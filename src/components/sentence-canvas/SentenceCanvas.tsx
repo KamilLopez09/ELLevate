@@ -198,7 +198,6 @@ export function SentenceCanvas() {
     },
     [
       currentIndex,
-      errorCount,
       feedback,
       finishSession,
       isComplete,
