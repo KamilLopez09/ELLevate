@@ -17,7 +17,7 @@ export default function HomePage() {
       />
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
-        <header className="rounded-3xl bg-white/70 p-8 shadow-bento backdrop-blur-sm">
+        <header className="rounded-3xl bg-paper p-8 shadow-bento">
           <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
             Certified Angels Summer Camp
           </p>

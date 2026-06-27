@@ -91,6 +91,7 @@ function PaintSwatch({
       onClick={() => onSelect(option)}
       aria-label={`Choose verb: ${option.label}`}
       className={`min-h-[56px] flex-1 rounded-3xl px-4 py-4 text-xl font-bold text-white shadow-bento transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${SWATCH_STYLES[color]}`}
+      whileHover={disabled ? undefined : { scale: 1.04 }}
       whileTap={disabled ? undefined : { scale: 0.96 }}
     >
       {option.label}
@@ -260,7 +261,7 @@ export function SentenceCanvas() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING}
-        className="rounded-3xl bg-white/80 p-8 shadow-bento backdrop-blur-sm"
+        className="rounded-3xl bg-paper p-8 shadow-bento"
       >
         <h2 className="text-3xl font-extrabold text-success-accent">
           Canvas Complete!
@@ -284,20 +285,22 @@ export function SentenceCanvas() {
             Session saved for camp organizers.
           </p>
         )}
-        <button
+        <motion.button
           type="button"
           onClick={handleReset}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
           className="mt-8 min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
           Paint again
-        </button>
+        </motion.button>
       </motion.section>
     );
   }
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="rounded-3xl bg-white/80 p-6 shadow-bento backdrop-blur-sm sm:p-8">
+      <div className="rounded-3xl bg-paper p-6 shadow-bento sm:p-8">
         <ProgressBento
           total={totalSentences}
           current={currentIndex}
@@ -308,7 +311,20 @@ export function SentenceCanvas() {
         </p>
       </div>
 
-      <div className="rounded-3xl bg-white/90 p-6 shadow-bento sm:p-10">
+      <div className="relative overflow-hidden rounded-3xl bg-paper p-6 shadow-bento sm:p-10">
+        <AnimatePresence>
+          {feedback === "correct" && (
+            <motion.div
+              key={`flash-${currentIndex}`}
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.45, 0] }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="pointer-events-none absolute inset-0 bg-success-accent"
+            />
+          )}
+        </AnimatePresence>
+        <div className="relative z-10">
         <p className="mb-3 text-sm font-semibold text-ink/60">Spanish hint</p>
         <p className="text-lg italic text-ink/70">{prompt.spanishHint}</p>
 
@@ -354,6 +370,7 @@ export function SentenceCanvas() {
           {feedback === "correct" && (
             <span className="text-success-accent">Beautiful brushstroke!</span>
           )}
+        </div>
         </div>
       </div>
 

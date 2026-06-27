@@ -3,11 +3,15 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
-## Milestone 6 — Certified Angels branding integration
+## Milestone 6 — Certified Angels branding + UX refinement
 
-- Added a `camp-blue` (`#C3E3F0`) color token (Tailwind + CSS var) and set it as the primary page/body background; cards stay off-white (`#FAF7F2`/white) for contrast.
-- Both routes (`/` and `/sentence-canvas`) now use `bg-camp-blue`; decorative blobs keep their opacity/blur and complement the blue.
-- Touch targets standardized to a 56px minimum across intake inputs/selects and the completion button (swatches were already 56px).
+- Added a `camp-blue` (`#C3E3F0`) color token (Tailwind + CSS var) and set it as the primary page/body background.
+- Content/canvas cards converted to solid `paper` (`#FAF7F2`) for clean, high-contrast separation against the blue (replacing the earlier translucent white).
+- Both routes (`/` and `/sentence-canvas`) use `bg-camp-blue`; decorative blobs keep their opacity/blur and complement the blue.
+- Tactile feedback: hover + tap scaling on swatches, the completion button, the intake submit, and nav pills ("primal gesture" response).
+- Joyful success cue: a celebratory green flash sweeps the sentence card on a correct answer (layered behind the text), alongside the existing spring fill and shake-on-error.
+- Touch targets standardized to a 56px minimum across intake inputs/selects and buttons (swatches were already 56px).
+- Structural cleanup verified: no OpenNext/Wrangler artifacts remain; `next.config.ts` stays `output: "export"`.
 - Confirmed the full intake -> telemetry pipeline writes attributable rows (verified a live row: `Kamil L` / `kamil-l`, age `11-14`, group `B`).
 
 ## Milestone 5 — Session-Scoped Identity Gatekeeper

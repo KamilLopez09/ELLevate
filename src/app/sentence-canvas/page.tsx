@@ -17,7 +17,7 @@ export default function SentenceCanvasPage() {
         <header className="mb-6 flex items-center justify-between gap-4">
           <Link
             href="/"
-            className="rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+            className="rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:scale-[1.03] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
           >
             ← Home
           </Link>
