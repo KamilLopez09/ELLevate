@@ -2,6 +2,7 @@ import type { CamperSessionData } from "@/types/sentence-canvas";
 
 export const CAMPER_SESSION_KEY = "camperSessionData";
 export const LESSON_COMPLETE_KEY = "lesson_complete";
+export const LESSON_1_PASSED_KEY = "lesson_1_passed";
 
 /**
  * Converts a display name into a URL/DB-safe id.
@@ -63,4 +64,19 @@ export function isLessonComplete(): boolean {
     return false;
   }
   return window.sessionStorage.getItem(LESSON_COMPLETE_KEY) === "true";
+}
+
+/** Records that the camper cleared Lesson 1's 80% accuracy gate. */
+export function setLesson1Passed(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(LESSON_1_PASSED_KEY, "true");
+}
+
+export function isLesson1Passed(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return window.sessionStorage.getItem(LESSON_1_PASSED_KEY) === "true";
 }

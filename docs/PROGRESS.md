@@ -3,6 +3,16 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
+## Milestone 8 — Game modes, Swapy drag & match, 80% accuracy gate
+
+Expanded the Paint step into two interactive modes plus an accuracy requirement to advance.
+
+- **Game Mode Selector** (`GameModeSelector.tsx`): a "Choose Your Painting Style!" card shown on `/application` before the canvas, offering **Click to Paint** (purple) and **Drag & Match** (teal).
+- **Drag & Match (Swapy):** added `swapy@^1.0.5`. The sentence blank is a `data-swapy-slot`; each answer is a `data-swapy-item`/`data-swapy-handle` block (56px min hit target, `role="button"` for a11y). Dropping a word in the blank fires evaluation; correct locks + advances, wrong shakes and slides back. The board remounts (via a parent `key`) between sentences and after a wrong attempt so Swapy always starts from clean DOM — avoiding React-vs-Swapy reconciliation conflicts.
+- **80% accuracy gate:** tracks first-try accuracy `(correct_first_try / total) * 100`. On completion, ≥80% shows a celebratory screen, sets `lesson_1_passed: true` in `sessionStorage`, and offers "Back to Menu — Unlock Next Lesson! 🔓" (routes to `/lesson`). <80% shows an encouraging screen with "Try Again".
+- Shared answer logic (`evaluateAnswer`) drives both modes; the single end-of-session Supabase INSERT is unchanged.
+- Verified end-to-end in-browser: intake → lesson → mode select → drag correct/incorrect/reset → 5-sentence completion → 80% pass screen with `lesson_1_passed` set and a telemetry row written ("Session saved for camp organizers").
+
 ## Milestone 7 — Locked Learning Chain
 
 Introduced a linear, locked progression so campers move through the lesson in order: `/` (Intake) -> `/lesson` (Video/Content) -> `/application` (Sentence Canvas).

@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SentenceCanvas } from "@/components/sentence-canvas/SentenceCanvas";
+import { GameModeSelector } from "@/components/sentence-canvas/GameModeSelector";
 import { StepRail } from "@/components/ui/StepRail";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
+import type { GameMode } from "@/types/sentence-canvas";
 
 export default function ApplicationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<GameMode | null>(null);
 
   useEffect(() => {
     // Locked chain guardrails: enforce intake, then the lesson, before painting.
@@ -48,7 +51,11 @@ export default function ApplicationPage() {
           <StepRail current={3} />
         </header>
 
-        <SentenceCanvas />
+        {mode === null ? (
+          <GameModeSelector onSelect={setMode} />
+        ) : (
+          <SentenceCanvas mode={mode} />
+        )}
       </div>
     </main>
   );
