@@ -3,7 +3,20 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
-## Milestone 4 — Native Cloudflare Pages (current)
+## Milestone 5 — Session-Scoped Identity Gatekeeper
+
+Added a mandatory intake step before the Sentence Canvas so telemetry is
+attributable to a camper.
+
+- New `IntakeGatekeeper.tsx`: checks `sessionStorage` for `camperSessionData`; if absent, shows a kid-friendly form (First Name + Last Initial, Age Bracket `5-7`/`8-10`/`11-14`, Home Language `English`/`Spanish`). On submit it persists the data and Framer Motion transitions to the canvas.
+- New `lib/camper-session.ts`: shared storage key, accent-aware `slugify` (`"Maria G"` -> `maria-g`), and hydration-safe read/write helpers.
+- `SentenceCanvas.tsx`: the single end-of-session INSERT now includes `camper_id`, `age_bracket`, and `native_language`. If intake was bypassed, telemetry is skipped rather than writing an orphaned row.
+- Types extended: `AgeBracket`, `NativeLanguage`, `CamperSessionData`, and three new fields on `CamperTelemetryRow`.
+- Database: `001` updated for fresh installs; `002_camper_intake_fields.sql` adds the columns idempotently (with backfill) and recreates the RLS insert policy to validate the new fields.
+
+Apply `002_camper_intake_fields.sql` in Supabase if the table was already created.
+
+## Milestone 4 — Native Cloudflare Pages
 
 - Confirmed a successful **native Pages** build (`initialize → clone → build → deploy` all green) serving from `*.ellevate.pages.dev`.
 - Production branch to be set to `main`; per-deployment alias (e.g. `f1a035b5.ellevate.pages.dev`) sits in front of the stable `ellevate.pages.dev`.

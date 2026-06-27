@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SENTENCE_PROMPTS } from "@/data/sentence-prompts";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { readCamperSession } from "@/lib/camper-session";
 import type {
   CamperTelemetryRow,
   FeedbackState,
@@ -149,10 +150,22 @@ export function SentenceCanvas() {
       finishCalledRef.current = true;
       setIsSubmitting(true);
 
+      const camper = readCamperSession();
+      if (!camper) {
+        // No intake data means the gatekeeper was bypassed; skip telemetry
+        // rather than write an orphaned, non-attributable row.
+        setTelemetrySaved(false);
+        setIsComplete(true);
+        return;
+      }
+
       const payload: CamperTelemetryRow = {
         module_name: "sentence_canvas",
         score: finalScore,
         error_count: finalErrors,
+        camper_id: camper.camper_id,
+        age_bracket: camper.age_bracket,
+        native_language: camper.native_language,
       };
 
       const supabase = createBrowserClient();

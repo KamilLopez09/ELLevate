@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SentenceCanvas } from "@/components/sentence-canvas/SentenceCanvas";
+import { IntakeGatekeeper } from "@/components/sentence-canvas/IntakeGatekeeper";
 
 export default function SentenceCanvasPage() {
   return (
@@ -26,7 +26,7 @@ export default function SentenceCanvasPage() {
           </p>
         </header>
 
-        <SentenceCanvas />
+        <IntakeGatekeeper />
       </div>
     </main>
   );
