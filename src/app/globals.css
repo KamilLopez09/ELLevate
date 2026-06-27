@@ -4,6 +4,7 @@
 
 :root {
   --paper: #faf7f2;
+  --camp-blue: #c3e3f0;
   --ink: #2d2a26;
   --purple-accent: #7c3aed;
   --gold-accent: #f5b942;
@@ -13,7 +14,7 @@
 
 body {
   color: var(--ink);
-  background: var(--paper);
+  background: var(--camp-blue);
 }
 
 @layer utilities {

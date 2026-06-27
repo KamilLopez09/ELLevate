@@ -20,7 +20,7 @@ const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
 const selectClasses =
-  "min-h-[52px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
+  "min-h-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
 
 export function IntakeGatekeeper() {
   const [hasSession, setHasSession] = useState(false);
@@ -104,7 +104,7 @@ export function IntakeGatekeeper() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -24 }}
           transition={SPRING}
-          className="rounded-3xl bg-white/90 p-6 shadow-bento sm:p-10"
+          className="rounded-3xl bg-paper p-6 shadow-bento sm:p-10"
         >
           <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
             Welcome, artist!
@@ -220,6 +220,7 @@ export function IntakeGatekeeper() {
 
             <motion.button
               type="submit"
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
             >

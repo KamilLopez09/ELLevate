@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-paper px-4 py-10 sm:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-10 sm:px-8">
       <div
         aria-hidden
         className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56"
@@ -17,7 +17,7 @@ export default function HomePage() {
       />
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
-        <header className="rounded-3xl bg-white/70 p-8 shadow-bento backdrop-blur-sm">
+        <header className="rounded-3xl bg-paper p-8 shadow-bento">
           <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
             Certified Angels Summer Camp
           </p>
