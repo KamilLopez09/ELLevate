@@ -34,9 +34,9 @@ export function IntakeGatekeeper() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Returning campers already have a session — skip ahead to the lesson.
+    // Returning campers already have a session — skip ahead to the menu.
     if (readCamperSession()) {
-      router.replace("/lesson");
+      router.replace("/menu");
       return;
     }
     setHydrated(true);
@@ -83,7 +83,7 @@ export function IntakeGatekeeper() {
 
     writeCamperSession(data);
     setError(null);
-    router.push("/lesson");
+    router.push("/menu");
   };
 
   if (!hydrated) {
@@ -217,7 +217,7 @@ export function IntakeGatekeeper() {
               whileTap={{ scale: 0.97 }}
               className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
             >
-              Continue to the lesson →
+              Continue →
             </motion.button>
           </form>
         </motion.section>

@@ -519,7 +519,7 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
         {passed ? (
           <motion.button
             type="button"
-            onClick={() => router.push("/lesson")}
+            onClick={() => router.push("/menu")}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.96 }}
             className="mt-8 min-h-[56px] rounded-3xl bg-purple-accent px-8 py-4 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"

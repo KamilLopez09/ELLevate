@@ -3,6 +3,14 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
+## Milestone 9 — Lesson-select menu hub
+
+Added a `/menu` hub so the flow now reads: `/` (Intake) → `/menu` → `/lesson` → `/application` → back to `/menu`.
+
+- New `/menu` page: greets the camper by first name and lists lessons. Lesson 1 ("Action Verbs in Motion") is always available; Lesson 2 ("Describing with Adjectives") is locked (🔒 "Finish Lesson 1 to unlock") until `lesson_1_passed` is set, then flips to an unlocked "Coming soon" state. Lesson 1 shows a "Passed ✓ · Replay" badge once cleared. Guards back to `/` if there's no session.
+- Rewired navigation: intake now routes to `/menu` (was `/lesson`); the canvas "Back to Menu — Unlock Next Lesson!" button routes to `/menu` (was `/lesson`); added a "← Menu" link on the lesson page.
+- Verified the full loop in-browser: intake → menu (Lesson 2 locked) → Lesson 1 → 100% pass → Back to Menu (Lesson 1 "Passed", Lesson 2 unlocked).
+
 ## Milestone 8 — Game modes, Swapy drag & match, 80% accuracy gate
 
 Expanded the Paint step into two interactive modes plus an accuracy requirement to advance.

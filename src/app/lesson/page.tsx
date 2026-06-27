@@ -102,9 +102,13 @@ export default function LessonPage() {
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-6">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
-            Today&apos;s Lesson
-          </p>
+          <button
+            type="button"
+            onClick={() => router.push("/menu")}
+            className="rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:scale-[1.03] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+          >
+            ← Menu
+          </button>
           <StepRail current={2} />
         </header>
 
