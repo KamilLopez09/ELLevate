@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #faf7f2;
+  --ink: #2d2a26;
+  --purple-accent: #7c3aed;
+  --gold-accent: #f5b942;
+  --teal-accent: #14b8a6;
+  --success-accent: #22c55e;
+}
+
+body {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.canvas-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.canvas-blob-purple {
+  background: var(--purple-accent);
+}
+
+.canvas-blob-gold {
+  background: var(--gold-accent);
+}
+
+.canvas-blob-teal {
+  background: var(--teal-accent);
+}
