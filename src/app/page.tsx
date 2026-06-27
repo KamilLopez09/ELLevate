@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-paper px-4 py-10 sm:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-10 sm:px-8">
       <div
         aria-hidden
         className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56"

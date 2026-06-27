@@ -20,7 +20,7 @@ const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
 const selectClasses =
-  "min-h-[52px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
+  "min-h-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
 
 export function IntakeGatekeeper() {
   const [hasSession, setHasSession] = useState(false);

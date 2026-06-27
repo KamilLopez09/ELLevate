@@ -3,6 +3,13 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
+## Milestone 6 — Certified Angels branding integration
+
+- Added a `camp-blue` (`#C3E3F0`) color token (Tailwind + CSS var) and set it as the primary page/body background; cards stay off-white (`#FAF7F2`/white) for contrast.
+- Both routes (`/` and `/sentence-canvas`) now use `bg-camp-blue`; decorative blobs keep their opacity/blur and complement the blue.
+- Touch targets standardized to a 56px minimum across intake inputs/selects and the completion button (swatches were already 56px).
+- Confirmed the full intake -> telemetry pipeline writes attributable rows (verified a live row: `Kamil L` / `kamil-l`, age `11-14`, group `B`).
+
 ## Milestone 5 — Session-Scoped Identity Gatekeeper
 
 Added a mandatory intake step before the Sentence Canvas so telemetry is

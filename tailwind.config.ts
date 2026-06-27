@@ -10,6 +10,7 @@ const config: Config = {
     extend: {
       colors: {
         paper: "#FAF7F2",
+        "camp-blue": "#C3E3F0",
         ink: "#2D2A26",
         "purple-accent": "#7C3AED",
         "gold-accent": "#F5B942",

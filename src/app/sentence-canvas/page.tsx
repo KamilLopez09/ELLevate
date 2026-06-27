@@ -3,7 +3,7 @@ import { IntakeGatekeeper } from "@/components/sentence-canvas/IntakeGatekeeper"
 
 export default function SentenceCanvasPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-paper px-4 py-8 sm:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
       <div
         aria-hidden
         className="canvas-blob canvas-blob-teal -right-16 top-0 h-52 w-52"
