@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ellevate",
+  "compatibility_date": "2026-06-26",
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page"
+  }
+}
