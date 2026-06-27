@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { SentenceCanvas } from "@/components/sentence-canvas/SentenceCanvas";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   readCamperSession,
   slugify,
@@ -23,7 +23,7 @@ const selectClasses =
   "min-h-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
 
 export function IntakeGatekeeper() {
-  const [hasSession, setHasSession] = useState(false);
+  const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
 
   const [firstName, setFirstName] = useState("");
@@ -34,9 +34,13 @@ export function IntakeGatekeeper() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setHasSession(readCamperSession() !== null);
+    // Returning campers already have a session — skip ahead to the lesson.
+    if (readCamperSession()) {
+      router.replace("/lesson");
+      return;
+    }
     setHydrated(true);
-  }, []);
+  }, [router]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -79,7 +83,7 @@ export function IntakeGatekeeper() {
 
     writeCamperSession(data);
     setError(null);
-    setHasSession(true);
+    router.push("/lesson");
   };
 
   if (!hydrated) {
@@ -87,17 +91,6 @@ export function IntakeGatekeeper() {
   }
 
   return (
-    <AnimatePresence mode="wait">
-      {hasSession ? (
-        <motion.div
-          key="canvas"
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={SPRING}
-        >
-          <SentenceCanvas />
-        </motion.div>
-      ) : (
         <motion.section
           key="intake"
           initial={{ opacity: 0, y: 24 }}
@@ -224,11 +217,9 @@ export function IntakeGatekeeper() {
               whileTap={{ scale: 0.97 }}
               className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
             >
-              Start painting →
+              Continue to the lesson →
             </motion.button>
           </form>
         </motion.section>
-      )}
-    </AnimatePresence>
   );
 }

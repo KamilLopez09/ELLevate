@@ -43,3 +43,6 @@ export interface CamperTelemetryRow {
 export type FeedbackState = "idle" | "correct" | "incorrect";
 
 export type SwatchColor = "purple" | "gold" | "teal";
+
+/** How the camper fills the blanks: tap a swatch, or drag a word block. */
+export type GameMode = "click" | "drag";

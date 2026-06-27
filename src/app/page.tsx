@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { IntakeGatekeeper } from "@/components/sentence-canvas/IntakeGatekeeper";
+import { StepRail } from "@/components/ui/StepRail";
 
 export default function HomePage() {
   return (
@@ -28,23 +29,12 @@ export default function HomePage() {
             Paint your way through English and Spanish — no tests, just creative
             play on your sentence canvas.
           </p>
+          <div className="mt-6">
+            <StepRail current={1} />
+          </div>
         </header>
 
-        <Link
-          href="/sentence-canvas"
-          className="group rounded-3xl bg-purple-accent p-8 text-white shadow-bento transition-transform hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-purple-accent"
-        >
-          <p className="text-sm font-semibold uppercase tracking-widest text-white/80">
-            Module 01
-          </p>
-          <h2 className="mt-2 text-3xl font-bold">Sentence Canvas</h2>
-          <p className="mt-3 text-lg text-white/90">
-            Tap a colorful verb swatch to fill the blank — spring it into place!
-          </p>
-          <span className="mt-6 inline-block rounded-full bg-white/20 px-5 py-2 text-sm font-semibold">
-            Start painting →
-          </span>
-        </Link>
+        <IntakeGatekeeper />
 
         <footer className="text-center text-sm text-ink/60">
           Completely free · Built for campers ages 5–14
