@@ -1,0 +1,47 @@
+# ELLevate — Progression Log
+
+A chronological record of how the project was built and deployed, including the
+decisions and course-corrections along the way. Newest entries at the top.
+
+## Milestone 4 — Native Cloudflare Pages (current)
+
+- Confirmed a successful **native Pages** build (`initialize → clone → build → deploy` all green) serving from `*.ellevate.pages.dev`.
+- Production branch to be set to `main`; per-deployment alias (e.g. `f1a035b5.ellevate.pages.dev`) sits in front of the stable `ellevate.pages.dev`.
+- Net result: static `out/` is served directly by Pages — no Workers runtime, no OpenNext, no wrangler.
+
+### Remaining to go fully live
+- Set Pages **Production branch = `main`**.
+- Ensure build env vars `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` exist in the Pages project.
+- Run the Supabase migration (`camper_telemetry` + RLS).
+- Smoke test: finish 5 sentences → expect HTTP 201 POST and one new telemetry row.
+
+## Milestone 3 — Deployment pivot: Workers → Pages (PR #2)
+
+Problem encountered, in order:
+
+1. First Cloudflare attempt auto-detected Next.js and ran `bunx opennextjs-cloudflare build`, which expects `output: "standalone"`. Our app is `output: "export"`, so it failed with `ENOENT … .next/standalone/.next/server/pages-manifest.json`.
+2. Switched build/deploy commands to `npm run build` / `npx wrangler deploy` and added a `wrangler.jsonc` static-assets config — a Workers static-assets path.
+3. Decided to follow the stricter architectural rule: deploy **natively to Pages**, bypassing Workers and OpenNext entirely.
+
+Changes in **PR #2** (`chore/pages-native-pivot`):
+- Deleted `wrangler.jsonc` and the `.wrangler/` gitignore entry (Workers artifacts no longer needed).
+- Confirmed `next.config.ts` keeps `output: "export"` + `images: { unoptimized: true }`.
+- Hardened the anti-spam guard: added a synchronous `transitionLockRef` so rapid double-clicks on the final sentence cannot bypass the async `isSubmitting`/`feedback` state and double-fire telemetry. The DB insert remains additionally guarded by `finishCalledRef`.
+
+## Milestone 2 — Build reproducibility + lint (PR #1)
+
+Changes in **PR #1** (`chore/lockfile-and-build-fix`):
+- Added `package-lock.json` for reproducible installs on Cloudflare builds.
+- Removed an unnecessary `errorCount` dependency from the `handleSelect` `useCallback` to clear a `react-hooks/exhaustive-deps` warning.
+
+## Milestone 1 — Initial scaffold
+
+- Bootstrapped Next.js 15 (App Router, `src/`, TypeScript, Tailwind) as a static export.
+- Built the **Sentence Canvas** module: click-to-fill verb conjugation with Framer Motion (spring fill on correct, horizontal shake on wrong), bilingual EN/ES prompts, progress indicator, and a celebratory completion screen.
+- 5 hardcoded sample sentences in `src/data/sentence-prompts.ts` (designed to be swapped for open-source ESL corpora later).
+- Supabase telemetry: browser client using only `NEXT_PUBLIC_*` keys, single end-of-session INSERT, graceful fallback when env vars are absent.
+- `camper_telemetry` schema with RLS — anonymous INSERT only, no SELECT.
+- Certified Angels "creative canvas" design system (paper background, purple/gold/teal accents, heavily rounded bento cards).
+
+See [DESIGN.md](DESIGN.md) for the architectural alternatives weighed at each step,
+and [PUBLISH.md](PUBLISH.md) for the GitHub + Cloudflare publish steps.

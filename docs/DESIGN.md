@@ -6,9 +6,13 @@ This document records why we chose the current architecture for the Sentence Can
 
 | Option | Pros | Cons | Decision |
 |--------|------|------|----------|
-| **Static export (`output: "export"`)** | Simple Cloudflare Pages deploy; no server runtime cost; fast CDN delivery | No API routes or SSR; all Supabase calls client-side | **Selected** — matches free camp hosting and anon-key-only constraint |
+| **Static export (`output: "export"`) on native Cloudflare Pages** | Simple Pages deploy (build `npm run build`, output `out/`); no server runtime; fast CDN delivery; build-time env injection | No API routes or SSR; all Supabase calls client-side | **Selected** — matches free camp hosting and anon-key-only constraint |
+| Workers + OpenNext (`opennextjs-cloudflare`) | Full SSR/App Router on Workers | Expects `output: "standalone"`; failed against our static export (`ENOENT … pages-manifest.json`) | Rejected — wrong tool for a static-only app |
+| Workers + static assets (`wrangler deploy` + `wrangler.jsonc`) | Serves `out/` via a Worker | Extra config; contradicts "bypass Workers" rule | Tried then removed (see PROGRESS.md) |
 | `@cloudflare/next-on-pages` | Full App Router features, edge middleware | More complex build; overkill for one client module | Rejected for v1 |
 | Vite + React SPA | Lighter bundle | Loses Next.js file routing and future SSR path | Rejected — user specified Next.js |
+
+The deployment journey (OpenNext failure → Workers static assets → native Pages) is logged in [PROGRESS.md](PROGRESS.md).
 
 ## Telemetry: End-of-Session INSERT vs. Per-Click Writes
 
