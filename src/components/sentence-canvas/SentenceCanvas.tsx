@@ -164,8 +164,10 @@ export function SentenceCanvas() {
         score: finalScore,
         error_count: finalErrors,
         camper_id: camper.camper_id,
+        display_name: camper.display_name,
         age_bracket: camper.age_bracket,
         native_language: camper.native_language,
+        group_letter: camper.group_letter,
       };
 
       const supabase = createBrowserClient();

@@ -30,6 +30,7 @@ export function IntakeGatekeeper() {
   const [lastInitial, setLastInitial] = useState("");
   const [ageBracket, setAgeBracket] = useState<AgeBracket | "">("");
   const [nativeLanguage, setNativeLanguage] = useState<NativeLanguage | "">("");
+  const [groupLetter, setGroupLetter] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,9 +43,21 @@ export function IntakeGatekeeper() {
 
     const cleanFirst = firstName.trim();
     const cleanInitial = lastInitial.trim();
+    const cleanGroup = groupLetter.trim().toUpperCase();
 
-    if (!cleanFirst || !cleanInitial || !ageBracket || !nativeLanguage) {
+    if (
+      !cleanFirst ||
+      !cleanInitial ||
+      !ageBracket ||
+      !nativeLanguage ||
+      !cleanGroup
+    ) {
       setError("Please fill in every box so we can set up your canvas!");
+      return;
+    }
+
+    if (!/^[A-Z]$/.test(cleanGroup)) {
+      setError("Your camp group should be a single letter (like A).");
       return;
     }
 
@@ -61,6 +74,7 @@ export function IntakeGatekeeper() {
       display_name: displayName,
       age_bracket: ageBracket,
       native_language: nativeLanguage,
+      group_letter: cleanGroup,
     };
 
     writeCamperSession(data);
@@ -175,6 +189,24 @@ export function IntakeGatekeeper() {
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="sm:w-40">
+              <span className="mb-2 block text-sm font-bold text-ink/80">
+                Camp group
+              </span>
+              <input
+                type="text"
+                value={groupLetter}
+                onChange={(e) =>
+                  setGroupLetter(e.target.value.replace(/[^a-zA-Z]/g, "").slice(0, 1).toUpperCase())
+                }
+                placeholder="A"
+                maxLength={1}
+                autoComplete="off"
+                aria-label="Camp group letter"
+                className={`${selectClasses} text-center uppercase`}
+              />
             </label>
 
             {error && (

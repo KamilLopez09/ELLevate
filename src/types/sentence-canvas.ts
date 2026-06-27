@@ -26,6 +26,7 @@ export interface CamperSessionData {
   display_name: string;
   age_bracket: AgeBracket;
   native_language: NativeLanguage;
+  group_letter: string;
 }
 
 export interface CamperTelemetryRow {
@@ -33,8 +34,10 @@ export interface CamperTelemetryRow {
   score: number;
   error_count: number;
   camper_id: string;
+  display_name: string;
   age_bracket: AgeBracket;
   native_language: NativeLanguage;
+  group_letter: string;
 }
 
 export type FeedbackState = "idle" | "correct" | "incorrect";

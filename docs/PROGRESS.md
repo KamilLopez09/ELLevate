@@ -8,11 +8,15 @@ decisions and course-corrections along the way. Newest entries at the top.
 Added a mandatory intake step before the Sentence Canvas so telemetry is
 attributable to a camper.
 
-- New `IntakeGatekeeper.tsx`: checks `sessionStorage` for `camperSessionData`; if absent, shows a kid-friendly form (First Name + Last Initial, Age Bracket `5-7`/`8-10`/`11-14`, Home Language `English`/`Spanish`). On submit it persists the data and Framer Motion transitions to the canvas.
+- New `IntakeGatekeeper.tsx`: checks `sessionStorage` for `camperSessionData`; if absent, shows a kid-friendly form (First Name + Last Initial, Age Bracket `5-7`/`8-10`/`11-14`, Home Language `English`/`Spanish`, Camp Group letter `A`-`Z`). On submit it persists the data and Framer Motion transitions to the canvas.
 - New `lib/camper-session.ts`: shared storage key, accent-aware `slugify` (`"Maria G"` -> `maria-g`), and hydration-safe read/write helpers.
-- `SentenceCanvas.tsx`: the single end-of-session INSERT now includes `camper_id`, `age_bracket`, and `native_language`. If intake was bypassed, telemetry is skipped rather than writing an orphaned row.
-- Types extended: `AgeBracket`, `NativeLanguage`, `CamperSessionData`, and three new fields on `CamperTelemetryRow`.
+- `SentenceCanvas.tsx`: the single end-of-session INSERT now includes the analyst-facing identifiers `camper_id`, `display_name` (name PII), `age_bracket`, `native_language`, and `group_letter`. If intake was bypassed, telemetry is skipped rather than writing an orphaned row.
+- Types extended: `AgeBracket`, `NativeLanguage`, `CamperSessionData`, and five identity fields on `CamperTelemetryRow`.
 - Database: `001` updated for fresh installs; `002_camper_intake_fields.sql` adds the columns idempotently (with backfill) and recreates the RLS insert policy to validate the new fields.
+
+Note: `display_name` is personally identifiable information (camper name). It is
+stored so a data analyst can identify campers; treat the table as PII-bearing
+and keep the anon key INSERT-only (no SELECT for `anon`).
 
 Apply `002_camper_intake_fields.sql` in Supabase if the table was already created.
 

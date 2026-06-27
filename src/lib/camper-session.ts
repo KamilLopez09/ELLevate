@@ -29,8 +29,10 @@ export function readCamperSession(): CamperSessionData | null {
     const parsed = JSON.parse(raw) as Partial<CamperSessionData>;
     if (
       !parsed.camper_id ||
+      !parsed.display_name ||
       !parsed.age_bracket ||
-      !parsed.native_language
+      !parsed.native_language ||
+      !parsed.group_letter
     ) {
       return null;
     }
