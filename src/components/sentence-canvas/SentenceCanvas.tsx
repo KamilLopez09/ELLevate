@@ -112,6 +112,11 @@ export function SentenceCanvas() {
 
   const finishCalledRef = useRef(false);
   const errorCountRef = useRef(0);
+  // Synchronous re-entrancy guard. State updates (isSubmitting/feedback) are
+  // async, so a fast double-tap can pass the state-based check twice in the same
+  // render. This ref flips synchronously the instant a correct answer is
+  // accepted, blocking duplicate handling before React re-renders.
+  const transitionLockRef = useRef(false);
 
   useEffect(() => {
     errorCountRef.current = errorCount;
@@ -125,6 +130,7 @@ export function SentenceCanvas() {
     setFilledVerb(null);
     setFeedback("idle");
     setHiddenOptionId(null);
+    transitionLockRef.current = false;
   }, [currentIndex, sessionKey, prompt.options]);
 
   const swatchColors = useMemo(
@@ -165,7 +171,12 @@ export function SentenceCanvas() {
 
   const handleSelect = useCallback(
     (option: VerbOption) => {
-      if (isSubmitting || isComplete || feedback === "correct") {
+      if (
+        transitionLockRef.current ||
+        isSubmitting ||
+        isComplete ||
+        feedback === "correct"
+      ) {
         return;
       }
 
@@ -175,6 +186,7 @@ export function SentenceCanvas() {
         return;
       }
 
+      transitionLockRef.current = true;
       setFeedback("correct");
       setFilledVerb(option);
       setHiddenOptionId(option.id);
@@ -211,6 +223,7 @@ export function SentenceCanvas() {
   const handleReset = () => {
     finishCalledRef.current = false;
     errorCountRef.current = 0;
+    transitionLockRef.current = false;
     setSessionKey((prev) => prev + 1);
     setCurrentIndex(0);
     setScore(0);
