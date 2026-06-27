@@ -3,6 +3,17 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
+## Milestone 7 — Locked Learning Chain
+
+Introduced a linear, locked progression so campers move through the lesson in order: `/` (Intake) -> `/lesson` (Video/Content) -> `/application` (Sentence Canvas).
+
+- `/` is now the Intake step. `IntakeGatekeeper` writes the session and `router.push("/lesson")` (returning campers are redirected straight to the lesson); it no longer renders the canvas inline.
+- New `/lesson` page: `shadow-bento` card with a 16:9 video embed placeholder (VOA / British Council), a custom `Tabs` component (Key Verbs / Examples / Tips), and a `purple-accent` "Ready to Paint!" button that sets `lesson_complete: true` in `sessionStorage` and routes to `/application`.
+- New `/application` page: hosts `SentenceCanvas` behind a `useEffect` guard — missing `camperSessionData` redirects to `/`, missing `lesson_complete` redirects to `/lesson`. The lesson page also guards back to `/` if intake was skipped.
+- Raw UI primitives added under `src/components/ui/`: `Tabs` (teal-accent labels, 56px targets, no external lib) and `StepRail` (the 1·2·3 chain indicator shown on each step).
+- `lesson_complete` helpers (`setLessonComplete` / `isLessonComplete`) centralized in `lib/camper-session.ts`; all progression state stays in `sessionStorage`.
+- Removed the obsolete `/sentence-canvas` route. Supabase telemetry in `SentenceCanvas` is unchanged.
+
 ## Milestone 6 — Certified Angels branding + UX refinement
 
 - Added a `camp-blue` (`#C3E3F0`) color token (Tailwind + CSS var) and set it as the primary page/body background.

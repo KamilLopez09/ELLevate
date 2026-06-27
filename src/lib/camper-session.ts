@@ -1,6 +1,7 @@
 import type { CamperSessionData } from "@/types/sentence-canvas";
 
 export const CAMPER_SESSION_KEY = "camperSessionData";
+export const LESSON_COMPLETE_KEY = "lesson_complete";
 
 /**
  * Converts a display name into a URL/DB-safe id.
@@ -47,4 +48,19 @@ export function writeCamperSession(data: CamperSessionData): void {
     return;
   }
   window.sessionStorage.setItem(CAMPER_SESSION_KEY, JSON.stringify(data));
+}
+
+/** Marks the lesson step as watched so the application step unlocks. */
+export function setLessonComplete(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(LESSON_COMPLETE_KEY, "true");
+}
+
+export function isLessonComplete(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return window.sessionStorage.getItem(LESSON_COMPLETE_KEY) === "true";
 }
