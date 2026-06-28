@@ -27,7 +27,6 @@ import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
 import type { LessonProgressState } from "@/types/lesson-progress";
 
-const TOTAL_PROMPTS = 10;
 const PASS_THRESHOLD = 8;
 
 type NodeOutcome = "pending" | "correct" | "incorrect";
@@ -35,15 +34,15 @@ type NodeOutcome = "pending" | "correct" | "incorrect";
 export interface LessonCanvasProps {
   weekNumber: number;
   ageGroup: AgeGroup;
-  /** Ordered session prompts (review → core → generative). Overrides bracket lookup. */
   sessionPrompts?: Prompt[];
-  /** Review prompts routed to FlashcardDrill. */
   reviewPrompts?: Prompt[];
-  /** Core + generative prompts routed to SentenceBuilder. */
   builderPrompts?: Prompt[];
-  /** When true, progress rail is rendered by the parent (e.g. application page header). */
   externalProgress?: boolean;
   onProgressChange?: (state: LessonProgressState) => void;
+  onSessionStateChange?: (state: {
+    sessionComplete: boolean;
+    showRetryModal: boolean;
+  }) => void;
 }
 
 function gameModeForPrompt(prompt: Prompt): GameModeId {
@@ -52,9 +51,11 @@ function gameModeForPrompt(prompt: Prompt): GameModeId {
 
 function RetryModal({
   correctFirstTry,
+  totalPrompts,
   onTryAgain,
 }: {
   correctFirstTry: number;
+  totalPrompts: number;
   onTryAgain: () => void;
 }) {
   return (
@@ -69,14 +70,14 @@ function RetryModal({
           Let&apos;s Practice Again!
         </h2>
         <p className="mt-4 text-lg text-ink/80">
-          You got {correctFirstTry} out of 10. You need 8 to move on. You can do
-          it!
+          You got {correctFirstTry} out of {totalPrompts}. You need {PASS_THRESHOLD}{" "}
+          to move on. You can do it!
         </p>
         <button
           type="button"
           onClick={onTryAgain}
           aria-label="Try the lesson again"
-          className="mt-8 min-h-[56px] min-w-[56px] w-full rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+          className="mt-8 min-h-[64px] w-full rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-card shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
           Try Again
         </button>
@@ -113,6 +114,7 @@ export function LessonCanvas({
   builderPrompts,
   externalProgress = false,
   onProgressChange,
+  onSessionStateChange,
 }: LessonCanvasProps) {
   const router = useRouter();
   const [promptIndex, setPromptIndex] = useState(0);
@@ -121,15 +123,6 @@ export function LessonCanvas({
   const [retryCount, setRetryCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [telemetryWarning, setTelemetryWarning] = useState(false);
-
-  const outcomesRef = useRef<NodeOutcome[]>(
-    Array.from({ length: TOTAL_PROMPTS }, () => "pending"),
-  );
-  const scoreResultsRef = useRef<ScoreResult[]>([]);
-  const modesUsedRef = useRef<Set<GameModeId>>(new Set());
-  const errorCountRef = useRef(0);
-  const weekCompletedRef = useRef(false);
-  const [outcomeVersion, bumpOutcomes] = useState(0);
 
   const bracket = useMemo(() => {
     const week = curriculum[weekNumber];
@@ -143,8 +136,23 @@ export function LessonCanvas({
     return base;
   }, [weekNumber, ageGroup, sessionPrompts]);
 
+  const totalPrompts = bracket?.prompts.length ?? 0;
+
+  const outcomesRef = useRef<NodeOutcome[]>([]);
+  const scoreResultsRef = useRef<ScoreResult[]>([]);
+  const modesUsedRef = useRef<Set<GameModeId>>(new Set());
+  const errorCountRef = useRef(0);
+  const weekCompletedRef = useRef(false);
+  const [outcomeVersion, bumpOutcomes] = useState(0);
+
+  useEffect(() => {
+    outcomesRef.current = Array.from({ length: totalPrompts }, () => "pending");
+    bumpOutcomes((value) => value + 1);
+  }, [totalPrompts, weekNumber, ageGroup]);
+
   const prompt = bracket?.prompts[promptIndex] ?? null;
-  const showRetryModal = promptIndex === TOTAL_PROMPTS && !sessionComplete;
+  const showRetryModal =
+    totalPrompts > 0 && promptIndex >= totalPrompts && !sessionComplete;
 
   useEffect(() => {
     weekCompletedRef.current = false;
@@ -169,33 +177,35 @@ export function LessonCanvas({
     });
   }, [onProgressChange, promptIndex, outcomeVersion]);
 
+  useEffect(() => {
+    onSessionStateChange?.({ sessionComplete, showRetryModal });
+  }, [onSessionStateChange, sessionComplete, showRetryModal]);
+
   const resetSession = useCallback(() => {
-    outcomesRef.current = Array.from({ length: TOTAL_PROMPTS }, () => "pending");
+    outcomesRef.current = Array.from({ length: totalPrompts }, () => "pending");
     scoreResultsRef.current = [];
     modesUsedRef.current = new Set();
     errorCountRef.current = 0;
     refreshOutcomes();
-  }, [refreshOutcomes]);
+  }, [refreshOutcomes, totalPrompts]);
 
   const finishGate = useCallback(
     (firstTryScore: number) => {
       if (firstTryScore >= PASS_THRESHOLD) {
         setSessionComplete(true);
-        setPromptIndex(TOTAL_PROMPTS);
         if (!weekCompletedRef.current) {
           weekCompletedRef.current = true;
           markWeekCompleted(weekNumber);
         }
-      } else {
-        setPromptIndex(TOTAL_PROMPTS);
       }
+      setPromptIndex(totalPrompts);
     },
-    [weekNumber],
+    [totalPrompts, weekNumber],
   );
 
   const handleModeComplete = useCallback(
     (payload: GameModeCompletePayload) => {
-      if (promptIndex >= TOTAL_PROMPTS || !prompt) {
+      if (totalPrompts === 0 || promptIndex >= totalPrompts || !prompt) {
         return;
       }
 
@@ -222,14 +232,21 @@ export function LessonCanvas({
       }
 
       const nextIndex = promptIndex + 1;
-      if (nextIndex >= TOTAL_PROMPTS) {
+      if (nextIndex >= totalPrompts) {
         finishGate(nextFirstTryScore);
         return;
       }
 
       setPromptIndex(nextIndex);
     },
-    [correctFirstTry, finishGate, prompt, promptIndex, refreshOutcomes],
+    [
+      correctFirstTry,
+      finishGate,
+      prompt,
+      promptIndex,
+      refreshOutcomes,
+      totalPrompts,
+    ],
   );
 
   const handleTryAgain = () => {
@@ -246,8 +263,8 @@ export function LessonCanvas({
 
     const camper = readCamperSession();
     const accuracyRate =
-      TOTAL_PROMPTS > 0
-        ? Number(((correctFirstTry / TOTAL_PROMPTS) * 100).toFixed(2))
+      totalPrompts > 0
+        ? Number(((correctFirstTry / totalPrompts) * 100).toFixed(2))
         : 0;
 
     const sessionGameMode: GameModeId = modesUsedRef.current.has(
@@ -332,35 +349,36 @@ export function LessonCanvas({
     );
   }
 
+  if (showRetryModal) {
+    return (
+      <RetryModal
+        correctFirstTry={correctFirstTry}
+        totalPrompts={totalPrompts}
+        onTryAgain={handleTryAgain}
+      />
+    );
+  }
+
   if (!prompt) {
     return null;
   }
 
   return (
-    <>
-      {showRetryModal && (
-        <RetryModal
-          correctFirstTry={correctFirstTry}
-          onTryAgain={handleTryAgain}
-        />
+    <section className="flex flex-col">
+      {!externalProgress && (
+        <p className="mb-6 text-sm font-semibold text-muted">
+          {prompt.category === "review"
+            ? "Review · Flashcard Drill"
+            : "Practice · Sentence Builder"}
+        </p>
       )}
 
-      <section className="flex flex-col">
-        {!externalProgress && (
-          <p className="mb-6 text-sm font-semibold text-muted">
-            {prompt.category === "review"
-              ? "Review · Flashcard Drill"
-              : "Practice · Sentence Builder"}
-          </p>
-        )}
-
-        {renderPromptByCategory(
-          prompt,
-          reviewPrompts,
-          builderPrompts,
-          handleModeComplete,
-        )}
-      </section>
-    </>
+      {renderPromptByCategory(
+        prompt,
+        reviewPrompts,
+        builderPrompts,
+        handleModeComplete,
+      )}
+    </section>
   );
 }

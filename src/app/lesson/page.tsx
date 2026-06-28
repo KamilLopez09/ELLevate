@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { StepRail } from "@/components/ui/StepRail";
 import {
   getBracketContent,
@@ -42,12 +43,15 @@ export default function LessonPage() {
 
   if (!ready || !week || !bracket) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+      <CampScreenLayout screen="lesson" activeItemId="watch">
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+      </CampScreenLayout>
     );
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
+    <CampScreenLayout screen="lesson" activeItemId="watch">
+      <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
       <div
         aria-hidden
         className="canvas-blob canvas-blob-teal -right-16 top-0 h-52 w-52"
@@ -128,6 +132,7 @@ export default function LessonPage() {
           Ready to Practice! →
         </motion.button>
       </div>
-    </main>
+      </main>
+    </CampScreenLayout>
   );
 }

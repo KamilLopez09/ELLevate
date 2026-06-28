@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { LessonCanvas } from "@/components/LessonCanvas";
+import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
 import { curriculum } from "@/data/curriculum";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
@@ -21,6 +24,7 @@ export default function ApplicationPage() {
   const [progress, setProgress] = useState<LessonProgressState>(
     createInitialProgress(),
   );
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
 
@@ -41,6 +45,13 @@ export default function ApplicationPage() {
     setProgress(state);
   }, []);
 
+  const handleSessionStateChange = useCallback(
+    (state: { sessionComplete: boolean; showRetryModal: boolean }) => {
+      setSessionEnded(state.sessionComplete || state.showRetryModal);
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!readCamperSession()) {
       router.replace("/");
@@ -57,52 +68,131 @@ export default function ApplicationPage() {
 
   useEffect(() => {
     setProgress(createInitialProgress(sessionPrompts.length || 10));
+    setSessionEnded(false);
   }, [sessionPrompts.length]);
+
+  const completedCount = progress.outcomes.filter((o) => o !== "pending").length;
+  const weekTheme = curriculum[weekNumber]?.theme ?? "Camp Week";
 
   if (!ready || !camper) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+      <CampScreenLayout screen="application" activeItemId="paint">
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+      </CampScreenLayout>
     );
   }
 
   if (sessionPrompts.length === 0) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-camp-blue px-4">
-        <p className="text-center text-body text-muted">
-          No Week {weekNumber} prompts found for age group {ageGroup}.
-        </p>
-      </main>
+      <CampScreenLayout screen="application" activeItemId="paint">
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue px-4">
+          <p className="text-center text-body text-muted">
+            No Week {weekNumber} prompts found for age group {ageGroup}.
+          </p>
+        </main>
+      </CampScreenLayout>
     );
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
-      <div
-        aria-hidden
-        className="canvas-blob canvas-blob-teal -right-16 top-0 h-52 w-52"
-      />
-      <div
-        aria-hidden
-        className="canvas-blob canvas-blob-gold -left-10 bottom-20 h-60 w-60"
-      />
-
-      <div className="relative mx-auto max-w-3xl">
-        <PracticeProgressHeader
-          promptIndex={progress.promptIndex}
-          outcomes={progress.outcomes}
-          totalSteps={sessionPrompts.length}
+    <CampScreenLayout
+      screen="application"
+      activeItemId={sessionEnded ? "stats" : "paint"}
+    >
+      <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
+        <div
+          aria-hidden
+          className="canvas-blob canvas-blob-teal -right-16 top-0 h-52 w-52"
+        />
+        <div
+          aria-hidden
+          className="canvas-blob canvas-blob-gold -left-10 bottom-20 h-60 w-60"
         />
 
-        <LessonCanvas
-          weekNumber={weekNumber}
-          ageGroup={ageGroup}
-          sessionPrompts={sessionPrompts}
-          reviewPrompts={reviewPrompts}
-          builderPrompts={builderPrompts}
-          externalProgress
-          onProgressChange={handleProgressChange}
-        />
-      </div>
-    </main>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.35 }}
+          className="relative mx-auto max-w-5xl"
+        >
+          <BentoGrid className="sm:auto-rows-[minmax(4rem,auto)]">
+            {!sessionEnded ? (
+              <>
+                <BentoCard
+                  index={0}
+                  span="sm:col-span-4"
+                  accent="purple"
+                  tilt={-0.6}
+                  className="!p-4 sm:!p-5"
+                >
+                  <PracticeProgressHeader
+                    promptIndex={progress.promptIndex}
+                    outcomes={progress.outcomes}
+                    totalSteps={sessionPrompts.length}
+                  />
+                </BentoCard>
+
+                <BentoCard
+                  index={1}
+                  span="sm:col-span-2"
+                  accent="gold"
+                  tilt={1}
+                  className="flex min-h-[64px] flex-col justify-center !p-5"
+                >
+                  <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
+                    Week {weekNumber}
+                  </p>
+                  <p className="mt-1 font-display font-extrabold text-bento-title text-ink">
+                    {weekTheme}
+                  </p>
+                  <p className="mt-2 text-bento-label text-muted">
+                    {completedCount} / {sessionPrompts.length} painted
+                  </p>
+                </BentoCard>
+
+                <BentoCard
+                  index={2}
+                  span="sm:col-span-2"
+                  accent="teal"
+                  tilt={-1.2}
+                  className="hidden min-h-[64px] flex-col justify-center !p-5 sm:flex"
+                >
+                  <p className="font-display font-bold text-bento-title text-ink">
+                    Paint Mode
+                  </p>
+                  <p className="mt-1 text-bento-label text-muted">
+                    Tap answers to build sentences
+                  </p>
+                </BentoCard>
+              </>
+            ) : null}
+
+            <BentoCard
+              key="lesson-canvas"
+              index={sessionEnded ? 0 : 3}
+              span={sessionEnded ? "sm:col-span-6" : "sm:col-span-6 lg:col-span-4"}
+              accent="warm"
+              tilt={sessionEnded ? 0 : 0.5}
+              className={
+                sessionEnded
+                  ? "overflow-visible !p-4 sm:!p-6"
+                  : "overflow-visible !p-0 sm:min-h-[28rem]"
+              }
+            >
+              <LessonCanvas
+                weekNumber={weekNumber}
+                ageGroup={ageGroup}
+                sessionPrompts={sessionPrompts}
+                reviewPrompts={reviewPrompts}
+                builderPrompts={builderPrompts}
+                externalProgress
+                onProgressChange={handleProgressChange}
+                onSessionStateChange={handleSessionStateChange}
+              />
+            </BentoCard>
+          </BentoGrid>
+        </motion.div>
+      </main>
+    </CampScreenLayout>
   );
 }

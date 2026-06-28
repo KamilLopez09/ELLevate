@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, useAnimation } from "framer-motion";
 import { calculateScoreForMode } from "@/lib/gamification";
 import {
   getFlashcardBack,
@@ -8,20 +9,20 @@ import {
 } from "@/lib/prompt-utils";
 import type { GameModeProps } from "@/types/game-modes";
 
-const TOUCH_TARGET = "min-h-[56px] min-w-[56px] px-6 py-3";
+const TOUCH_TARGET = "min-h-[64px] min-w-[64px] px-6 py-3";
 
 const CARD_SHADOW_FRONT =
-  "shadow-[0_20px_50px_-16px_oklch(0.52_0.21_292/0.18),0_8px_24px_-8px_oklch(0.28_0.04_265/0.07)]";
+  "shadow-[0_20px_50px_-16px_rgba(26,95,168,0.18),0_8px_24px_-8px_rgba(26,39,68,0.07)]";
 
 const CARD_SHADOW_BACK =
-  "shadow-[0_20px_50px_-16px_oklch(0.62_0.13_178/0.2),0_8px_24px_-8px_oklch(0.28_0.04_265/0.07)]";
+  "shadow-[0_20px_50px_-16px_rgba(26,143,122,0.2),0_8px_24px_-8px_rgba(26,39,68,0.07)]";
+
+const HOVER_SPRING = { type: "spring" as const, bounce: 0.4, duration: 0.35 };
 
 const ACTION_BASE = [
   "inline-flex flex-1 items-center justify-center",
   TOUCH_TARGET,
-  "rounded-2xl border-2 font-display font-bold text-h2",
-  "transition-all duration-200 transition-decel",
-  "active:translate-y-[6px] active:shadow-pushable-pressed",
+  "rounded-2xl border-2 font-display font-bold",
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
 ].join(" ");
 
@@ -34,8 +35,8 @@ const GOT_IT_CLASS = [
 
 const MISSED_IT_CLASS = [
   ACTION_BASE,
-  "bg-highlight border-[oklch(0.58_0.14_75)] text-body",
-  "shadow-[0_6px_0_0_oklch(0.58_0.14_75)]",
+  "bg-highlight border-[#d49200] text-body",
+  "shadow-[0_6px_0_0_#d49200]",
   "hover:brightness-[1.03]",
   "focus-visible:outline-highlight",
 ].join(" ");
@@ -50,21 +51,70 @@ function FlashcardFace({
   hint: string;
 }) {
   return (
-    <div
+    <motion.div
+      initial={false}
+      animate={{
+        opacity: visible ? 1 : 0,
+        y: visible ? 0 : 8,
+        scale: visible ? 1 : 0.98,
+      }}
+      transition={HOVER_SPRING}
       className={[
         "absolute inset-0 flex flex-col items-center justify-center gap-3",
-        "transition-all duration-300 transition-decel",
-        visible
-          ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-          : "pointer-events-none translate-y-2 scale-[0.98] opacity-0",
+        visible ? "pointer-events-auto" : "pointer-events-none",
       ].join(" ")}
       aria-hidden={!visible}
     >
-      <p className="font-display text-h2 font-extrabold leading-tight text-body text-balance md:text-h1">
+      <p
+        className="font-display font-extrabold leading-tight text-body text-balance"
+        style={{ fontSize: "var(--text-h1)" }}
+      >
         {label}
       </p>
-      <p className="text-body font-semibold text-muted">{hint}</p>
-    </div>
+      <p className="font-semibold text-muted" style={{ fontSize: "var(--text-body)" }}>
+        {hint}
+      </p>
+    </motion.div>
+  );
+}
+
+function ActionButton({
+  label,
+  className,
+  onClick,
+  burstOnClick,
+}: {
+  label: string;
+  className: string;
+  onClick: () => void;
+  burstOnClick?: boolean;
+}) {
+  const controls = useAnimation();
+
+  const handleClick = () => {
+    if (burstOnClick) {
+      void controls.start({
+        scale: [1, 1.12, 0.96, 1.04, 1],
+        transition: { type: "spring", bounce: 0.5, duration: 0.55 },
+      });
+    }
+    onClick();
+  };
+
+  return (
+    <motion.button
+      type="button"
+      aria-label={label}
+      onClick={handleClick}
+      animate={controls}
+      whileHover={{ scale: 1.05, rotate: 1 }}
+      whileTap={{ scale: 0.95 }}
+      transition={HOVER_SPRING}
+      className={className}
+      style={{ fontSize: "var(--text-h2)" }}
+    >
+      {label}
+    </motion.button>
   );
 }
 
@@ -97,16 +147,17 @@ export function FlashcardDrill({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 py-10 md:px-8 md:py-16">
-      <button
+      <motion.button
         type="button"
         aria-label={revealed ? "Flashcard answer side" : "Flashcard question side"}
         aria-pressed={revealed}
         onClick={() => setRevealed((value) => !value)}
+        whileHover={{ scale: 1.03, rotate: -0.5 }}
+        whileTap={{ scale: 0.97 }}
+        transition={HOVER_SPRING}
         className={[
-          "w-full max-w-lg",
+          "w-full max-w-lg min-h-[64px]",
           "rounded-3xl bg-card px-8 py-12 text-center md:px-12 md:py-16",
-          "transition-all duration-300 transition-decel",
-          "hover:-translate-y-0.5",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
           revealed ? CARD_SHADOW_BACK : CARD_SHADOW_FRONT,
         ].join(" ")}
@@ -123,25 +174,20 @@ export function FlashcardDrill({
             hint="Tap to flip back"
           />
         </div>
-      </button>
+      </motion.button>
 
       <div className="mt-14 flex w-full max-w-lg flex-col gap-4 sm:flex-row md:mt-16">
-        <button
-          type="button"
-          aria-label="Mark flashcard as correct"
-          onClick={() => finish(true)}
+        <ActionButton
+          label="Got it!"
           className={GOT_IT_CLASS}
-        >
-          Got it!
-        </button>
-        <button
-          type="button"
-          aria-label="Mark flashcard as missed"
-          onClick={() => finish(false)}
+          burstOnClick
+          onClick={() => finish(true)}
+        />
+        <ActionButton
+          label="Missed it"
           className={MISSED_IT_CLASS}
-        >
-          Missed it
-        </button>
+          onClick={() => finish(false)}
+        />
       </div>
     </div>
   );
