@@ -14,14 +14,45 @@ import {
 import type { GameModeProps } from "@/types/game-modes";
 import type { Prompt } from "@/data/curriculum";
 
-const OPTION_DEFAULT =
-  "bg-white border-4 border-camp-gray-dark text-camp-slate font-bold text-2xl rounded-2xl px-8 py-4 min-h-[72px] min-w-[140px] shadow-pushable-gray transition-all active:translate-y-[6px] active:shadow-pushable-pressed cursor-pointer select-none hover:border-camp-purple hover:text-camp-purple focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-camp-purple disabled:cursor-not-allowed";
+const TOUCH_TARGET =
+  "min-h-[56px] min-w-[56px] px-6 py-3";
 
-const OPTION_SUCCESS =
-  "bg-camp-teal border-4 border-camp-teal-dark text-white shadow-pushable-teal animate-spring pointer-events-none min-h-[72px] min-w-[140px] rounded-2xl px-8 py-4 font-bold text-2xl";
+const OPTION_BASE = [
+  "inline-flex items-center justify-center",
+  TOUCH_TARGET,
+  "rounded-2xl border-2 font-display font-bold text-h2",
+  "bg-card text-body border-border",
+  "transition-all duration-200 transition-decel",
+  "active:translate-y-[6px] active:shadow-pushable-pressed",
+  "cursor-pointer select-none",
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+  "disabled:cursor-not-allowed disabled:opacity-60",
+].join(" ");
+
+const OPTION_PRIMARY = [
+  OPTION_BASE,
+  "shadow-pushable-purple hover:border-primary hover:text-primary",
+  "focus-visible:outline-primary",
+].join(" ");
+
+const OPTION_SECONDARY = [
+  OPTION_BASE,
+  "shadow-pushable-teal hover:border-secondary hover:text-secondary",
+  "focus-visible:outline-secondary",
+].join(" ");
+
+const OPTION_SUCCESS = [
+  "inline-flex items-center justify-center",
+  TOUCH_TARGET,
+  "rounded-2xl border-2 font-display font-bold text-h2",
+  "bg-secondary border-secondary-dark text-card",
+  "shadow-pushable-teal animate-spring",
+  "pointer-events-none",
+].join(" ");
 
 function getOptionButtonClass(
   option: string,
+  index: number,
   {
     filledAnswer,
     correctAnswer,
@@ -38,24 +69,9 @@ function getOptionButtonClass(
     return OPTION_SUCCESS;
   }
 
+  const accent = index % 2 === 0 ? OPTION_PRIMARY : OPTION_SECONDARY;
   const shake = shakingOption === option ? " animate-shake" : "";
-  return `${OPTION_DEFAULT}${shake}`;
-}
-
-function BentoPromptCard({
-  children,
-  feedbackClass,
-}: {
-  children: React.ReactNode;
-  feedbackClass: string;
-}) {
-  return (
-    <div
-      className={`bg-camp-card rounded-[2rem] border-4 border-white p-8 text-center shadow-bento-card md:p-12 ${feedbackClass}`}
-    >
-      {children}
-    </div>
-  );
+  return `${accent}${shake}`;
 }
 
 function TargetBlank({
@@ -69,10 +85,10 @@ function TargetBlank({
 
   return (
     <span
-      className={`mx-3 inline-flex h-[60px] min-w-[140px] items-center justify-center rounded-2xl border-4 border-dashed align-middle transition-colors ${
+      className={`mx-2 inline-flex min-h-[56px] min-w-[7rem] items-center justify-center rounded-2xl border-2 border-dashed align-middle transition-colors duration-200 transition-decel ${
         filled
-          ? "border-camp-purple bg-camp-purple/10 font-extrabold text-camp-purple"
-          : "border-camp-gray-dark bg-gray-50 text-camp-gray-dark"
+          ? "border-primary bg-primary/10 font-extrabold text-primary"
+          : "border-border bg-surface-muted text-muted"
       }`}
       aria-label={filled ? `Selected answer: ${displayValue}` : "Blank to fill in"}
     >
@@ -97,15 +113,19 @@ function OptionButtons({
   onSelect: (option: string) => void;
 }) {
   return (
-    <div className="mt-8 flex flex-wrap justify-center gap-6">
-      {options.map((option) => (
+    <div
+      className="mt-14 flex w-full flex-wrap justify-center gap-4 md:mt-16 md:gap-5"
+      role="group"
+      aria-label="Answer choices"
+    >
+      {options.map((option, index) => (
         <button
           key={option}
           type="button"
           disabled={isAdvancing}
           aria-label={`Choose answer ${option}`}
           onClick={() => onSelect(option)}
-          className={getOptionButtonClass(option, {
+          className={getOptionButtonClass(option, index, {
             filledAnswer,
             correctAnswer,
             isAdvancing,
@@ -120,11 +140,12 @@ function OptionButtons({
 }
 
 function renderPromptContent(prompt: Prompt, filledAnswer: string | null) {
+  const promptClass =
+    "font-display text-h1 font-extrabold leading-[1.15] text-body text-balance";
+
   if (isDragMatchPrompt(prompt)) {
     return (
-      <p className="text-3xl font-extrabold leading-tight text-camp-slate md:text-5xl">
-        {dragMatchQuestion(prompt)}
-      </p>
+      <p className={promptClass}>{dragMatchQuestion(prompt)}</p>
     );
   }
 
@@ -132,10 +153,7 @@ function renderPromptContent(prompt: Prompt, filledAnswer: string | null) {
   const displayValue = filledAnswer ?? "";
 
   return (
-    <p
-      className="text-3xl font-extrabold leading-tight text-camp-slate md:text-5xl"
-      aria-live="polite"
-    >
+    <p className={promptClass} aria-live="polite">
       {clickParts[0]}
       <TargetBlank filledAnswer={filledAnswer} displayValue={displayValue} />
       {clickParts[1] ?? ""}
@@ -244,14 +262,10 @@ export function SentenceBuilder({
     : getPromptAnswer(prompt);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 p-4 md:p-8">
-      <p className="text-center text-sm font-semibold uppercase tracking-widest text-camp-purple">
-        Sentence Builder
-      </p>
-
-      <BentoPromptCard feedbackClass={feedbackClass}>
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 py-10 md:px-8 md:py-16">
+      <div className={`w-full text-center ${feedbackClass}`}>
         {renderPromptContent(prompt, filledAnswer)}
-      </BentoPromptCard>
+      </div>
 
       <OptionButtons
         options={options}

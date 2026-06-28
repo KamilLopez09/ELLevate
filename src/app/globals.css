@@ -5,31 +5,54 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap");
 
 :root {
-  --primary: #1a5fa8;
-  --accent: #f0a500;
-  --background: #f4f6fb;
-  --card: #ffffff;
-  --text: #1a2744;
-  --muted: #6b7a99;
-  --border: rgba(0, 0, 0, 0.1);
+  /* Tinted neutrals */
+  --background: oklch(0.98 0.01 85);
+  --card: oklch(0.995 0.012 85);
+  --text: oklch(0.28 0.04 265);
+  --muted: oklch(0.5 0.035 265);
+  --border: oklch(0.88 0.018 85);
+  --surface-muted: oklch(0.94 0.016 85);
 
+  /* Brand accents */
+  --primary: oklch(0.52 0.21 292);
+  --primary-dark: oklch(0.42 0.19 292);
+  --secondary: oklch(0.62 0.13 178);
+  --secondary-dark: oklch(0.48 0.11 178);
+  --highlight: oklch(0.72 0.16 75);
+  --success: oklch(0.58 0.14 145);
+
+  /* Fluid typography */
+  --text-body: clamp(1rem, 0.94rem + 0.28vw, 1.125rem);
+  --text-h2: clamp(1.5rem, 1.2rem + 1.35vw, 2.25rem);
+  --text-h1: clamp(2rem, 1.45rem + 2.75vw, 3.5rem);
+
+  /* Motion */
+  --ease-decel: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Legacy aliases */
   --color-bg-canvas: var(--background);
   --color-bg-card: var(--card);
   --color-purple-accent: var(--primary);
-  --color-teal-accent: #14b8a6;
-
+  --color-teal-accent: var(--secondary);
   --paper: var(--card);
   --camp-blue: var(--background);
   --ink: var(--text);
   --purple-accent: var(--primary);
-  --gold-accent: var(--accent);
-  --teal-accent: var(--color-teal-accent);
-  --success-accent: #16a34a;
+  --gold-accent: var(--highlight);
+  --teal-accent: var(--secondary);
+  --accent: var(--highlight);
+  --success-accent: var(--success);
 }
 
 @layer base {
   body {
-    @apply bg-background font-sans text-body antialiased;
+    font-size: var(--text-body);
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--background);
+    font-family: var(--font-open-sans), "Open Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1,
@@ -38,7 +61,26 @@
   h4,
   h5,
   h6 {
-    @apply font-display text-body;
+    font-family: var(--font-nunito), "Nunito", system-ui, sans-serif;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: var(--text-h1);
+    line-height: 1.1;
+    font-weight: 800;
+  }
+
+  h2 {
+    font-size: var(--text-h2);
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
 
@@ -80,6 +122,10 @@
     text-wrap: balance;
   }
 
+  .transition-decel {
+    transition-timing-function: var(--ease-decel);
+  }
+
   .ca-surface {
     background: var(--card);
     border: 1px solid var(--border);
@@ -100,11 +146,11 @@
 }
 
 .canvas-blob-gold {
-  background: var(--accent);
+  background: var(--highlight);
 }
 
 .canvas-blob-teal {
-  background: var(--color-teal-accent);
+  background: var(--secondary);
 }
 
 [data-swapy-item],
@@ -112,4 +158,15 @@
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake,
+  .animate-spring {
+    animation: none;
+  }
+
+  .transition-decel {
+    transition-duration: 0.01ms !important;
+  }
 }
