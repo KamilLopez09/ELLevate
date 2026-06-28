@@ -9,11 +9,10 @@ import {
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
-const MODE_ORDER: GameModeId[] = [
+/** V1.0: Match Blitz and Rapid Fire are disabled until post-launch. */
+const V1_ENABLED_MODES: GameModeId[] = [
   "flashcard_drill",
-  "match_blitz",
   "sentence_builder",
-  "rapid_fire",
 ];
 
 const ACCENT_CLASSES: Record<string, string> = {
@@ -37,12 +36,12 @@ export function GameModeSelector({
         Pick a game mode
       </h2>
       <p className="mt-3 text-lg text-ink/70">
-        All 10 prompts use the mode you choose. Each mode has its own point
-        values.
+        Review prompts use flashcards. Core and challenge prompts use sentence
+        builder.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        {MODE_ORDER.map((modeId, index) => {
+        {V1_ENABLED_MODES.map((modeId, index) => {
           const meta = GAME_MODE_LABELS[modeId];
           const maxPoints = getMaxPromptScore(modeId);
 
@@ -57,7 +56,7 @@ export function GameModeSelector({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...SPRING, delay: index * 0.05 }}
-              className={`flex min-h-[56px] flex-col items-start gap-2 rounded-3xl border-2 p-6 text-left shadow-bento transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent ${ACCENT_CLASSES[meta.accent] ?? ACCENT_CLASSES["purple-accent"]}`}
+              className={`flex min-h-[56px] min-w-[56px] flex-col items-start gap-2 rounded-3xl border-2 p-6 text-left shadow-bento transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent ${ACCENT_CLASSES[meta.accent] ?? ACCENT_CLASSES["purple-accent"]}`}
             >
               <span className="text-xl font-extrabold text-ink">
                 {meta.title}

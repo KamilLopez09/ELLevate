@@ -23,7 +23,8 @@ export type NativeLanguage = "English" | "Spanish";
 
 export interface CamperSessionData {
   camper_id: string;
-  display_name: string;
+  first_name: string;
+  last_initial: string;
   age_bracket: AgeBracket;
   native_language: NativeLanguage;
   group_letter: string;
@@ -46,7 +47,8 @@ export interface CamperTelemetryRow {
   speed_bonuses_earned: number;
   accuracy_rate: number;
   camper_id: string;
-  display_name: string;
+  first_name: string;
+  last_initial: string;
   age_bracket: AgeBracket;
   native_language: NativeLanguage;
   group_letter: string;

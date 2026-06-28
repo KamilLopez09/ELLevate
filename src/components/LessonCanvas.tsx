@@ -4,8 +4,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/styles/animations.css";
 import { FlashcardDrill } from "@/components/sentence-canvas/FlashcardDrill";
-import { MatchBlitz } from "@/components/sentence-canvas/MatchBlitz";
-import { RapidFire } from "@/components/sentence-canvas/RapidFire";
 import { SentenceBuilder } from "@/components/sentence-canvas/SentenceBuilder";
 import { Scoreboard } from "@/components/ui/Scoreboard";
 import {
@@ -20,7 +18,6 @@ import {
 import { setWeekPassed } from "@/lib/curriculum-engine";
 import {
   summarizeSession,
-  GAME_MODE_LABELS,
   type GameModeId,
   type ScoreResult,
   type SessionScoreSummary,
@@ -37,8 +34,10 @@ type NodeOutcome = "pending" | "correct" | "incorrect";
 export interface LessonCanvasProps {
   weekNumber: number;
   ageGroup: AgeGroup;
-  selectedGameMode: GameModeId;
-  onChangeMode?: () => void;
+}
+
+function gameModeForPrompt(prompt: Prompt): GameModeId {
+  return prompt.category === "review" ? "flashcard_drill" : "sentence_builder";
 }
 
 function ProgressRail({
@@ -109,7 +108,7 @@ function RetryModal({
           type="button"
           onClick={onTryAgain}
           aria-label="Try the lesson again"
-          className="mt-8 min-h-[56px] w-full rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+          className="mt-8 min-h-[56px] min-w-[56px] w-full rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
           Try Again
         </button>
@@ -118,31 +117,21 @@ function RetryModal({
   );
 }
 
-function renderGameMode(
-  modeId: GameModeId,
+function renderPromptByCategory(
   prompt: Prompt,
   onComplete: (payload: GameModeCompletePayload) => void,
 ) {
+  const modeId = gameModeForPrompt(prompt);
   const props = { prompts: [prompt], gameModeId: modeId, onComplete };
 
-  switch (modeId) {
-    case "flashcard_drill":
-      return <FlashcardDrill key={prompt.id} {...props} />;
-    case "match_blitz":
-      return <MatchBlitz key={prompt.id} {...props} />;
-    case "sentence_builder":
-      return <SentenceBuilder key={prompt.id} {...props} />;
-    case "rapid_fire":
-      return <RapidFire key={prompt.id} {...props} />;
+  if (prompt.category === "review") {
+    return <FlashcardDrill key={prompt.id} {...props} />;
   }
+
+  return <SentenceBuilder key={prompt.id} {...props} />;
 }
 
-export function LessonCanvas({
-  weekNumber,
-  ageGroup,
-  selectedGameMode,
-  onChangeMode,
-}: LessonCanvasProps) {
+export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
   const router = useRouter();
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
@@ -155,6 +144,7 @@ export function LessonCanvas({
     Array.from({ length: TOTAL_PROMPTS }, () => "pending"),
   );
   const scoreResultsRef = useRef<ScoreResult[]>([]);
+  const modesUsedRef = useRef<Set<GameModeId>>(new Set());
   const errorCountRef = useRef(0);
   const [, bumpOutcomes] = useState(0);
 
@@ -181,6 +171,7 @@ export function LessonCanvas({
   const resetSession = useCallback(() => {
     outcomesRef.current = Array.from({ length: TOTAL_PROMPTS }, () => "pending");
     scoreResultsRef.current = [];
+    modesUsedRef.current = new Set();
     errorCountRef.current = 0;
     refreshOutcomes();
   }, [refreshOutcomes]);
@@ -204,7 +195,8 @@ export function LessonCanvas({
         return;
       }
 
-      const modeId = selectedGameMode;
+      const modeId = gameModeForPrompt(prompt);
+      modesUsedRef.current.add(modeId);
       scoreResultsRef.current.push(payload.scoreResult);
       addSessionScore(payload.scoreResult.total, modeId);
 
@@ -233,7 +225,7 @@ export function LessonCanvas({
 
       setPromptIndex(nextIndex);
     },
-    [correctFirstTry, finishGate, prompt, promptIndex, refreshOutcomes, selectedGameMode],
+    [correctFirstTry, finishGate, prompt, promptIndex, refreshOutcomes],
   );
 
   const handleTryAgain = () => {
@@ -253,12 +245,18 @@ export function LessonCanvas({
         ? Number(((correctFirstTry / TOTAL_PROMPTS) * 100).toFixed(2))
         : 0;
 
+    const sessionGameMode: GameModeId = modesUsedRef.current.has(
+      "sentence_builder",
+    )
+      ? "sentence_builder"
+      : "flashcard_drill";
+
     if (camper) {
       const payload: CamperTelemetryRow = {
         module_name: "sentence_canvas",
         score: correctFirstTry,
         error_count: errorCountRef.current,
-        game_mode: selectedGameMode,
+        game_mode: sessionGameMode,
         base_points: sessionSummary.results.reduce(
           (sum, result) => sum + result.base,
           0,
@@ -272,7 +270,8 @@ export function LessonCanvas({
         speed_bonuses_earned: sessionSummary.totalSpeedBonus,
         accuracy_rate: accuracyRate,
         camper_id: camper.camper_id,
-        display_name: camper.display_name,
+        first_name: camper.first_name,
+        last_initial: camper.last_initial,
         age_bracket: camper.age_bracket,
         native_language: camper.native_language,
         group_letter: camper.group_letter,
@@ -302,13 +301,19 @@ export function LessonCanvas({
   }
 
   if (sessionComplete) {
+    const sessionGameMode: GameModeId = modesUsedRef.current.has(
+      "sentence_builder",
+    )
+      ? "sentence_builder"
+      : "flashcard_drill";
+
     return (
       <>
         <Scoreboard
           summary={sessionSummary}
           sessionPoints={sessionPoints}
           retryCount={retryCount}
-          gameMode={selectedGameMode}
+          gameMode={sessionGameMode}
           onReturnToMenu={() => void handleReturnToMenu()}
           isSaving={isSaving}
         />
@@ -326,8 +331,6 @@ export function LessonCanvas({
     return null;
   }
 
-  const modeId = selectedGameMode;
-
   return (
     <>
       {showRetryModal && (
@@ -338,28 +341,18 @@ export function LessonCanvas({
       )}
 
       <section className="flex flex-col gap-6 rounded-3xl bg-paper p-6 shadow-bento sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-semibold uppercase tracking-widest text-ink/60">
-            Mode: {GAME_MODE_LABELS[modeId].title}
-          </p>
-          {onChangeMode && (
-            <button
-              type="button"
-              onClick={onChangeMode}
-              aria-label="Change game mode"
-              className="min-h-[56px] rounded-full bg-camp-blue/60 px-4 py-2 text-sm font-bold text-ink transition hover:bg-camp-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
-            >
-              Change mode
-            </button>
-          )}
-        </div>
+        <p className="text-sm font-semibold uppercase tracking-widest text-ink/60">
+          {prompt.category === "review"
+            ? "Review · Flashcard Drill"
+            : "Practice · Sentence Builder"}
+        </p>
 
         <ProgressRail
           promptIndex={promptIndex}
           outcomes={outcomesRef.current}
         />
 
-        {renderGameMode(modeId, prompt, handleModeComplete)}
+        {renderPromptByCategory(prompt, handleModeComplete)}
       </section>
     </>
   );
