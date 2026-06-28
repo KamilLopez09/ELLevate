@@ -2,23 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap");
+
 :root {
-  --color-bg-canvas: #c3e3f0;
-  --color-bg-card: #faf7f2;
-  --color-purple-accent: #9333ea;
+  --primary: #1a5fa8;
+  --accent: #f0a500;
+  --background: #f4f6fb;
+  --card: #ffffff;
+  --text: #1a2744;
+  --muted: #6b7a99;
+  --border: rgba(0, 0, 0, 0.1);
+
+  --color-bg-canvas: var(--background);
+  --color-bg-card: var(--card);
+  --color-purple-accent: var(--primary);
   --color-teal-accent: #14b8a6;
 
-  --paper: var(--color-bg-card);
-  --camp-blue: var(--color-bg-canvas);
-  --ink: #1e293b;
-  --purple-accent: var(--color-purple-accent);
-  --gold-accent: #f5b942;
+  --paper: var(--card);
+  --camp-blue: var(--background);
+  --ink: var(--text);
+  --purple-accent: var(--primary);
+  --gold-accent: var(--accent);
   --teal-accent: var(--color-teal-accent);
-  --success-accent: #22c55e;
+  --success-accent: #16a34a;
 }
 
-body {
-  @apply bg-camp-blue font-sans text-camp-slate;
+@layer base {
+  body {
+    @apply bg-background font-sans text-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display text-body;
+  }
 }
 
 @keyframes shake {
@@ -58,6 +79,12 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .ca-surface {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+  }
 }
 
 .canvas-blob {
@@ -69,11 +96,11 @@ body {
 }
 
 .canvas-blob-purple {
-  background: var(--color-purple-accent);
+  background: var(--primary);
 }
 
 .canvas-blob-gold {
-  background: var(--gold-accent);
+  background: var(--accent);
 }
 
 .canvas-blob-teal {
