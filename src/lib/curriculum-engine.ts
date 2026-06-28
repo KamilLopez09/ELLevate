@@ -86,3 +86,11 @@ export function getPromptsForSession(
 ): Prompt[] {
   return getBracketContent(weekNumber, ageBracket)?.prompts ?? [];
 }
+
+/** Human-readable practice structure shown on the lesson screen. */
+export function getLessonPracticePlan(weekNumber: number): string {
+  if (weekNumber <= 1) {
+    return "10 practice questions from this week's video (greetings and to be).";
+  }
+  return "3 review questions from last week, then 4 from this video, then 3 challenge questions.";
+}

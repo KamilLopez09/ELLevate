@@ -1,6 +1,13 @@
 import { curriculumWeeks3Through8 } from "./curriculum-weeks-3-8";
 
-export type AgeGroup = "5-7" | "8-10" | "11-14";
+/**
+ * Curriculum design (each age bracket, each week):
+ * - Week 1: 10× core (no prior week). Video teaches this week's grammar/vocab.
+ * - Weeks 2–8: 3× review (prior week) → 4× core (matches video) → 3× generative (prior + current).
+ * - The lesson video aligns with prompts 4–7 (core). Prompts 1–3 warm up last week's skill first.
+ */
+
+export type AgeGroup = "5-9" | "10-14";
 export type PromptCategory = "review" | "core" | "generative";
 export type InteractionMode = "drag-match" | "click-paint";
 
@@ -43,103 +50,14 @@ export const curriculum: Record<number, LessonWeek> = {
     weekNumber: 1,
     theme: "Identity & Greetings",
     brackets: {
-      "5-7": {
-        videoId: "61Qb05MuZ98",
-        channel: "Quixot Kids Edu",
-        title: "Greetings – How Are You Today?",
-        mode: "drag-match",
-        prompts: [
-          // Week 1 Exception: No prior week. Review slots replaced with additional core prompts.
-          {
-            id: "w1_57_01",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Hello",
-            imageOptions: ["img_hello", "img_apple", "img_dog"],
-            target: "img_hello",
-          },
-          {
-            id: "w1_57_02",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "I",
-            imageOptions: ["img_i", "img_ball", "img_tree"],
-            target: "img_i",
-          },
-          {
-            id: "w1_57_03",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "You",
-            imageOptions: ["img_you", "img_car", "img_fish"],
-            target: "img_you",
-          },
-          {
-            id: "w1_57_04",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "He",
-            imageOptions: ["img_he", "img_hat", "img_cup"],
-            target: "img_he",
-          },
-          {
-            id: "w1_57_05",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "She",
-            imageOptions: ["img_she", "img_star", "img_shoe"],
-            target: "img_she",
-          },
-          {
-            id: "w1_57_06",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Friend",
-            imageOptions: ["img_friend", "img_book", "img_sun"],
-            target: "img_friend",
-          },
-          {
-            id: "w1_57_07",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Happy",
-            imageOptions: ["img_happy", "img_sad", "img_mad"],
-            target: "img_happy",
-          },
-          {
-            id: "w1_57_08",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Name",
-            imageOptions: ["img_name", "img_game", "img_food"],
-            target: "img_name",
-          },
-          {
-            id: "w1_57_09",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Goodbye",
-            imageOptions: ["img_goodbye", "img_hello", "img_hi"],
-            target: "img_goodbye",
-          },
-          {
-            id: "w1_57_10",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "We",
-            imageOptions: ["img_we", "img_me", "img_they"],
-            target: "img_we",
-          },
-        ],
-      },
-      "8-10": {
-        videoId: "PZCcRzgrr8Y",
-        channel: "Rockin' English Lessons",
-        title: "I Am You Are He She Is – To Be Song",
+      "5-9": {
+        videoId: "rC6bmDuHsWE",
+        channel: "JamesESL English Lessons (engVid)",
+        title: 'VERY, VERY BEGINNER LESSON 1 The verb "TO BE" Present',
         mode: "click-paint",
         prompts: [
           {
-            id: "w1_810_01",
+            id: "w1_59_01",
             category: "core",
             mode: "click-paint",
             text: "I ___ a camper at Certified Angels.",
@@ -147,7 +65,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_02",
+            id: "w1_59_02",
             category: "core",
             mode: "click-paint",
             text: "You ___ my friend today.",
@@ -155,7 +73,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_03",
+            id: "w1_59_03",
             category: "core",
             mode: "click-paint",
             text: "He ___ ready for art class.",
@@ -163,7 +81,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_04",
+            id: "w1_59_04",
             category: "core",
             mode: "click-paint",
             text: "She ___ happy to say hello.",
@@ -171,7 +89,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_05",
+            id: "w1_59_05",
             category: "core",
             mode: "click-paint",
             text: "We ___ in group B today.",
@@ -179,7 +97,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_06",
+            id: "w1_59_06",
             category: "core",
             mode: "click-paint",
             text: "They ___ new campers this week.",
@@ -187,7 +105,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_07",
+            id: "w1_59_07",
             category: "core",
             mode: "click-paint",
             text: "My name ___ Leo.",
@@ -195,7 +113,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_08",
+            id: "w1_59_08",
             category: "core",
             mode: "click-paint",
             text: "I ___ from Mexico City.",
@@ -203,7 +121,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_09",
+            id: "w1_59_09",
             category: "core",
             mode: "click-paint",
             text: "The teacher ___ kind and helpful.",
@@ -211,7 +129,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_810_10",
+            id: "w1_59_10",
             category: "core",
             mode: "click-paint",
             text: "You and I ___ on the blue team.",
@@ -220,14 +138,14 @@ export const curriculum: Record<number, LessonWeek> = {
           },
         ],
       },
-      "11-14": {
+      "10-14": {
         videoId: "rC6bmDuHsWE",
-        channel: "JamesESL",
-        title: "The Verb To Be – Beginner Lesson",
+        channel: "JamesESL English Lessons (engVid)",
+        title: 'VERY, VERY BEGINNER LESSON 1 The verb "TO BE" Present',
         mode: "click-paint",
         prompts: [
           {
-            id: "w1_1114_01",
+            id: "w1_1014_01",
             category: "core",
             mode: "click-paint",
             text: "I ___ the student who arrived first.",
@@ -235,7 +153,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_02",
+            id: "w1_1014_02",
             category: "core",
             mode: "click-paint",
             text: "She ___ not late for the morning meeting.",
@@ -243,7 +161,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["is", "are", "am"],
           },
           {
-            id: "w1_1114_03",
+            id: "w1_1014_03",
             category: "core",
             mode: "click-paint",
             text: "They ___ from different cities.",
@@ -251,7 +169,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_04",
+            id: "w1_1014_04",
             category: "core",
             mode: "click-paint",
             text: "He ___ my partner for the project.",
@@ -259,7 +177,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_05",
+            id: "w1_1014_05",
             category: "core",
             mode: "click-paint",
             text: "We ___ ready to introduce ourselves.",
@@ -267,7 +185,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_06",
+            id: "w1_1014_06",
             category: "core",
             mode: "click-paint",
             text: "My friends ___ in the same camp group.",
@@ -275,7 +193,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_07",
+            id: "w1_1014_07",
             category: "core",
             mode: "click-paint",
             text: "It ___ a sunny day at camp.",
@@ -283,7 +201,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_08",
+            id: "w1_1014_08",
             category: "core",
             mode: "click-paint",
             text: "You ___ the person I wanted to meet.",
@@ -291,7 +209,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_09",
+            id: "w1_1014_09",
             category: "core",
             mode: "click-paint",
             text: "The camp director ___ very welcoming.",
@@ -299,7 +217,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w1_1114_10",
+            id: "w1_1014_10",
             category: "core",
             mode: "click-paint",
             text: "I ___ proud to be here today.",
@@ -314,102 +232,14 @@ export const curriculum: Record<number, LessonWeek> = {
     weekNumber: 2,
     theme: "Physical Action",
     brackets: {
-      "5-7": {
-        videoId: "KKVDvv4jBCw",
-        channel: "ESL Kids",
-        title: "Action Verbs Song for Kids",
-        mode: "drag-match",
-        prompts: [
-          {
-            id: "w2_57_r01",
-            category: "review",
-            mode: "drag-match",
-            wordLabel: "Hello",
-            imageOptions: ["img_hello", "img_run", "img_jump"],
-            target: "img_hello",
-          },
-          {
-            id: "w2_57_r02",
-            category: "review",
-            mode: "drag-match",
-            wordLabel: "I",
-            imageOptions: ["img_i", "img_swim", "img_paint"],
-            target: "img_i",
-          },
-          {
-            id: "w2_57_r03",
-            category: "review",
-            mode: "drag-match",
-            wordLabel: "Friend",
-            imageOptions: ["img_friend", "img_clap", "img_kick"],
-            target: "img_friend",
-          },
-          {
-            id: "w2_57_c01",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Run",
-            imageOptions: ["img_run", "img_sleep", "img_sit"],
-            target: "img_run",
-          },
-          {
-            id: "w2_57_c02",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Jump",
-            imageOptions: ["img_jump", "img_eat", "img_read"],
-            target: "img_jump",
-          },
-          {
-            id: "w2_57_c03",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Swim",
-            imageOptions: ["img_swim", "img_walk", "img_stand"],
-            target: "img_swim",
-          },
-          {
-            id: "w2_57_c04",
-            category: "core",
-            mode: "drag-match",
-            wordLabel: "Paint",
-            imageOptions: ["img_paint", "img_cook", "img_drive"],
-            target: "img_paint",
-          },
-          {
-            id: "w2_57_g01",
-            category: "generative",
-            mode: "drag-match",
-            wordLabel: "Clap",
-            imageOptions: ["img_clap", "img_run", "img_swim"],
-            target: "img_clap",
-          },
-          {
-            id: "w2_57_g02",
-            category: "generative",
-            mode: "drag-match",
-            wordLabel: "Kick",
-            imageOptions: ["img_kick", "img_jump", "img_paint"],
-            target: "img_kick",
-          },
-          {
-            id: "w2_57_g03",
-            category: "generative",
-            mode: "drag-match",
-            wordLabel: "Dance",
-            imageOptions: ["img_dance", "img_sit", "img_sleep"],
-            target: "img_dance",
-          },
-        ],
-      },
-      "8-10": {
+      "5-9": {
         videoId: "GDb5LboBieY",
         channel: "ELF Kids Videos",
         title: "Actions 1 – Verb Chant for Kids",
         mode: "click-paint",
         prompts: [
           {
-            id: "w2_810_r01",
+            id: "w2_59_r01",
             category: "review",
             mode: "click-paint",
             text: "She ___ my camp buddy.",
@@ -417,7 +247,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w2_810_r02",
+            id: "w2_59_r02",
             category: "review",
             mode: "click-paint",
             text: "We ___ in the art room.",
@@ -425,7 +255,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w2_810_r03",
+            id: "w2_59_r03",
             category: "review",
             mode: "click-paint",
             text: "I ___ ready to learn.",
@@ -433,7 +263,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w2_810_c01",
+            id: "w2_59_c01",
             category: "core",
             mode: "click-paint",
             text: "He ___ fast on the field.",
@@ -441,7 +271,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["run", "runs", "running"],
           },
           {
-            id: "w2_810_c02",
+            id: "w2_59_c02",
             category: "core",
             mode: "click-paint",
             text: "She ___ over the puddle.",
@@ -449,7 +279,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["jump", "jumps", "jumping"],
           },
           {
-            id: "w2_810_c03",
+            id: "w2_59_c03",
             category: "core",
             mode: "click-paint",
             text: "The dog ___ in the lake.",
@@ -457,7 +287,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["swim", "swims", "swimming"],
           },
           {
-            id: "w2_810_c04",
+            id: "w2_59_c04",
             category: "core",
             mode: "click-paint",
             text: "My friend ___ a rainbow mural.",
@@ -465,7 +295,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["paint", "paints", "painting"],
           },
           {
-            id: "w2_810_g01",
+            id: "w2_59_g01",
             category: "generative",
             mode: "click-paint",
             text: "He ___ after school, and she paints at camp.",
@@ -473,7 +303,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["run", "runs", "running"],
           },
           {
-            id: "w2_810_g02",
+            id: "w2_59_g02",
             category: "generative",
             mode: "click-paint",
             text: "They ___ in the pool, then they eat lunch.",
@@ -481,7 +311,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["swim", "swims", "swimming"],
           },
           {
-            id: "w2_810_g03",
+            id: "w2_59_g03",
             category: "generative",
             mode: "click-paint",
             text: "She ___ high, and her team claps loudly.",
@@ -490,14 +320,14 @@ export const curriculum: Record<number, LessonWeek> = {
           },
         ],
       },
-      "11-14": {
+      "10-14": {
         videoId: "DhPFdJe4KVQ",
         channel: "All Things Grammar",
         title: "Present Simple Third Person Verb Endings",
         mode: "click-paint",
         prompts: [
           {
-            id: "w2_1114_r01",
+            id: "w2_1014_r01",
             category: "review",
             mode: "click-paint",
             text: "They ___ not lost; they are in the gym.",
@@ -505,7 +335,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w2_1114_r02",
+            id: "w2_1014_r02",
             category: "review",
             mode: "click-paint",
             text: "He ___ the captain of our team.",
@@ -513,7 +343,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w2_1114_r03",
+            id: "w2_1014_r03",
             category: "review",
             mode: "click-paint",
             text: "I ___ excited about camp week two.",
@@ -521,7 +351,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["am", "is", "are"],
           },
           {
-            id: "w2_1114_c01",
+            id: "w2_1014_c01",
             category: "core",
             mode: "click-paint",
             text: "Miles ___ across the rooftop every morning.",
@@ -529,7 +359,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["run", "runs", "running"],
           },
           {
-            id: "w2_1114_c02",
+            id: "w2_1014_c02",
             category: "core",
             mode: "click-paint",
             text: "Gwen ___ between the buildings with ease.",
@@ -537,7 +367,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["jump", "jumps", "jumping"],
           },
           {
-            id: "w2_1114_c03",
+            id: "w2_1014_c03",
             category: "core",
             mode: "click-paint",
             text: "The athlete ___ laps before breakfast.",
@@ -545,7 +375,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["swim", "swims", "swimming"],
           },
           {
-            id: "w2_1114_c04",
+            id: "w2_1014_c04",
             category: "core",
             mode: "click-paint",
             text: "She ___ murals for the community wall.",
@@ -553,7 +383,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["paint", "paints", "painting"],
           },
           {
-            id: "w2_1114_g01",
+            id: "w2_1014_g01",
             category: "generative",
             mode: "click-paint",
             text: "He does not ___ indoors, but he ___ outside after lunch.",
@@ -561,7 +391,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["run", "runs", "running"],
           },
           {
-            id: "w2_1114_g02",
+            id: "w2_1014_g02",
             category: "generative",
             mode: "click-paint",
             text: "She doesn't skip practice, and she ___ higher each week.",
@@ -569,7 +399,7 @@ export const curriculum: Record<number, LessonWeek> = {
             options: ["jump", "jumps", "jumping"],
           },
           {
-            id: "w2_1114_g03",
+            id: "w2_1014_g03",
             category: "generative",
             mode: "click-paint",
             text: "They do not swim alone, yet he ___ every Saturday.",
@@ -584,13 +414,46 @@ export const curriculum: Record<number, LessonWeek> = {
 };
 
 if (process.env.NODE_ENV === "development") {
+  const EXPECTED_CATEGORIES: PromptCategory[] = [
+    "review",
+    "review",
+    "review",
+    "core",
+    "core",
+    "core",
+    "core",
+    "generative",
+    "generative",
+    "generative",
+  ];
+
   Object.entries(curriculum).forEach(([week, lesson]) => {
+    const weekNum = Number(week);
     Object.entries(lesson.brackets).forEach(([group, bracket]) => {
       if (bracket.prompts.length !== 10) {
         throw new Error(
           `Curriculum error: Week ${week}, Age ${group} has ${bracket.prompts.length} prompts. Expected exactly 10.`,
         );
       }
+
+      if (weekNum === 1) {
+        bracket.prompts.forEach((prompt, index) => {
+          if (prompt.category !== "core") {
+            throw new Error(
+              `Curriculum error: Week 1, Age ${group}, prompt ${index} must be core (Week 1 exception).`,
+            );
+          }
+        });
+        return;
+      }
+
+      bracket.prompts.forEach((prompt, index) => {
+        if (prompt.category !== EXPECTED_CATEGORIES[index]) {
+          throw new Error(
+            `Curriculum error: Week ${week}, Age ${group}, prompt ${index} is "${prompt.category}". Expected "${EXPECTED_CATEGORIES[index]}".`,
+          );
+        }
+      });
     });
   });
 }

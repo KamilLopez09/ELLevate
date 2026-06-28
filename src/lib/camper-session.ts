@@ -1,8 +1,18 @@
-import type { CamperSessionData } from "@/types/sentence-canvas";
+import type { CamperSessionData, AgeBracket } from "@/types/sentence-canvas";
 
 export const CAMPER_SESSION_KEY = "camperSessionData";
 export const LESSON_COMPLETE_KEY = "lesson_complete";
 export const SELECTED_GAME_MODE_KEY = "selectedGameMode";
+
+function migrateAgeBracket(bracket: string): AgeBracket {
+  if (bracket === "5-7" || bracket === "8-10" || bracket === "5-9") {
+    return "5-9";
+  }
+  if (bracket === "11-14" || bracket === "10-14") {
+    return "10-14";
+  }
+  return "5-9";
+}
 
 /**
  * Converts a display name into a URL/DB-safe id.
@@ -34,7 +44,7 @@ function normalizeSession(
   return {
     camper_id: parsed.camper_id,
     display_name: parsed.display_name,
-    age_bracket: parsed.age_bracket,
+    age_bracket: migrateAgeBracket(parsed.age_bracket),
     native_language: parsed.native_language,
     group_letter: parsed.group_letter,
     cumulativeScore: parsed.cumulativeScore ?? 0,

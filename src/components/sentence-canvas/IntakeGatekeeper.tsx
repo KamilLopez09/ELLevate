@@ -14,7 +14,12 @@ import type {
   NativeLanguage,
 } from "@/types/sentence-canvas";
 
-const AGE_BRACKETS: AgeBracket[] = ["5-7", "8-10", "11-14"];
+const AGE_BRACKET_LABELS: Record<AgeBracket, string> = {
+  "5-9": "Ages 5–9",
+  "10-14": "Ages 10–14",
+};
+
+const AGE_BRACKETS: AgeBracket[] = ["5-9", "10-14"];
 const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
@@ -158,7 +163,7 @@ export function IntakeGatekeeper() {
                 </option>
                 {AGE_BRACKETS.map((bracket) => (
                   <option key={bracket} value={bracket}>
-                    {bracket} years
+                    {AGE_BRACKET_LABELS[bracket]}
                   </option>
                 ))}
               </select>

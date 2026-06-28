@@ -17,7 +17,7 @@ export interface SessionStats {
   errorCount: number;
 }
 
-export type AgeBracket = "5-7" | "8-10" | "11-14";
+export type AgeBracket = "5-9" | "10-14";
 
 export type NativeLanguage = "English" | "Spanish";
 

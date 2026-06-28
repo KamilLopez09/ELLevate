@@ -7,6 +7,7 @@ import { StepRail } from "@/components/ui/StepRail";
 import {
   getBracketContent,
   getCurrentWeek,
+  getLessonPracticePlan,
   getLessonWeek,
   getVideoEmbedUrl,
 } from "@/lib/curriculum-engine";
@@ -82,7 +83,11 @@ export default function LessonPage() {
           </h1>
           <p className="mt-1 text-sm text-ink/60">{bracket.channel}</p>
           <p className="mt-4 text-ink/70">
-            Watch the clip, then tap Ready to Paint when you&apos;re set.
+            Watch the clip — it matches this week&apos;s main lesson. Then tap
+            Ready to Practice.
+          </p>
+          <p className="mt-2 text-sm font-semibold text-teal-accent">
+            {getLessonPracticePlan(weekNumber)}
           </p>
 
           <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border-2 border-purple-accent/20 bg-camp-blue/40 shadow-bento">
@@ -120,7 +125,7 @@ export default function LessonPage() {
           whileTap={videoReady ? { scale: 0.97 } : undefined}
           className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-4 text-xl font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
-          Ready to Paint! →
+          Ready to Practice! →
         </motion.button>
       </div>
     </main>
