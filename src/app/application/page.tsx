@@ -6,29 +6,28 @@ import { LessonCanvas } from "@/components/LessonCanvas";
 import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
 import { curriculum } from "@/data/curriculum";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
-import { resolveAgeGroup } from "@/lib/curriculum-engine";
+import { getCurrentWeek, resolveAgeGroup } from "@/lib/curriculum-engine";
 import {
   createInitialProgress,
   type LessonProgressState,
 } from "@/types/lesson-progress";
 
-/** Vertical slice demo: Week 2, Ages 8–10 cohort (stored as 5-9). */
-const DEMO_WEEK = 2;
-const DEMO_AGE_BRACKET = "8-10";
+const DEFAULT_AGE_BRACKET = "8-10";
 
 export default function ApplicationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [weekNumber, setWeekNumber] = useState(1);
   const [progress, setProgress] = useState<LessonProgressState>(
     createInitialProgress(),
   );
 
   const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
 
-  const ageGroup = resolveAgeGroup(camper?.age_bracket ?? DEMO_AGE_BRACKET);
+  const ageGroup = resolveAgeGroup(camper?.age_bracket ?? DEFAULT_AGE_BRACKET);
 
   const { reviewPrompts, builderPrompts, sessionPrompts } = useMemo(() => {
-    const prompts = curriculum[DEMO_WEEK]?.brackets[ageGroup]?.prompts ?? [];
+    const prompts = curriculum[weekNumber]?.brackets[ageGroup]?.prompts ?? [];
     const review = prompts.filter((prompt) => prompt.category === "review");
     const builder = prompts.filter((prompt) => prompt.category !== "review");
     return {
@@ -36,7 +35,7 @@ export default function ApplicationPage() {
       builderPrompts: builder,
       sessionPrompts: [...review, ...builder],
     };
-  }, [ageGroup]);
+  }, [ageGroup, weekNumber]);
 
   const handleProgressChange = useCallback((state: LessonProgressState) => {
     setProgress(state);
@@ -52,6 +51,7 @@ export default function ApplicationPage() {
       return;
     }
 
+    setWeekNumber(getCurrentWeek());
     setReady(true);
   }, [router]);
 
@@ -69,7 +69,7 @@ export default function ApplicationPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-camp-blue px-4">
         <p className="text-center text-body text-muted">
-          No Week {DEMO_WEEK} prompts found for age group {ageGroup}.
+          No Week {weekNumber} prompts found for age group {ageGroup}.
         </p>
       </main>
     );
@@ -94,7 +94,7 @@ export default function ApplicationPage() {
         />
 
         <LessonCanvas
-          weekNumber={DEMO_WEEK}
+          weekNumber={weekNumber}
           ageGroup={ageGroup}
           sessionPrompts={sessionPrompts}
           reviewPrompts={reviewPrompts}

@@ -15,7 +15,7 @@ import {
   addSessionScore,
   readCamperSession,
 } from "@/lib/camper-session";
-import { setWeekPassed } from "@/lib/curriculum-engine";
+import { markWeekCompleted } from "@/lib/curriculum-engine";
 import {
   summarizeSession,
   type GameModeId,
@@ -128,6 +128,7 @@ export function LessonCanvas({
   const scoreResultsRef = useRef<ScoreResult[]>([]);
   const modesUsedRef = useRef<Set<GameModeId>>(new Set());
   const errorCountRef = useRef(0);
+  const weekCompletedRef = useRef(false);
   const [outcomeVersion, bumpOutcomes] = useState(0);
 
   const bracket = useMemo(() => {
@@ -144,6 +145,10 @@ export function LessonCanvas({
 
   const prompt = bracket?.prompts[promptIndex] ?? null;
   const showRetryModal = promptIndex === TOTAL_PROMPTS && !sessionComplete;
+
+  useEffect(() => {
+    weekCompletedRef.current = false;
+  }, [weekNumber]);
 
   const sessionSummary: SessionScoreSummary = useMemo(
     () => summarizeSession(scoreResultsRef.current, correctFirstTry),
@@ -177,7 +182,10 @@ export function LessonCanvas({
       if (firstTryScore >= PASS_THRESHOLD) {
         setSessionComplete(true);
         setPromptIndex(TOTAL_PROMPTS);
-        setWeekPassed(weekNumber);
+        if (!weekCompletedRef.current) {
+          weekCompletedRef.current = true;
+          markWeekCompleted(weekNumber);
+        }
       } else {
         setPromptIndex(TOTAL_PROMPTS);
       }
@@ -229,6 +237,7 @@ export function LessonCanvas({
     setCorrectFirstTry(0);
     setSessionComplete(false);
     setRetryCount((count) => count + 1);
+    weekCompletedRef.current = false;
     resetSession();
   };
 

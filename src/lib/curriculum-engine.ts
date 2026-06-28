@@ -46,7 +46,18 @@ export function setWeekPassed(weekNumber: number): void {
   if (typeof window === "undefined") {
     return;
   }
-  window.sessionStorage.setItem(weekPassedKey(weekNumber), "true");
+  const completedWeek = Math.max(1, Math.floor(weekNumber));
+  window.sessionStorage.setItem(weekPassedKey(completedWeek), "true");
+}
+
+/**
+ * Marks the week the camper just finished and returns the next week number
+ * that becomes unlocked (strict integer math: completed + 1).
+ */
+export function markWeekCompleted(completedWeekNumber: number): number {
+  const completedWeek = Math.max(1, Math.floor(completedWeekNumber));
+  setWeekPassed(completedWeek);
+  return completedWeek + 1;
 }
 
 /** Week 1 is always available; later weeks require the prior week to pass. */
