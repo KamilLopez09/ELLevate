@@ -50,8 +50,20 @@ export function imagePlaceholderClass(key: string): string {
   return palettes[index];
 }
 
-/** Maps curriculum prompts to the four game mode components. */
-export function resolveGameMode(prompt: Prompt): GameModeId {
+export function dragMatchToChoices(prompt: DragMatchPrompt): string[] {
+  return prompt.imageOptions.map(formatImageKey);
+}
+
+export function dragMatchAnswer(prompt: DragMatchPrompt): string {
+  return formatImageKey(prompt.target);
+}
+
+export function dragMatchQuestion(prompt: DragMatchPrompt): string {
+  return `Which picture matches "${prompt.wordLabel}"?`;
+}
+
+/** Suggested default mode by prompt category (user may override via selector). */
+export function suggestGameMode(prompt: Prompt): GameModeId {
   if (prompt.category === "review") {
     return "flashcard_drill";
   }

@@ -1,5 +1,5 @@
 import type { Prompt } from "@/data/curriculum";
-import type { ScoreResult } from "@/lib/gamification";
+import type { ScoreResult, GameModeId } from "@/lib/gamification";
 
 export interface GameModeCompletePayload {
   scoreResult: ScoreResult;
@@ -9,5 +9,6 @@ export interface GameModeCompletePayload {
 
 export interface GameModeProps {
   prompts: Prompt[];
+  gameModeId: GameModeId;
   onComplete: (payload: GameModeCompletePayload) => void;
 }

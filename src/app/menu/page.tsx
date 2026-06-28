@@ -11,7 +11,11 @@ import {
   TOTAL_WEEKS,
   WEEK_NUMBERS,
 } from "@/lib/curriculum-engine";
-import { clearLessonComplete, readCamperSession } from "@/lib/camper-session";
+import {
+  clearLessonComplete,
+  clearSelectedGameMode,
+  readCamperSession,
+} from "@/lib/camper-session";
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
@@ -33,6 +37,7 @@ export default function MenuPage() {
   const startWeek = (weekNumber: number) => {
     setCurrentWeek(weekNumber);
     clearLessonComplete();
+    clearSelectedGameMode();
     router.push("/lesson");
   };
 
@@ -60,7 +65,7 @@ export default function MenuPage() {
       <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
         <header className="rounded-3xl bg-paper p-8 shadow-bento">
           <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
-            {TOTAL_WEEKS}-Week Camp Journey
+            8-Week Camp Journey
           </p>
           <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
             Hi, {firstName}! 👋

@@ -1,12 +1,14 @@
 "use client";
 
 import "@/styles/animations.css";
-import type { SessionScoreSummary } from "@/lib/gamification";
+import type { GameModeId, SessionScoreSummary } from "@/lib/gamification";
+import { GAME_MODE_LABELS } from "@/lib/gamification";
 
 export interface ScoreboardProps {
   summary: SessionScoreSummary;
   sessionPoints: number;
   retryCount: number;
+  gameMode: GameModeId;
   onReturnToMenu: () => void;
   isSaving?: boolean;
 }
@@ -15,6 +17,7 @@ export function Scoreboard({
   summary,
   sessionPoints,
   retryCount,
+  gameMode,
   onReturnToMenu,
   isSaving = false,
 }: ScoreboardProps) {
@@ -49,6 +52,9 @@ export function Scoreboard({
       </div>
 
       <h2 className="text-3xl font-extrabold text-ink">Great work!</h2>
+      <p className="mt-1 text-sm font-semibold uppercase tracking-widest text-teal-accent">
+        {GAME_MODE_LABELS[gameMode].title}
+      </p>
       <p className="mt-2 text-lg text-ink/70">
         You earned{" "}
         <span className="font-extrabold text-purple-accent">{sessionPoints}</span>{" "}
@@ -57,6 +63,12 @@ export function Scoreboard({
       </p>
 
       <dl className="mt-8 grid w-full max-w-md gap-3 text-left">
+        <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
+          <dt className="font-semibold text-ink/70">Base points</dt>
+          <dd className="text-lg font-extrabold text-ink">
+            {summary.results.reduce((sum, result) => sum + result.base, 0)}
+          </dd>
+        </div>
         <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
           <dt className="font-semibold text-ink/70">First-try bonuses</dt>
           <dd className="text-lg font-extrabold text-teal-accent">

@@ -2,15 +2,25 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import "@/styles/animations.css";
-import { calculateRapidFireScore } from "@/lib/gamification";
-import { isAnswerCorrect, isClickPaintPrompt } from "@/lib/prompt-utils";
+import { calculateScoreForMode } from "@/lib/gamification";
+import {
+  dragMatchAnswer,
+  dragMatchQuestion,
+  dragMatchToChoices,
+  isAnswerCorrect,
+  isClickPaintPrompt,
+  isDragMatchPrompt,
+} from "@/lib/prompt-utils";
 import type { GameModeProps } from "@/types/game-modes";
 
 const RAPID_FIRE_LIMIT_MS = 10000;
 const TICK_MS = 100;
 
-export function RapidFire({ prompts, onComplete }: GameModeProps) {
-  const prompt = prompts.find(isClickPaintPrompt) ?? null;
+export function RapidFire({ prompts, gameModeId, onComplete }: GameModeProps) {
+  const dragPrompt = prompts.find(isDragMatchPrompt) ?? null;
+  const clickPrompt = prompts.find(isClickPaintPrompt) ?? null;
+  const prompt = dragPrompt ?? clickPrompt;
+
   const [remainingMs, setRemainingMs] = useState(RAPID_FIRE_LIMIT_MS);
   const [hasAttempted, setHasAttempted] = useState(false);
   const [feedbackClass, setFeedbackClass] = useState("");
@@ -26,7 +36,7 @@ export function RapidFire({ prompts, onComplete }: GameModeProps) {
       finishedRef.current = true;
       setIsAdvancing(true);
 
-      const scoreResult = calculateRapidFireScore({
+      const scoreResult = calculateScoreForMode(gameModeId, {
         correct,
         firstTry,
         timeTakenMs: Date.now() - startTimeRef.current,
@@ -34,7 +44,7 @@ export function RapidFire({ prompts, onComplete }: GameModeProps) {
 
       onComplete({ scoreResult, firstTry, correct });
     },
-    [onComplete, prompt],
+    [gameModeId, onComplete, prompt],
   );
 
   useEffect(() => {
@@ -88,6 +98,14 @@ export function RapidFire({ prompts, onComplete }: GameModeProps) {
   const urgency =
     remainingMs <= 3000 ? "text-red-500" : "text-teal-accent";
 
+  const questionText = dragPrompt
+    ? dragMatchQuestion(dragPrompt)
+    : clickPrompt!.text.replace("___", " ___ ");
+
+  const options = dragPrompt
+    ? dragMatchToChoices(dragPrompt)
+    : clickPrompt!.options;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
@@ -105,17 +123,25 @@ export function RapidFire({ prompts, onComplete }: GameModeProps) {
       <p
         className={`text-2xl font-bold leading-relaxed text-ink sm:text-3xl ${feedbackClass}`}
       >
-        {prompt.text.replace("___", " ___ ")}
+        {questionText}
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        {prompt.options.map((option) => (
+        {options.map((option) => (
           <button
             key={option}
             type="button"
             disabled={isAdvancing}
             aria-label={`Rapid fire answer ${option}`}
-            onClick={() => handleSelect(option)}
+            onClick={() =>
+              handleSelect(
+                dragPrompt
+                  ? option === dragMatchAnswer(dragPrompt)
+                    ? dragPrompt.target
+                    : option
+                  : option,
+              )
+            }
             className="min-h-[56px] flex-1 rounded-2xl bg-gold-accent px-4 py-3 text-lg font-bold text-ink shadow-bento transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-accent"
           >
             {option}

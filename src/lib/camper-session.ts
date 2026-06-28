@@ -2,6 +2,7 @@ import type { CamperSessionData } from "@/types/sentence-canvas";
 
 export const CAMPER_SESSION_KEY = "camperSessionData";
 export const LESSON_COMPLETE_KEY = "lesson_complete";
+export const SELECTED_GAME_MODE_KEY = "selectedGameMode";
 
 /**
  * Converts a display name into a URL/DB-safe id.
@@ -103,4 +104,25 @@ export function clearLessonComplete(): void {
     return;
   }
   window.sessionStorage.removeItem(LESSON_COMPLETE_KEY);
+}
+
+export function getSelectedGameMode(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.sessionStorage.getItem(SELECTED_GAME_MODE_KEY);
+}
+
+export function setSelectedGameMode(modeId: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(SELECTED_GAME_MODE_KEY, modeId);
+}
+
+export function clearSelectedGameMode(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.removeItem(SELECTED_GAME_MODE_KEY);
 }

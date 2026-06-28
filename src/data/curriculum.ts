@@ -1,3 +1,5 @@
+import { curriculumWeeks3Through8 } from "./curriculum-weeks-3-8";
+
 export type AgeGroup = "5-7" | "8-10" | "11-14";
 export type PromptCategory = "review" | "core" | "generative";
 export type InteractionMode = "drag-match" | "click-paint";
@@ -578,6 +580,7 @@ export const curriculum: Record<number, LessonWeek> = {
       },
     },
   },
+  ...curriculumWeeks3Through8,
 };
 
 if (process.env.NODE_ENV === "development") {

@@ -35,6 +35,13 @@ export interface CamperTelemetryRow {
   module_name: "sentence_canvas";
   score: number;
   error_count: number;
+  game_mode: string;
+  base_points: number;
+  first_try_bonus: number;
+  speed_bonus: number;
+  total_points: number;
+  week_number: number;
+  correct_first_try: number;
   cumulative_score: number;
   speed_bonuses_earned: number;
   accuracy_rate: number;

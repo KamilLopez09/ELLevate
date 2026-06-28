@@ -2,14 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { GameModeSelector } from "@/components/sentence-canvas/GameModeSelector";
 import { LessonCanvas } from "@/components/LessonCanvas";
 import { StepRail } from "@/components/ui/StepRail";
 import { getCurrentWeek, toAgeGroup } from "@/lib/curriculum-engine";
-import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
+import {
+  getSelectedGameMode,
+  clearSelectedGameMode,
+  isLessonComplete,
+  readCamperSession,
+  setSelectedGameMode,
+} from "@/lib/camper-session";
+import { isGameModeId, type GameModeId } from "@/lib/gamification";
 
 export default function ApplicationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<GameModeId | null>(null);
 
   const weekNumber = getCurrentWeek();
   const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
@@ -23,8 +32,19 @@ export default function ApplicationPage() {
       router.replace("/lesson");
       return;
     }
+
+    const stored = getSelectedGameMode();
+    if (stored && isGameModeId(stored)) {
+      setSelectedMode(stored);
+    }
+
     setReady(true);
   }, [router]);
+
+  const handleModeSelect = (modeId: GameModeId) => {
+    setSelectedGameMode(modeId);
+    setSelectedMode(modeId);
+  };
 
   if (!ready || !camper) {
     return (
@@ -51,10 +71,19 @@ export default function ApplicationPage() {
           <StepRail current={3} />
         </header>
 
-        <LessonCanvas
-          weekNumber={weekNumber}
-          ageGroup={toAgeGroup(camper.age_bracket)}
-        />
+        {!selectedMode ? (
+          <GameModeSelector onSelect={handleModeSelect} />
+        ) : (
+          <LessonCanvas
+            weekNumber={weekNumber}
+            ageGroup={toAgeGroup(camper.age_bracket)}
+            selectedGameMode={selectedMode}
+            onChangeMode={() => {
+              clearSelectedGameMode();
+              setSelectedMode(null);
+            }}
+          />
+        )}
       </div>
     </main>
   );

@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { calculateFlashcardScore } from "@/lib/gamification";
+import { calculateScoreForMode } from "@/lib/gamification";
 import {
   getFlashcardBack,
   getFlashcardFront,
 } from "@/lib/prompt-utils";
 import type { GameModeProps } from "@/types/game-modes";
 
-export function FlashcardDrill({ prompts, onComplete }: GameModeProps) {
+export function FlashcardDrill({
+  prompts,
+  gameModeId,
+  onComplete,
+}: GameModeProps) {
   const prompt = prompts[0] ?? null;
   const [revealed, setRevealed] = useState(false);
   const startTimeRef = useRef(Date.now());
@@ -23,7 +27,7 @@ export function FlashcardDrill({ prompts, onComplete }: GameModeProps) {
   }
 
   const finish = (correct: boolean) => {
-    const scoreResult = calculateFlashcardScore({
+    const scoreResult = calculateScoreForMode(gameModeId, {
       correct,
       firstTry: true,
       timeTakenMs: Date.now() - startTimeRef.current,
@@ -34,7 +38,7 @@ export function FlashcardDrill({ prompts, onComplete }: GameModeProps) {
   return (
     <div className="flex flex-col gap-6">
       <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
-        Flashcard Drill · Review ✦
+        Flashcard Drill
       </p>
 
       <button

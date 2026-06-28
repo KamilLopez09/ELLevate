@@ -11,6 +11,56 @@ export type GameModeId =
   | "sentence_builder"
   | "rapid_fire";
 
+const GAME_MODE_IDS: GameModeId[] = [
+  "flashcard_drill",
+  "match_blitz",
+  "sentence_builder",
+  "rapid_fire",
+];
+
+export function isGameModeId(value: string): value is GameModeId {
+  return GAME_MODE_IDS.includes(value as GameModeId);
+}
+
+export function getModeConstants(mode: GameModeId): ModeConstants {
+  return MODE_CONSTANTS[mode];
+}
+
+export function getMaxPromptScore(mode: GameModeId): number {
+  const config = MODE_CONSTANTS[mode];
+  return config.base + config.firstTry + config.speedMax;
+}
+
+export function getMaxSessionScore(mode: GameModeId, promptCount = 10): number {
+  return getMaxPromptScore(mode) * promptCount;
+}
+
+export const GAME_MODE_LABELS: Record<
+  GameModeId,
+  { title: string; description: string; accent: string }
+> = {
+  flashcard_drill: {
+    title: "Flashcard Drill",
+    description: "Flip, recall, and self-check. Great for review.",
+    accent: "teal-accent",
+  },
+  match_blitz: {
+    title: "Match Blitz",
+    description: "Drag and match fast. Highest speed bonus potential.",
+    accent: "purple-accent",
+  },
+  sentence_builder: {
+    title: "Sentence Builder",
+    description: "Click the word that completes the sentence.",
+    accent: "purple-accent",
+  },
+  rapid_fire: {
+    title: "Rapid Fire",
+    description: "Beat the clock with quick multiple choice.",
+    accent: "gold-accent",
+  },
+};
+
 interface ModeConstants {
   base: number;
   firstTry: number;

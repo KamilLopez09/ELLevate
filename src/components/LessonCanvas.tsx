@@ -20,10 +20,11 @@ import {
 import { setWeekPassed } from "@/lib/curriculum-engine";
 import {
   summarizeSession,
+  GAME_MODE_LABELS,
+  type GameModeId,
   type ScoreResult,
   type SessionScoreSummary,
 } from "@/lib/gamification";
-import { resolveGameMode } from "@/lib/prompt-utils";
 import { createBrowserClient } from "@/lib/supabase/client";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
@@ -36,6 +37,8 @@ type NodeOutcome = "pending" | "correct" | "incorrect";
 export interface LessonCanvasProps {
   weekNumber: number;
   ageGroup: AgeGroup;
+  selectedGameMode: GameModeId;
+  onChangeMode?: () => void;
 }
 
 function ProgressRail({
@@ -116,11 +119,11 @@ function RetryModal({
 }
 
 function renderGameMode(
-  modeId: ReturnType<typeof resolveGameMode>,
+  modeId: GameModeId,
   prompt: Prompt,
   onComplete: (payload: GameModeCompletePayload) => void,
 ) {
-  const props = { prompts: [prompt], onComplete };
+  const props = { prompts: [prompt], gameModeId: modeId, onComplete };
 
   switch (modeId) {
     case "flashcard_drill":
@@ -134,7 +137,12 @@ function renderGameMode(
   }
 }
 
-export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
+export function LessonCanvas({
+  weekNumber,
+  ageGroup,
+  selectedGameMode,
+  onChangeMode,
+}: LessonCanvasProps) {
   const router = useRouter();
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
@@ -196,7 +204,7 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
         return;
       }
 
-      const modeId = resolveGameMode(prompt);
+      const modeId = selectedGameMode;
       scoreResultsRef.current.push(payload.scoreResult);
       addSessionScore(payload.scoreResult.total, modeId);
 
@@ -225,7 +233,7 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
 
       setPromptIndex(nextIndex);
     },
-    [correctFirstTry, finishGate, prompt, promptIndex, refreshOutcomes],
+    [correctFirstTry, finishGate, prompt, promptIndex, refreshOutcomes, selectedGameMode],
   );
 
   const handleTryAgain = () => {
@@ -250,6 +258,16 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
         module_name: "sentence_canvas",
         score: correctFirstTry,
         error_count: errorCountRef.current,
+        game_mode: selectedGameMode,
+        base_points: sessionSummary.results.reduce(
+          (sum, result) => sum + result.base,
+          0,
+        ),
+        first_try_bonus: sessionSummary.totalFirstTryBonus,
+        speed_bonus: sessionSummary.totalSpeedBonus,
+        total_points: sessionSummary.totalPoints,
+        week_number: weekNumber,
+        correct_first_try: correctFirstTry,
         cumulative_score: camper.cumulativeScore,
         speed_bonuses_earned: sessionSummary.totalSpeedBonus,
         accuracy_rate: accuracyRate,
@@ -290,6 +308,7 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
           summary={sessionSummary}
           sessionPoints={sessionPoints}
           retryCount={retryCount}
+          gameMode={selectedGameMode}
           onReturnToMenu={() => void handleReturnToMenu()}
           isSaving={isSaving}
         />
@@ -307,7 +326,7 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
     return null;
   }
 
-  const modeId = resolveGameMode(prompt);
+  const modeId = selectedGameMode;
 
   return (
     <>
@@ -319,6 +338,22 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
       )}
 
       <section className="flex flex-col gap-6 rounded-3xl bg-paper p-6 shadow-bento sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-semibold uppercase tracking-widest text-ink/60">
+            Mode: {GAME_MODE_LABELS[modeId].title}
+          </p>
+          {onChangeMode && (
+            <button
+              type="button"
+              onClick={onChangeMode}
+              aria-label="Change game mode"
+              className="min-h-[56px] rounded-full bg-camp-blue/60 px-4 py-2 text-sm font-bold text-ink transition hover:bg-camp-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+            >
+              Change mode
+            </button>
+          )}
+        </div>
+
         <ProgressRail
           promptIndex={promptIndex}
           outcomes={outcomesRef.current}

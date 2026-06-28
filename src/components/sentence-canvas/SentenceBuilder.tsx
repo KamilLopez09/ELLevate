@@ -2,12 +2,26 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import "@/styles/animations.css";
-import { calculateSentenceBuilderScore } from "@/lib/gamification";
-import { isAnswerCorrect, isClickPaintPrompt } from "@/lib/prompt-utils";
+import { calculateScoreForMode } from "@/lib/gamification";
+import {
+  dragMatchAnswer,
+  dragMatchQuestion,
+  dragMatchToChoices,
+  isAnswerCorrect,
+  isClickPaintPrompt,
+  isDragMatchPrompt,
+} from "@/lib/prompt-utils";
 import type { GameModeProps } from "@/types/game-modes";
 
-export function SentenceBuilder({ prompts, onComplete }: GameModeProps) {
-  const prompt = prompts.find(isClickPaintPrompt) ?? null;
+export function SentenceBuilder({
+  prompts,
+  gameModeId,
+  onComplete,
+}: GameModeProps) {
+  const dragPrompt = prompts.find(isDragMatchPrompt) ?? null;
+  const clickPrompt = prompts.find(isClickPaintPrompt) ?? null;
+  const prompt = dragPrompt ?? clickPrompt;
+
   const [filledAnswer, setFilledAnswer] = useState<string | null>(null);
   const [feedbackClass, setFeedbackClass] = useState("");
   const [hasAttempted, setHasAttempted] = useState(false);
@@ -33,7 +47,7 @@ export function SentenceBuilder({ prompts, onComplete }: GameModeProps) {
       setIsAdvancing(true);
 
       const firstTry = !hasAttempted;
-      const scoreResult = calculateSentenceBuilderScore({
+      const scoreResult = calculateScoreForMode(gameModeId, {
         correct: true,
         firstTry,
         timeTakenMs: Date.now() - startTimeRef.current,
@@ -43,7 +57,7 @@ export function SentenceBuilder({ prompts, onComplete }: GameModeProps) {
         onComplete({ scoreResult, firstTry, correct: true });
       }, 600);
     },
-    [hasAttempted, isAdvancing, onComplete, prompt],
+    [gameModeId, hasAttempted, isAdvancing, onComplete, prompt],
   );
 
   const handleSelect = (option: string) => {
@@ -65,7 +79,43 @@ export function SentenceBuilder({ prompts, onComplete }: GameModeProps) {
     return null;
   }
 
-  const clickParts = prompt.text.split("___");
+  if (dragPrompt) {
+    const options = dragMatchToChoices(dragPrompt);
+    return (
+      <div className="flex flex-col gap-6">
+        <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
+          Sentence Builder
+        </p>
+        <p
+          className={`text-2xl font-bold leading-relaxed text-ink sm:text-3xl ${feedbackClass}`}
+        >
+          {dragMatchQuestion(dragPrompt)}
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              disabled={isAdvancing}
+              aria-label={`Choose answer ${option}`}
+              onClick={() =>
+                handleSelect(
+                  option === dragMatchAnswer(dragPrompt)
+                    ? dragPrompt.target
+                    : option,
+                )
+              }
+              className="min-h-[56px] flex-1 rounded-2xl bg-purple-accent px-4 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const clickParts = clickPrompt!.text.split("___");
 
   return (
     <div className="flex flex-col gap-6">
@@ -85,7 +135,7 @@ export function SentenceBuilder({ prompts, onComplete }: GameModeProps) {
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        {prompt.options.map((option) => (
+        {clickPrompt!.options.map((option) => (
           <button
             key={option}
             type="button"
