@@ -34,6 +34,12 @@ type NodeOutcome = "pending" | "correct" | "incorrect";
 export interface LessonCanvasProps {
   weekNumber: number;
   ageGroup: AgeGroup;
+  /** Ordered session prompts (review → core → generative). Overrides bracket lookup. */
+  sessionPrompts?: Prompt[];
+  /** Review prompts routed to FlashcardDrill. */
+  reviewPrompts?: Prompt[];
+  /** Core + generative prompts routed to SentenceBuilder. */
+  builderPrompts?: Prompt[];
 }
 
 function gameModeForPrompt(prompt: Prompt): GameModeId {
@@ -119,19 +125,31 @@ function RetryModal({
 
 function renderPromptByCategory(
   prompt: Prompt,
+  reviewPrompts: Prompt[] | undefined,
+  builderPrompts: Prompt[] | undefined,
   onComplete: (payload: GameModeCompletePayload) => void,
 ) {
-  const modeId = gameModeForPrompt(prompt);
+  const inReview = reviewPrompts?.some((entry) => entry.id === prompt.id);
+  const inBuilder = builderPrompts?.some((entry) => entry.id === prompt.id);
+  const isReview =
+    inReview ?? (!inBuilder && prompt.category === "review");
+  const modeId: GameModeId = isReview ? "flashcard_drill" : "sentence_builder";
   const props = { prompts: [prompt], gameModeId: modeId, onComplete };
 
-  if (prompt.category === "review") {
+  if (isReview) {
     return <FlashcardDrill key={prompt.id} {...props} />;
   }
 
   return <SentenceBuilder key={prompt.id} {...props} />;
 }
 
-export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
+export function LessonCanvas({
+  weekNumber,
+  ageGroup,
+  sessionPrompts,
+  reviewPrompts,
+  builderPrompts,
+}: LessonCanvasProps) {
   const router = useRouter();
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
@@ -150,8 +168,15 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
 
   const bracket = useMemo(() => {
     const week = curriculum[weekNumber];
-    return week?.brackets[ageGroup] ?? null;
-  }, [weekNumber, ageGroup]);
+    const base = week?.brackets[ageGroup] ?? null;
+    if (!base) {
+      return null;
+    }
+    if (sessionPrompts) {
+      return { ...base, prompts: sessionPrompts };
+    }
+    return base;
+  }, [weekNumber, ageGroup, sessionPrompts]);
 
   const prompt = bracket?.prompts[promptIndex] ?? null;
   const showRetryModal = promptIndex === TOTAL_PROMPTS && !sessionComplete;
@@ -352,7 +377,12 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
           outcomes={outcomesRef.current}
         />
 
-        {renderPromptByCategory(prompt, handleModeComplete)}
+        {renderPromptByCategory(
+          prompt,
+          reviewPrompts,
+          builderPrompts,
+          handleModeComplete,
+        )}
       </section>
     </>
   );

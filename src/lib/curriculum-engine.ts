@@ -65,6 +65,14 @@ export function toAgeGroup(ageBracket: AgeBracket): AgeGroup {
   return ageBracket;
 }
 
+/** Maps legacy demo brackets (e.g. 8-10) to the current age-group keys. */
+export function resolveAgeGroup(ageBracket?: string): AgeGroup {
+  if (ageBracket === "10-14" || ageBracket === "11-14") {
+    return "10-14";
+  }
+  return "5-9";
+}
+
 export function getBracketContent(
   weekNumber: number,
   ageBracket: AgeBracket,
