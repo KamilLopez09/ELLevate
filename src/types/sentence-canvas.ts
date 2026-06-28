@@ -27,12 +27,17 @@ export interface CamperSessionData {
   age_bracket: AgeBracket;
   native_language: NativeLanguage;
   group_letter: string;
+  cumulativeScore: number;
+  completedModes: string[];
 }
 
 export interface CamperTelemetryRow {
   module_name: "sentence_canvas";
   score: number;
   error_count: number;
+  cumulative_score: number;
+  speed_bonuses_earned: number;
+  accuracy_rate: number;
   camper_id: string;
   display_name: string;
   age_bracket: AgeBracket;

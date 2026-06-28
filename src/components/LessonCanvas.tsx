@@ -1,59 +1,41 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/styles/animations.css";
+import { FlashcardDrill } from "@/components/sentence-canvas/FlashcardDrill";
+import { MatchBlitz } from "@/components/sentence-canvas/MatchBlitz";
+import { RapidFire } from "@/components/sentence-canvas/RapidFire";
+import { SentenceBuilder } from "@/components/sentence-canvas/SentenceBuilder";
+import { Scoreboard } from "@/components/ui/Scoreboard";
 import {
   curriculum,
   type AgeGroup,
-  type ClickPaintPrompt,
-  type DragMatchPrompt,
   type Prompt,
 } from "@/data/curriculum";
-import { readCamperSession } from "@/lib/camper-session";
+import {
+  addSessionScore,
+  readCamperSession,
+} from "@/lib/camper-session";
 import { setWeekPassed } from "@/lib/curriculum-engine";
+import {
+  summarizeSession,
+  type ScoreResult,
+  type SessionScoreSummary,
+} from "@/lib/gamification";
+import { resolveGameMode } from "@/lib/prompt-utils";
 import { createBrowserClient } from "@/lib/supabase/client";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
+import type { GameModeCompletePayload } from "@/types/game-modes";
 
 const TOTAL_PROMPTS = 10;
 const PASS_THRESHOLD = 8;
-const ADVANCE_DELAY_MS = 600;
 
 type NodeOutcome = "pending" | "correct" | "incorrect";
 
 export interface LessonCanvasProps {
   weekNumber: number;
   ageGroup: AgeGroup;
-}
-
-function isDragMatchPrompt(prompt: Prompt): prompt is DragMatchPrompt {
-  return prompt.mode === "drag-match";
-}
-
-function isClickPaintPrompt(prompt: Prompt): prompt is ClickPaintPrompt {
-  return prompt.mode === "click-paint";
-}
-
-function isAnswerCorrect(prompt: Prompt, answer: string): boolean {
-  if (isDragMatchPrompt(prompt)) {
-    return answer === prompt.target;
-  }
-  const targets = Array.isArray(prompt.target)
-    ? prompt.target
-    : [prompt.target];
-  return targets.includes(answer);
-}
-
-function imagePlaceholderClass(key: string): string {
-  const palettes = [
-    "bg-purple-accent/30",
-    "bg-teal-accent/30",
-    "bg-gold-accent/40",
-  ];
-  const index =
-    key.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) %
-    palettes.length;
-  return palettes[index];
 }
 
 function ProgressRail({
@@ -98,90 +80,6 @@ function ProgressRail({
   );
 }
 
-function CategoryBadge({ category }: { category: Prompt["category"] }) {
-  if (category !== "review") {
-    return null;
-  }
-  return (
-    <p className="mb-3 text-sm font-bold uppercase tracking-widest text-teal-accent">
-      Review ✦
-    </p>
-  );
-}
-
-function ImageCard({
-  imageKey,
-  onDragStart,
-  feedbackClass,
-}: {
-  imageKey: string;
-  onDragStart: (event: React.DragEvent<HTMLDivElement>, key: string) => void;
-  feedbackClass: string;
-}) {
-  return (
-    <div
-      draggable
-      onDragStart={(event) => onDragStart(event, imageKey)}
-      aria-label={`Drag picture ${imageKey}`}
-      className={`min-h-[56px] flex-1 cursor-grab rounded-2xl border-2 border-ink/10 shadow-bento active:cursor-grabbing ${imagePlaceholderClass(imageKey)} ${feedbackClass}`}
-    />
-  );
-}
-
-function SuccessScreen({
-  retryCount,
-  onNextLesson,
-}: {
-  retryCount: number;
-  onNextLesson: () => void;
-}) {
-  const stars = retryCount > 0 ? 1 : 3;
-
-  return (
-    <section className="flex flex-col items-center rounded-3xl bg-paper p-8 text-center shadow-bento">
-      <div className="animate-checkmark-pop mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-teal-accent/15">
-        <svg
-          viewBox="0 0 52 52"
-          className="h-16 w-16"
-          aria-hidden
-        >
-          <circle
-            cx="26"
-            cy="26"
-            r="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            className="text-teal-accent/30"
-          />
-          <path
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M14 27 l8 8 l16-18"
-            className="animate-checkmark-draw text-teal-accent"
-          />
-        </svg>
-      </div>
-      <h2 className="text-3xl font-extrabold text-ink">Great work!</h2>
-      <p className="mt-4 text-lg text-ink/70">
-        Stars earned: {"★".repeat(stars)}
-        {"☆".repeat(3 - stars)}
-      </p>
-      <button
-        type="button"
-        onClick={onNextLesson}
-        aria-label="Go to next lesson"
-        className="mt-8 min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
-      >
-        Next Lesson
-      </button>
-    </section>
-  );
-}
-
 function RetryModal({
   correctFirstTry,
   onTryAgain,
@@ -217,23 +115,40 @@ function RetryModal({
   );
 }
 
+function renderGameMode(
+  modeId: ReturnType<typeof resolveGameMode>,
+  prompt: Prompt,
+  onComplete: (payload: GameModeCompletePayload) => void,
+) {
+  const props = { prompts: [prompt], onComplete };
+
+  switch (modeId) {
+    case "flashcard_drill":
+      return <FlashcardDrill key={prompt.id} {...props} />;
+    case "match_blitz":
+      return <MatchBlitz key={prompt.id} {...props} />;
+    case "sentence_builder":
+      return <SentenceBuilder key={prompt.id} {...props} />;
+    case "rapid_fire":
+      return <RapidFire key={prompt.id} {...props} />;
+  }
+}
+
 export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
   const router = useRouter();
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
-  const [hasAttempted, setHasAttempted] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [feedbackClass, setFeedbackClass] = useState("");
-  const [filledAnswer, setFilledAnswer] = useState<string | null>(null);
-  const [isAdvancing, setIsAdvancing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [telemetryWarning, setTelemetryWarning] = useState(false);
 
   const outcomesRef = useRef<NodeOutcome[]>(
     Array.from({ length: TOTAL_PROMPTS }, () => "pending"),
   );
-  const [, bumpOutcomes] = useState(0);
-  const [telemetrySaved, setTelemetrySaved] = useState<boolean | null>(null);
+  const scoreResultsRef = useRef<ScoreResult[]>([]);
   const errorCountRef = useRef(0);
+  const [, bumpOutcomes] = useState(0);
 
   const bracket = useMemo(() => {
     const week = curriculum[weekNumber];
@@ -243,12 +158,22 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
   const prompt = bracket?.prompts[promptIndex] ?? null;
   const showRetryModal = promptIndex === TOTAL_PROMPTS && !sessionComplete;
 
+  const sessionSummary: SessionScoreSummary = useMemo(
+    () => summarizeSession(scoreResultsRef.current, correctFirstTry),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ref syncs when promptIndex/sessionComplete changes
+    [correctFirstTry, sessionComplete, promptIndex],
+  );
+
+  const sessionPoints = sessionSummary.totalPoints;
+
   const refreshOutcomes = useCallback(() => {
     bumpOutcomes((value) => value + 1);
   }, []);
 
-  const resetOutcomes = useCallback(() => {
+  const resetSession = useCallback(() => {
     outcomesRef.current = Array.from({ length: TOTAL_PROMPTS }, () => "pending");
+    scoreResultsRef.current = [];
+    errorCountRef.current = 0;
     refreshOutcomes();
   }, [refreshOutcomes]);
 
@@ -265,142 +190,89 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
     [weekNumber],
   );
 
-  const advancePrompt = useCallback(
-    (firstTryScore: number) => {
+  const handleModeComplete = useCallback(
+    (payload: GameModeCompletePayload) => {
+      if (promptIndex >= TOTAL_PROMPTS || !prompt) {
+        return;
+      }
+
+      const modeId = resolveGameMode(prompt);
+      scoreResultsRef.current.push(payload.scoreResult);
+      addSessionScore(payload.scoreResult.total, modeId);
+
+      if (!payload.correct) {
+        errorCountRef.current += 1;
+      }
+
+      outcomesRef.current[promptIndex] =
+        payload.correct && payload.firstTry ? "correct" : "incorrect";
+      refreshOutcomes();
+
+      const nextFirstTryScore =
+        payload.correct && payload.firstTry
+          ? correctFirstTry + 1
+          : correctFirstTry;
+
+      if (payload.correct && payload.firstTry) {
+        setCorrectFirstTry(nextFirstTryScore);
+      }
+
       const nextIndex = promptIndex + 1;
       if (nextIndex >= TOTAL_PROMPTS) {
-        finishGate(firstTryScore);
+        finishGate(nextFirstTryScore);
         return;
       }
+
       setPromptIndex(nextIndex);
-      setHasAttempted(false);
-      setFilledAnswer(null);
-      setFeedbackClass("");
-      setIsAdvancing(false);
     },
-    [finishGate, promptIndex],
-  );
-
-  const handleCorrect = useCallback(
-    (currentPrompt: Prompt, firstTryScore: number) => {
-      outcomesRef.current[promptIndex] = hasAttempted ? "incorrect" : "correct";
-      refreshOutcomes();
-      setFeedbackClass("animate-spring");
-      setIsAdvancing(true);
-
-      window.setTimeout(() => {
-        advancePrompt(firstTryScore);
-      }, ADVANCE_DELAY_MS);
-    },
-    [advancePrompt, hasAttempted, promptIndex, refreshOutcomes],
-  );
-
-  const handleIncorrect = useCallback(() => {
-    setHasAttempted(true);
-    errorCountRef.current += 1;
-    setFeedbackClass("animate-shake");
-    window.setTimeout(() => setFeedbackClass(""), 400);
-  }, []);
-
-  const evaluateAnswer = useCallback(
-    (answer: string) => {
-      if (!prompt || isAdvancing || promptIndex >= TOTAL_PROMPTS) {
-        return;
-      }
-
-      if (isAnswerCorrect(prompt, answer)) {
-        const nextFirstTryScore =
-          !hasAttempted ? correctFirstTry + 1 : correctFirstTry;
-        if (!hasAttempted) {
-          setCorrectFirstTry(nextFirstTryScore);
-        }
-        setFilledAnswer(answer);
-        handleCorrect(prompt, nextFirstTryScore);
-      } else {
-        handleIncorrect();
-      }
-    },
-    [
-      correctFirstTry,
-      handleCorrect,
-      handleIncorrect,
-      hasAttempted,
-      isAdvancing,
-      prompt,
-      promptIndex,
-    ],
+    [correctFirstTry, finishGate, prompt, promptIndex, refreshOutcomes],
   );
 
   const handleTryAgain = () => {
     setPromptIndex(0);
     setCorrectFirstTry(0);
-    setHasAttempted(false);
+    setSessionComplete(false);
     setRetryCount((count) => count + 1);
-    setFilledAnswer(null);
-    setFeedbackClass("");
-    setIsAdvancing(false);
-    errorCountRef.current = 0;
-    resetOutcomes();
+    resetSession();
   };
 
-  const saveTelemetry = useCallback(async (score: number) => {
+  const handleReturnToMenu = async () => {
+    setIsSaving(true);
+
     const camper = readCamperSession();
-    if (!camper) {
-      setTelemetrySaved(false);
-      return;
+    const accuracyRate =
+      TOTAL_PROMPTS > 0
+        ? Number(((correctFirstTry / TOTAL_PROMPTS) * 100).toFixed(2))
+        : 0;
+
+    if (camper) {
+      const payload: CamperTelemetryRow = {
+        module_name: "sentence_canvas",
+        score: correctFirstTry,
+        error_count: errorCountRef.current,
+        cumulative_score: camper.cumulativeScore,
+        speed_bonuses_earned: sessionSummary.totalSpeedBonus,
+        accuracy_rate: accuracyRate,
+        camper_id: camper.camper_id,
+        display_name: camper.display_name,
+        age_bracket: camper.age_bracket,
+        native_language: camper.native_language,
+        group_letter: camper.group_letter,
+      };
+
+      const supabase = createBrowserClient();
+      if (supabase) {
+        const { error } = await supabase
+          .from("camper_telemetry")
+          .insert(payload);
+        setTelemetryWarning(Boolean(error));
+      } else {
+        setTelemetryWarning(true);
+      }
     }
 
-    const payload: CamperTelemetryRow = {
-      module_name: "sentence_canvas",
-      score,
-      error_count: errorCountRef.current,
-      camper_id: camper.camper_id,
-      display_name: camper.display_name,
-      age_bracket: camper.age_bracket,
-      native_language: camper.native_language,
-      group_letter: camper.group_letter,
-    };
-
-    const supabase = createBrowserClient();
-    if (!supabase) {
-      setTelemetrySaved(false);
-      return;
-    }
-
-    const { error } = await supabase.from("camper_telemetry").insert(payload);
-    setTelemetrySaved(!error);
-  }, []);
-
-  useEffect(() => {
-    if (!sessionComplete) {
-      return;
-    }
-    void saveTelemetry(correctFirstTry);
-  }, [correctFirstTry, saveTelemetry, sessionComplete]);
-
-  const handleNextLesson = () => {
+    setIsSaving(false);
     router.push("/menu");
-  };
-
-  const handleDragStart = (
-    event: React.DragEvent<HTMLDivElement>,
-    key: string,
-  ) => {
-    event.dataTransfer.setData("text/plain", key);
-    event.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const key = event.dataTransfer.getData("text/plain");
-    if (key) {
-      evaluateAnswer(key);
-    }
   };
 
   if (!bracket) {
@@ -414,8 +286,14 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
   if (sessionComplete) {
     return (
       <>
-        <SuccessScreen retryCount={retryCount} onNextLesson={handleNextLesson} />
-        {telemetrySaved === false && (
+        <Scoreboard
+          summary={sessionSummary}
+          sessionPoints={sessionPoints}
+          retryCount={retryCount}
+          onReturnToMenu={() => void handleReturnToMenu()}
+          isSaving={isSaving}
+        />
+        {telemetryWarning && (
           <p className="mt-4 rounded-2xl bg-gold-accent/20 px-4 py-3 text-center text-sm text-ink/80">
             Your score is saved on this device. Connect Supabase env vars to
             share camp telemetry.
@@ -429,9 +307,7 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
     return null;
   }
 
-  const clickParts = isClickPaintPrompt(prompt)
-    ? prompt.text.split("___")
-    : null;
+  const modeId = resolveGameMode(prompt);
 
   return (
     <>
@@ -448,63 +324,7 @@ export function LessonCanvas({ weekNumber, ageGroup }: LessonCanvasProps) {
           outcomes={outcomesRef.current}
         />
 
-        <CategoryBadge category={prompt.category} />
-
-        {isClickPaintPrompt(prompt) && clickParts && (
-          <div>
-            <p
-              className={`text-2xl font-bold leading-relaxed text-ink sm:text-3xl ${feedbackClass}`}
-              aria-live="polite"
-            >
-              {clickParts[0]}
-              <span className="mx-1 inline-flex min-h-[56px] min-w-[5rem] items-center justify-center rounded-xl border-2 border-dashed border-teal-accent px-2 align-middle">
-                {filledAnswer ?? "___"}
-              </span>
-              {clickParts[1] ?? ""}
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {prompt.options.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  disabled={isAdvancing}
-                  aria-label={`Choose answer ${option}`}
-                  onClick={() => evaluateAnswer(option)}
-                  className="min-h-[56px] flex-1 rounded-2xl bg-purple-accent px-4 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isDragMatchPrompt(prompt) && (
-          <div>
-            <div
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              aria-label={`Drop zone for ${prompt.wordLabel}`}
-              className={`mx-auto flex min-h-[56px] w-full max-w-md items-center justify-center rounded-3xl border-4 border-dashed border-purple-accent/40 bg-camp-blue/30 px-6 py-8 text-center ${feedbackClass}`}
-            >
-              <p className="text-3xl font-extrabold text-ink sm:text-4xl">
-                {prompt.wordLabel}
-              </p>
-            </div>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {prompt.imageOptions.map((imageKey) => (
-                <ImageCard
-                  key={imageKey}
-                  imageKey={imageKey}
-                  onDragStart={handleDragStart}
-                  feedbackClass=""
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {renderGameMode(modeId, prompt, handleModeComplete)}
       </section>
     </>
   );

@@ -79,6 +79,8 @@ export function IntakeGatekeeper() {
       age_bracket: ageBracket,
       native_language: nativeLanguage,
       group_letter: cleanGroup,
+      cumulativeScore: 0,
+      completedModes: [],
     };
 
     writeCamperSession(data);

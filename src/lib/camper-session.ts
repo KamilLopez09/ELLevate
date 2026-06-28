@@ -17,6 +17,30 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function normalizeSession(
+  parsed: Partial<CamperSessionData>,
+): CamperSessionData | null {
+  if (
+    !parsed.camper_id ||
+    !parsed.display_name ||
+    !parsed.age_bracket ||
+    !parsed.native_language ||
+    !parsed.group_letter
+  ) {
+    return null;
+  }
+
+  return {
+    camper_id: parsed.camper_id,
+    display_name: parsed.display_name,
+    age_bracket: parsed.age_bracket,
+    native_language: parsed.native_language,
+    group_letter: parsed.group_letter,
+    cumulativeScore: parsed.cumulativeScore ?? 0,
+    completedModes: parsed.completedModes ?? [],
+  };
+}
+
 export function readCamperSession(): CamperSessionData | null {
   if (typeof window === "undefined") {
     return null;
@@ -28,16 +52,7 @@ export function readCamperSession(): CamperSessionData | null {
       return null;
     }
     const parsed = JSON.parse(raw) as Partial<CamperSessionData>;
-    if (
-      !parsed.camper_id ||
-      !parsed.display_name ||
-      !parsed.age_bracket ||
-      !parsed.native_language ||
-      !parsed.group_letter
-    ) {
-      return null;
-    }
-    return parsed as CamperSessionData;
+    return normalizeSession(parsed);
   } catch {
     return null;
   }
@@ -48,6 +63,23 @@ export function writeCamperSession(data: CamperSessionData): void {
     return;
   }
   window.sessionStorage.setItem(CAMPER_SESSION_KEY, JSON.stringify(data));
+}
+
+export function addSessionScore(points: number, modeId: string): void {
+  const session = readCamperSession();
+  if (!session) {
+    return;
+  }
+
+  const completedModes = session.completedModes.includes(modeId)
+    ? session.completedModes
+    : [...session.completedModes, modeId];
+
+  writeCamperSession({
+    ...session,
+    cumulativeScore: session.cumulativeScore + points,
+    completedModes,
+  });
 }
 
 /** Marks the lesson step as watched so the application step unlocks. */
