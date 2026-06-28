@@ -8,6 +8,7 @@ import {
   getBracketContent,
   getCurrentWeek,
   getLessonWeek,
+  getVideoEmbedUrl,
 } from "@/lib/curriculum-engine";
 import { readCamperSession, setLessonComplete } from "@/lib/camper-session";
 
@@ -87,7 +88,7 @@ export default function LessonPage() {
           <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border-2 border-purple-accent/20 bg-camp-blue/40 shadow-bento">
             <iframe
               className="h-full w-full"
-              src={`${bracket.videoSrc}?enablejsapi=1&rel=0`}
+              src={getVideoEmbedUrl(bracket.videoId)}
               title={bracket.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen

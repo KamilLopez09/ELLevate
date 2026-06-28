@@ -8,6 +8,7 @@ import {
   isWeekPassed,
   isWeekUnlocked,
   setCurrentWeek,
+  TOTAL_WEEKS,
   WEEK_NUMBERS,
 } from "@/lib/curriculum-engine";
 import { clearLessonComplete, readCamperSession } from "@/lib/camper-session";
@@ -59,7 +60,7 @@ export default function MenuPage() {
       <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
         <header className="rounded-3xl bg-paper p-8 shadow-bento">
           <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
-            8-Week Camp Journey
+            {TOTAL_WEEKS}-Week Camp Journey
           </p>
           <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
             Hi, {firstName}! 👋
@@ -92,7 +93,7 @@ export default function MenuPage() {
                     {week.theme}
                   </span>
                   <span className="text-sm text-ink/50">
-                    Week {weekNumber} of 8
+                    Week {weekNumber} of {TOTAL_WEEKS}
                   </span>
                   <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-ink/10 px-3 py-1 text-sm font-bold text-ink/50">
                     🔒 Finish Week {weekNumber - 1} to unlock
@@ -120,7 +121,7 @@ export default function MenuPage() {
                   {week.theme}
                 </span>
                 <span className="text-sm text-ink/70">
-                  Week {weekNumber} of 8
+                  Week {weekNumber} of {TOTAL_WEEKS}
                 </span>
                 {passed ? (
                   <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success-accent/15 px-3 py-1 text-sm font-bold text-success-accent">

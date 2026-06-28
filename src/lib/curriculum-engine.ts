@@ -1,17 +1,19 @@
 import {
   curriculum,
-  type BracketContent,
+  type AgeGroup,
+  type BracketData,
   type LessonWeek,
   type Prompt,
 } from "@/data/curriculum";
 import type { AgeBracket } from "@/types/sentence-canvas";
-import type { GameMode } from "@/types/sentence-canvas";
 
 export const CURRENT_WEEK_KEY = "currentWeek";
 
 export const WEEK_NUMBERS = Object.keys(curriculum)
   .map(Number)
   .sort((a, b) => a - b);
+
+export const TOTAL_WEEKS = WEEK_NUMBERS.length;
 
 export function weekPassedKey(weekNumber: number): string {
   return `lesson_${weekNumber}_passed`;
@@ -59,21 +61,23 @@ export function getLessonWeek(weekNumber: number): LessonWeek | null {
   return curriculum[weekNumber] ?? null;
 }
 
+export function toAgeGroup(ageBracket: AgeBracket): AgeGroup {
+  return ageBracket;
+}
+
 export function getBracketContent(
   weekNumber: number,
   ageBracket: AgeBracket,
-): BracketContent | null {
+): BracketData | null {
   const week = getLessonWeek(weekNumber);
   if (!week) {
     return null;
   }
-  return week.brackets[ageBracket] ?? null;
+  return week.brackets[toAgeGroup(ageBracket)] ?? null;
 }
 
-export function curriculumModeToGameMode(
-  mode: BracketContent["mode"],
-): GameMode {
-  return mode === "drag-match" ? "drag" : "click";
+export function getVideoEmbedUrl(videoId: string): string {
+  return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0`;
 }
 
 export function getPromptsForSession(

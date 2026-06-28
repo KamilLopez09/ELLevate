@@ -2,13 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SentenceCanvas } from "@/components/sentence-canvas/SentenceCanvas";
+import { LessonCanvas } from "@/components/LessonCanvas";
 import { StepRail } from "@/components/ui/StepRail";
-import {
-  curriculumModeToGameMode,
-  getBracketContent,
-  getCurrentWeek,
-} from "@/lib/curriculum-engine";
+import { getCurrentWeek, toAgeGroup } from "@/lib/curriculum-engine";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
 
 export default function ApplicationPage() {
@@ -17,9 +13,6 @@ export default function ApplicationPage() {
 
   const weekNumber = getCurrentWeek();
   const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
-  const bracket = camper
-    ? getBracketContent(weekNumber, camper.age_bracket)
-    : null;
 
   useEffect(() => {
     if (!readCamperSession()) {
@@ -33,13 +26,11 @@ export default function ApplicationPage() {
     setReady(true);
   }, [router]);
 
-  if (!ready || !bracket || !camper) {
+  if (!ready || !camper) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
     );
   }
-
-  const mode = curriculumModeToGameMode(bracket.mode);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
@@ -55,15 +46,14 @@ export default function ApplicationPage() {
       <div className="relative mx-auto max-w-3xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
-            Week {weekNumber} · Paint Canvas
+            Week {weekNumber} · Practice
           </p>
           <StepRail current={3} />
         </header>
 
-        <SentenceCanvas
-          mode={mode}
-          prompts={bracket.prompts}
+        <LessonCanvas
           weekNumber={weekNumber}
+          ageGroup={toAgeGroup(camper.age_bracket)}
         />
       </div>
     </main>
