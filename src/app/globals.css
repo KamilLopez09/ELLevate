@@ -5,12 +5,12 @@
 :root {
   --color-bg-canvas: #c3e3f0;
   --color-bg-card: #faf7f2;
-  --color-purple-accent: #7c3aed;
+  --color-purple-accent: #9333ea;
   --color-teal-accent: #14b8a6;
 
   --paper: var(--color-bg-card);
   --camp-blue: var(--color-bg-canvas);
-  --ink: #2d2a26;
+  --ink: #1e293b;
   --purple-accent: var(--color-purple-accent);
   --gold-accent: #f5b942;
   --teal-accent: var(--color-teal-accent);
@@ -18,8 +18,40 @@
 }
 
 body {
-  color: var(--ink);
-  background: var(--color-bg-canvas);
+  @apply bg-camp-blue font-sans text-camp-slate;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes spring {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.animate-spring {
+  animation: spring 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
 @layer utilities {
