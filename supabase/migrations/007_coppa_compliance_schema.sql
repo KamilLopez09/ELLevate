@@ -95,6 +95,10 @@ alter table public.camper_telemetry
 alter table public.camper_telemetry
   drop constraint if exists camper_telemetry_display_name_check;
 
+-- Drop insert policies before removing display_name (006 policies reference it).
+drop policy if exists "anon_insert_camper_telemetry" on public.camper_telemetry;
+drop policy if exists "authenticated_insert_camper_telemetry" on public.camper_telemetry;
+
 alter table public.camper_telemetry
   drop column if exists display_name;
 
