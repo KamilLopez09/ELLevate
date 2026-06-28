@@ -18,8 +18,8 @@ export default function HomePage() {
       />
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
-        <header className="rounded-3xl bg-paper p-8 shadow-bento">
-          <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
+        <header className="ca-surface p-8 shadow-bento">
+          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
             Certified Angels Summer Camp
           </p>
           <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
@@ -36,7 +36,7 @@ export default function HomePage() {
 
         <IntakeGatekeeper />
 
-        <footer className="text-center text-sm text-ink/60">
+        <footer className="text-center text-sm text-muted">
           Completely free · Built for campers ages 5–14
         </footer>
       </div>

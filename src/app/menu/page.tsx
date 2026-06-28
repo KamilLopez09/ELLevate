@@ -63,8 +63,8 @@ export default function MenuPage() {
       />
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
-        <header className="rounded-3xl bg-paper p-8 shadow-bento">
-          <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
+        <header className="ca-surface p-8 shadow-bento">
+          <p className="text-sm font-semibold uppercase tracking-widest text-accent">
             8-Week Camp Journey
           </p>
           <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
@@ -89,7 +89,7 @@ export default function MenuPage() {
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 0.6, y: 0 }}
                   transition={{ ...SPRING, delay: index * 0.03 }}
-                  className="flex min-h-[56px] cursor-not-allowed flex-col items-start gap-3 rounded-3xl border-2 border-ink/10 bg-white p-6 text-left shadow-bento"
+                  className="flex min-h-[56px] cursor-not-allowed flex-col items-start gap-3 ca-surface p-6 text-left opacity-60 shadow-bento"
                 >
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink/20 text-xl font-extrabold text-white">
                     {weekNumber}
@@ -117,7 +117,7 @@ export default function MenuPage() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...SPRING, delay: index * 0.03 }}
-                className="flex min-h-[56px] flex-col items-start gap-3 rounded-3xl border-2 border-ink/10 bg-white p-6 text-left shadow-bento transition hover:border-purple-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+                className="flex min-h-[56px] flex-col items-start gap-3 ca-surface p-6 text-left shadow-bento transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-accent text-xl font-extrabold text-white">
                   {weekNumber}
@@ -142,7 +142,7 @@ export default function MenuPage() {
           })}
         </div>
 
-        <footer className="text-center text-sm text-ink/60">
+        <footer className="text-center text-sm text-muted">
           Completely free · Built for campers ages 5–14
         </footer>
       </div>

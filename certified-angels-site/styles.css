@@ -1,0 +1,309 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap");
+
+:root {
+  --primary: #1a5fa8;
+  --accent: #f0a500;
+  --background: #f4f6fb;
+  --card: #ffffff;
+  --text: #1a2744;
+  --muted: #6b7a99;
+  --border: rgba(0, 0, 0, 0.1);
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Open Sans", system-ui, sans-serif;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--background);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.brand-eyebrow {
+  font-family: "Open Sans", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.brand-title {
+  font-family: "Nunito", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.season-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text);
+  font-family: "Open Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.accent-strip {
+  height: 4px;
+  background: var(--accent);
+}
+
+.page-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.welcome-block {
+  margin-bottom: 2rem;
+}
+
+.welcome-block h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  margin-bottom: 0.35rem;
+}
+
+.welcome-block p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.progress-panel {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.progress-track {
+  height: 0.65rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 12.5%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.section-heading {
+  font-size: 1.35rem;
+  margin-bottom: 1rem;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.week-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 148px;
+  padding: 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  text-align: left;
+}
+
+.week-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.week-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  font-family: "Nunito", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.week-card__chevron {
+  color: var(--muted);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.week-card__meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.week-card__title {
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  margin-top: auto;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.week-card--completed {
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+.week-card--completed .week-card__icon {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-completed {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.week-card--active {
+  border-color: rgba(26, 95, 168, 0.45);
+}
+
+.week-card--active .week-card__icon {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.btn-start {
+  border: none;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: "Open Sans", sans-serif;
+}
+
+.badge-start {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.week-card--locked {
+  opacity: 0.72;
+}
+
+.week-card--locked .week-card__icon {
+  background: #e2e8f0;
+  color: var(--muted);
+}
+
+.badge-locked {
+  background: #eef2f7;
+  color: var(--muted);
+}
+
+.site-footer {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.help-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 3rem;
+  height: 3rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--text);
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(26, 39, 68, 0.18);
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .brand-title {
+    font-size: 1.65rem;
+  }
+
+  .week-grid {
+    grid-template-columns: 1fr;
+  }
+}
