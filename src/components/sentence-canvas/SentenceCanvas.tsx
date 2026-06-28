@@ -4,16 +4,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createSwapy, type Swapy } from "swapy";
-import { SENTENCE_PROMPTS } from "@/data/sentence-prompts";
+import type { Prompt } from "@/data/curriculum";
+import { setWeekPassed } from "@/lib/curriculum-engine";
 import { createBrowserClient } from "@/lib/supabase/client";
-import { readCamperSession, setLesson1Passed } from "@/lib/camper-session";
+import { readCamperSession } from "@/lib/camper-session";
+import {
+  isCorrectSelection,
+  normalizeTargets,
+  optionIdFor,
+  parsePromptSegment,
+} from "@/lib/prompt-parser";
 import type {
   CamperTelemetryRow,
   FeedbackState,
   GameMode,
-  SentencePrompt,
   SwatchColor,
-  VerbOption,
 } from "@/types/sentence-canvas";
 
 const SWATCH_COLORS: SwatchColor[] = ["purple", "gold", "teal"];
@@ -26,6 +31,7 @@ const SWATCH_STYLES: Record<SwatchColor, string> = {
 
 const PASS_THRESHOLD = 80;
 const SPRING = { type: "spring" as const, stiffness: 500, damping: 28 };
+const INCORRECT_LOCK_MS = 500;
 
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
@@ -46,11 +52,10 @@ function ProgressBento({
   completed: number;
 }) {
   return (
-    <div className="flex gap-2" aria-label={`Progress: ${completed} of ${total} sentences`}>
+    <div className="flex gap-2" aria-label={`Progress: ${completed} of ${total} prompts`}>
       {Array.from({ length: total }).map((_, index) => {
         const isDone = index < completed;
         const isActive = index === current && !isDone;
-
         return (
           <motion.div
             key={index}
@@ -71,36 +76,31 @@ function ProgressBento({
   );
 }
 
-function PaintSwatch({
-  option,
-  color,
-  disabled,
-  hidden,
-  onSelect,
-}: {
-  option: VerbOption;
-  color: SwatchColor;
-  disabled: boolean;
-  hidden: boolean;
-  onSelect: (optionId: string) => void;
-}) {
-  if (hidden) {
-    return null;
-  }
-
+function ConfettiOverlay() {
+  const pieces = Array.from({ length: 24 }, (_, i) => i);
   return (
-    <motion.button
-      type="button"
-      layoutId={`verb-${option.id}`}
-      disabled={disabled}
-      onClick={() => onSelect(option.id)}
-      aria-label={`Choose verb: ${option.label}`}
-      className={`min-h-[56px] flex-1 rounded-3xl px-4 py-4 text-xl font-bold text-white shadow-bento transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${SWATCH_STYLES[color]}`}
-      whileHover={disabled ? undefined : { scale: 1.04 }}
-      whileTap={disabled ? undefined : { scale: 0.96 }}
-    >
-      {option.label}
-    </motion.button>
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {pieces.map((piece) => (
+        <motion.span
+          key={piece}
+          initial={{
+            opacity: 1,
+            y: -20,
+            x: `${(piece * 17) % 100}%`,
+            rotate: 0,
+          }}
+          animate={{
+            opacity: 0,
+            y: 320,
+            rotate: 360 + piece * 30,
+          }}
+          transition={{ duration: 1.4, delay: piece * 0.03, ease: "easeOut" }}
+          className="absolute text-2xl"
+        >
+          {piece % 3 === 0 ? "🎉" : piece % 3 === 1 ? "✨" : "🎨"}
+        </motion.span>
+      ))}
+    </div>
   );
 }
 
@@ -144,31 +144,26 @@ function FeedbackLine({
   );
 }
 
-/**
- * Drag & Match mechanic powered by Swapy. The blank in the sentence is a Swapy
- * slot; each answer is a draggable item in its own tray slot. Dropping a word in
- * the blank fires `onAnswer`. The board is remounted (via a parent `key`) between
- * sentences and after a wrong attempt, so Swapy always starts from a clean DOM
- * — this avoids React reconciliation fighting Swapy's manual node moves.
- */
 function DragMatchBoard({
   prompt,
-  options,
+  shuffledOptions,
   colors,
   feedback,
   locked,
   onAnswer,
 }: {
-  prompt: SentencePrompt;
-  options: VerbOption[];
+  prompt: Prompt;
+  shuffledOptions: string[];
   colors: SwatchColor[];
   feedback: FeedbackState;
   locked: boolean;
-  onAnswer: (optionId: string) => void;
+  onAnswer: (label: string) => void;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const swapyRef = useRef<Swapy | null>(null);
   const onAnswerRef = useRef(onAnswer);
+  const targets = normalizeTargets(prompt.target);
+  const activeTarget = targets[0] ?? "";
 
   useEffect(() => {
     onAnswerRef.current = onAnswer;
@@ -202,16 +197,24 @@ function DragMatchBoard({
     swapyRef.current?.enable(!locked);
   }, [locked]);
 
+  const segment = parsePromptSegment(prompt.text, targets, 0);
+  const isWordCard = prompt.text.trim() === activeTarget;
+
   return (
     <div ref={rootRef} className="flex select-none flex-col gap-6">
       <div className="relative overflow-hidden rounded-3xl bg-paper p-6 shadow-bento sm:p-10">
         <SuccessFlash show={feedback === "correct"} />
         <div className="relative z-10">
-          <p className="mb-3 text-sm font-semibold text-ink/60">Spanish hint</p>
-          <p className="text-lg italic text-ink/70">{prompt.spanishHint}</p>
+          {!isWordCard && (
+            <p className="mb-3 text-sm font-semibold text-ink/60">Your sentence</p>
+          )}
 
-          <div className="mt-8 flex flex-wrap items-center gap-x-1 gap-y-3 text-2xl font-bold leading-relaxed text-ink sm:text-3xl">
-            <span>{prompt.englishBefore}</span>
+          <div className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-3 text-2xl font-bold leading-relaxed text-ink sm:text-3xl">
+            {isWordCard ? (
+              <span className="text-ink/70">Match: </span>
+            ) : (
+              <span>{segment.before}</span>
+            )}
             <span
               data-swapy-slot="blank"
               className={`inline-flex min-h-[56px] min-w-[7rem] items-center justify-center rounded-2xl border-4 border-dashed px-2 transition ${
@@ -227,7 +230,7 @@ function DragMatchBoard({
                 ···
               </span>
             </span>
-            <span>{prompt.englishAfter}</span>
+            {!isWordCard && <span>{segment.after}</span>}
           </div>
 
           <FeedbackLine
@@ -235,90 +238,102 @@ function DragMatchBoard({
             incorrectLabel="Not quite — drag another word!"
           />
           <p className="mt-1 text-xs text-ink/50">
-            Drag a word block into the dotted blank.
+            Drag the correct word block into the dotted blank.
           </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
-        {options.map((option, index) => (
-          <div
-            key={option.id}
-            data-swapy-slot={`tray-${index}`}
-            className="flex min-h-[56px] flex-1"
-          >
+        {shuffledOptions.map((label, index) => {
+          const isTarget = label === activeTarget;
+          const optId = optionIdFor(prompt.id, label);
+
+          if (!isTarget) {
+            return (
+              <div
+                key={optId}
+                className={`flex min-h-[56px] flex-1 cursor-not-allowed items-center justify-center rounded-3xl px-4 py-4 text-xl font-bold shadow-bento opacity-50 ${SWATCH_STYLES[colors[index % colors.length]]}`}
+                aria-hidden
+              >
+                {label}
+              </div>
+            );
+          }
+
+          return (
             <div
-              data-swapy-item={`opt-${option.id}`}
-              data-swapy-handle
-              role="button"
-              tabIndex={0}
-              aria-label={`Drag verb: ${option.label}`}
-              className={`flex min-h-[56px] w-full cursor-grab touch-none items-center justify-center rounded-3xl px-4 py-4 text-xl font-bold text-white shadow-bento transition active:cursor-grabbing ${SWATCH_STYLES[colors[index]]}`}
+              key={optId}
+              data-swapy-slot={`tray-${index}`}
+              className="flex min-h-[56px] flex-1"
             >
-              {option.label}
+              <div
+                data-swapy-item={`opt-${label}`}
+                data-swapy-handle
+                role="button"
+                tabIndex={0}
+                aria-label={`Drag word: ${label}`}
+                className={`flex min-h-[56px] w-full cursor-grab touch-none items-center justify-center rounded-3xl px-4 py-4 text-xl font-bold text-white shadow-bento transition active:cursor-grabbing ${SWATCH_STYLES[colors[index % colors.length]]}`}
+              >
+                {label}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-export function SentenceCanvas({ mode }: { mode: GameMode }) {
+export function SentenceCanvas({
+  mode,
+  prompts,
+  weekNumber,
+}: {
+  mode: GameMode;
+  prompts: Prompt[];
+  weekNumber: number;
+}) {
   const router = useRouter();
 
   const [sessionKey, setSessionKey] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [blankIndex, setBlankIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [telemetrySaved, setTelemetrySaved] = useState<boolean | null>(null);
-  const [filledVerb, setFilledVerb] = useState<VerbOption | null>(null);
+  const [filledLabel, setFilledLabel] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
-  const [hiddenOptionId, setHiddenOptionId] = useState<string | null>(null);
-  // Bumping this remounts the Drag & Match board so a wrong word slides back.
+  const [lockout, setLockout] = useState(false);
   const [dragNonce, setDragNonce] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const finishCalledRef = useRef(false);
   const errorCountRef = useRef(0);
-  // Synchronous re-entrancy guard. State updates (isSubmitting/feedback) are
-  // async, so a fast double-tap can pass the state-based check twice in the same
-  // render. This ref flips synchronously the instant a correct answer is
-  // accepted, blocking duplicate handling before React re-renders.
   const transitionLockRef = useRef(false);
-  // Tracks whether the current sentence has had a wrong attempt, so we only
-  // credit "first try" accuracy when it was solved cleanly.
-  const sentenceErroredRef = useRef(false);
+  const promptErroredRef = useRef(false);
 
   useEffect(() => {
     errorCountRef.current = errorCount;
   }, [errorCount]);
 
-  const totalSentencesCount = SENTENCE_PROMPTS.length;
-  useEffect(() => {
-    if (!isComplete) {
-      return;
-    }
-    const accuracy =
-      totalSentencesCount > 0
-        ? (correctFirstTry / totalSentencesCount) * 100
-        : 0;
-    if (accuracy >= PASS_THRESHOLD) {
-      setLesson1Passed();
-    }
-  }, [isComplete, correctFirstTry, totalSentencesCount]);
+  const totalPrompts = prompts.length;
+  const prompt = prompts[currentIndex];
+  const targets = useMemo(
+    () => (prompt ? normalizeTargets(prompt.target) : []),
+    [prompt],
+  );
+  const segment = prompt
+    ? parsePromptSegment(prompt.text, targets, blankIndex)
+    : { before: "", target: "", after: "" };
+  const isLastBlankInPrompt = blankIndex >= targets.length - 1;
 
-  const prompt = SENTENCE_PROMPTS[currentIndex];
-  const totalSentences = SENTENCE_PROMPTS.length;
-
-  // Stable per "generation" (sentence + reset). Reshuffles on sentence change,
-  // session reset, and — in drag mode — each wrong-attempt remount.
   const shuffledOptions = useMemo(
-    () => shuffle(prompt.options),
+    () => (prompt ? shuffle(prompt.options) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentIndex, sessionKey, dragNonce],
+    [currentIndex, sessionKey, dragNonce, prompt?.id],
   );
 
   const swatchColors = useMemo(
@@ -330,11 +345,23 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
   );
 
   useEffect(() => {
-    setFilledVerb(null);
+    if (!isComplete) {
+      return;
+    }
+    const accuracy =
+      totalPrompts > 0 ? (correctFirstTry / totalPrompts) * 100 : 0;
+    if (accuracy >= PASS_THRESHOLD) {
+      setWeekPassed(weekNumber);
+      setShowConfetti(true);
+    }
+  }, [isComplete, correctFirstTry, totalPrompts, weekNumber]);
+
+  useEffect(() => {
+    setFilledLabel(null);
     setFeedback("idle");
-    setHiddenOptionId(null);
+    setBlankIndex(0);
     transitionLockRef.current = false;
-    sentenceErroredRef.current = false;
+    promptErroredRef.current = false;
   }, [currentIndex, sessionKey]);
 
   const finishSession = useCallback(
@@ -347,8 +374,6 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
 
       const camper = readCamperSession();
       if (!camper) {
-        // No intake data means the gatekeeper was bypassed; skip telemetry
-        // rather than write an orphaned, non-attributable row.
         setTelemetrySaved(false);
         setIsComplete(true);
         return;
@@ -379,23 +404,43 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
     [isSubmitting],
   );
 
+  const advancePrompt = useCallback(
+    (nextScore: number) => {
+      const isLastPrompt = currentIndex === totalPrompts - 1;
+      if (isLastPrompt) {
+        setIsSubmitting(true);
+        window.setTimeout(() => {
+          void finishSession(nextScore, errorCountRef.current);
+        }, 900);
+      } else {
+        window.setTimeout(() => {
+          setCurrentIndex((prev) => prev + 1);
+        }, 900);
+      }
+    },
+    [currentIndex, finishSession, totalPrompts],
+  );
+
   const evaluateAnswer = useCallback(
-    (optionId: string) => {
+    (selectedLabel: string) => {
       if (
+        !prompt ||
         transitionLockRef.current ||
         isSubmitting ||
         isComplete ||
-        feedback === "correct"
+        feedback === "correct" ||
+        lockout
       ) {
         return;
       }
 
-      if (optionId !== prompt.correctOptionId) {
+      if (!isCorrectSelection(selectedLabel, segment.target)) {
         setFeedback("incorrect");
         setErrorCount((prev) => prev + 1);
-        sentenceErroredRef.current = true;
+        promptErroredRef.current = true;
+        setLockout(true);
+        window.setTimeout(() => setLockout(false), INCORRECT_LOCK_MS);
         if (mode === "drag") {
-          // Slide the wrong word back to the tray with a fresh board.
           setDragNonce((prev) => prev + 1);
         }
         return;
@@ -403,41 +448,35 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
 
       transitionLockRef.current = true;
       setFeedback("correct");
-      const chosen = shuffledOptions.find((o) => o.id === optionId) ?? null;
-      setFilledVerb(chosen);
-      setHiddenOptionId(optionId);
+      setFilledLabel(selectedLabel);
 
-      if (!sentenceErroredRef.current) {
-        setCorrectFirstTry((prev) => prev + 1);
-      }
-
-      const nextScore = score + 1;
-      setScore(nextScore);
-
-      const isLastSentence = currentIndex === totalSentences - 1;
-      if (isLastSentence) {
-        setIsSubmitting(true);
-      }
-
-      window.setTimeout(() => {
-        if (isLastSentence) {
-          void finishSession(nextScore, errorCountRef.current);
-        } else {
-          setCurrentIndex((prev) => prev + 1);
+      if (isLastBlankInPrompt) {
+        if (!promptErroredRef.current) {
+          setCorrectFirstTry((prev) => prev + 1);
         }
-      }, 900);
+        const nextScore = score + 1;
+        setScore(nextScore);
+        advancePrompt(nextScore);
+      } else {
+        window.setTimeout(() => {
+          setBlankIndex((prev) => prev + 1);
+          setFilledLabel(null);
+          setFeedback("idle");
+          transitionLockRef.current = false;
+        }, 900);
+      }
     },
     [
-      currentIndex,
+      advancePrompt,
       feedback,
-      finishSession,
       isComplete,
+      isLastBlankInPrompt,
       isSubmitting,
+      lockout,
       mode,
-      prompt.correctOptionId,
+      prompt,
       score,
-      shuffledOptions,
-      totalSentences,
+      segment.target,
     ],
   );
 
@@ -445,9 +484,11 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
     finishCalledRef.current = false;
     errorCountRef.current = 0;
     transitionLockRef.current = false;
-    sentenceErroredRef.current = false;
+    promptErroredRef.current = false;
+    setShowConfetti(false);
     setSessionKey((prev) => prev + 1);
     setCurrentIndex(0);
+    setBlankIndex(0);
     setScore(0);
     setErrorCount(0);
     setCorrectFirstTry(0);
@@ -455,17 +496,22 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
     setIsSubmitting(false);
     setIsComplete(false);
     setTelemetrySaved(null);
-    setFilledVerb(null);
+    setFilledLabel(null);
     setFeedback("idle");
-    setHiddenOptionId(null);
+    setLockout(false);
   };
 
-  const buttonsDisabled = isSubmitting || isComplete || feedback === "correct";
+  const buttonsDisabled =
+    isSubmitting || isComplete || feedback === "correct" || lockout;
+
+  if (!prompt) {
+    return null;
+  }
 
   if (isComplete) {
     const accuracy =
-      totalSentences > 0
-        ? Math.round((correctFirstTry / totalSentences) * 100)
+      totalPrompts > 0
+        ? Math.round((correctFirstTry / totalPrompts) * 100)
         : 0;
     const passed = accuracy >= PASS_THRESHOLD;
 
@@ -474,8 +520,9 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={SPRING}
-        className="rounded-3xl bg-paper p-8 shadow-bento"
+        className="relative overflow-hidden rounded-3xl bg-paper p-8 shadow-bento"
       >
+        {passed && showConfetti && <ConfettiOverlay />}
         {passed ? (
           <>
             <h2 className="text-3xl font-extrabold text-success-accent">
@@ -485,8 +532,7 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
               ¡Muy bien! You got {accuracy}% right on the first try.
             </p>
             <p className="mt-4 text-ink/70">
-              You finished all {totalSentences} sentences and unlocked the next
-              lesson.
+              Week {weekNumber} complete — the next lesson is unlocked!
             </p>
           </>
         ) : (
@@ -545,12 +591,18 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
     <section className="flex flex-col gap-6">
       <div className="rounded-3xl bg-paper p-6 shadow-bento sm:p-8">
         <ProgressBento
-          total={totalSentences}
+          total={totalPrompts}
           current={currentIndex}
           completed={currentIndex}
         />
         <p className="mt-4 text-sm font-semibold uppercase tracking-widest text-teal-accent">
-          Sentence {currentIndex + 1} of {totalSentences}
+          Prompt {currentIndex + 1} of {totalPrompts}
+          {targets.length > 1 && (
+            <span className="text-ink/40">
+              {" "}
+              · blank {blankIndex + 1}/{targets.length}
+            </span>
+          )}
           <span className="ml-2 text-ink/40">
             · {mode === "drag" ? "Drag & Match" : "Click to Paint"}
           </span>
@@ -561,7 +613,7 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
         <DragMatchBoard
           key={`${sessionKey}-${currentIndex}-${dragNonce}`}
           prompt={prompt}
-          options={shuffledOptions}
+          shuffledOptions={shuffledOptions}
           colors={swatchColors}
           feedback={feedback}
           locked={feedback === "correct"}
@@ -572,40 +624,34 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
           <div className="relative overflow-hidden rounded-3xl bg-paper p-6 shadow-bento sm:p-10">
             <SuccessFlash show={feedback === "correct"} />
             <div className="relative z-10">
-              <p className="mb-3 text-sm font-semibold text-ink/60">
-                Spanish hint
-              </p>
-              <p className="text-lg italic text-ink/70">{prompt.spanishHint}</p>
-
               <p
-                className="mt-8 text-2xl font-bold leading-relaxed text-ink sm:text-3xl"
+                className="text-2xl font-bold leading-relaxed text-ink sm:text-3xl"
                 aria-live="polite"
               >
-                {prompt.englishBefore}
-                <span className="mx-1 inline-flex min-w-[5rem] items-center justify-center border-b-4 border-dashed border-purple-accent/40 px-2 pb-1 align-baseline">
+                {segment.before}
+                <span className="mx-1 inline-flex min-w-[5rem] items-center justify-center border-b-4 border-dashed border-teal-accent px-2 pb-1 align-baseline">
                   <AnimatePresence mode="wait">
-                    {filledVerb ? (
+                    {filledLabel ? (
                       <motion.span
-                        key={filledVerb.id}
-                        layoutId={`verb-${filledVerb.id}`}
+                        key={filledLabel}
                         transition={SPRING}
                         className="font-extrabold text-success-accent"
                       >
-                        {filledVerb.label}
+                        {filledLabel}
                       </motion.span>
                     ) : (
                       <motion.span
                         key="blank"
                         initial={{ opacity: 0.4 }}
                         animate={{ opacity: 1 }}
-                        className="text-purple-accent/50"
+                        className="text-teal-accent/50"
                       >
                         ···
                       </motion.span>
                     )}
                   </AnimatePresence>
                 </span>
-                {prompt.englishAfter}
+                {segment.after}
               </p>
 
               <FeedbackLine
@@ -624,15 +670,19 @@ export function SentenceCanvas({ mode }: { mode: GameMode }) {
             }
             transition={{ duration: 0.45 }}
           >
-            {shuffledOptions.map((option, index) => (
-              <PaintSwatch
-                key={option.id}
-                option={option}
-                color={swatchColors[index]}
+            {shuffledOptions.map((label, index) => (
+              <motion.button
+                key={optionIdFor(prompt.id, label)}
+                type="button"
                 disabled={buttonsDisabled}
-                hidden={hiddenOptionId === option.id}
-                onSelect={evaluateAnswer}
-              />
+                onClick={() => evaluateAnswer(label)}
+                aria-label={`Choose: ${label}`}
+                className={`min-h-[56px] flex-1 rounded-3xl px-4 py-4 text-xl font-bold text-white shadow-bento transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${SWATCH_STYLES[swatchColors[index]]}`}
+                whileHover={buttonsDisabled ? undefined : { scale: 1.04 }}
+                whileTap={buttonsDisabled ? undefined : { scale: 0.96 }}
+              >
+                {label}
+              </motion.button>
             ))}
           </motion.div>
         </>

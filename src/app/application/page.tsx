@@ -1,20 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SentenceCanvas } from "@/components/sentence-canvas/SentenceCanvas";
-import { GameModeSelector } from "@/components/sentence-canvas/GameModeSelector";
 import { StepRail } from "@/components/ui/StepRail";
+import {
+  curriculumModeToGameMode,
+  getBracketContent,
+  getCurrentWeek,
+} from "@/lib/curriculum-engine";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
-import type { GameMode } from "@/types/sentence-canvas";
 
 export default function ApplicationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<GameMode | null>(null);
+
+  const weekNumber = getCurrentWeek();
+  const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
+  const bracket = camper
+    ? getBracketContent(weekNumber, camper.age_bracket)
+    : null;
 
   useEffect(() => {
-    // Locked chain guardrails: enforce intake, then the lesson, before painting.
     if (!readCamperSession()) {
       router.replace("/");
       return;
@@ -26,11 +33,13 @@ export default function ApplicationPage() {
     setReady(true);
   }, [router]);
 
-  if (!ready) {
+  if (!ready || !bracket || !camper) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
     );
   }
+
+  const mode = curriculumModeToGameMode(bracket.mode);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
@@ -46,16 +55,16 @@ export default function ApplicationPage() {
       <div className="relative mx-auto max-w-3xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
-            Sentence Canvas
+            Week {weekNumber} · Paint Canvas
           </p>
           <StepRail current={3} />
         </header>
 
-        {mode === null ? (
-          <GameModeSelector onSelect={setMode} />
-        ) : (
-          <SentenceCanvas mode={mode} />
-        )}
+        <SentenceCanvas
+          mode={mode}
+          prompts={bracket.prompts}
+          weekNumber={weekNumber}
+        />
       </div>
     </main>
   );
