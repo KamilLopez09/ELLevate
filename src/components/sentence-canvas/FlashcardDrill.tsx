@@ -12,10 +12,10 @@ import type { GameModeProps } from "@/types/game-modes";
 const TOUCH_TARGET = "min-h-[64px] min-w-[64px] px-6 py-3";
 
 const CARD_SHADOW_FRONT =
-  "shadow-[0_20px_50px_-16px_oklch(0.52_0.21_292/0.18),0_8px_24px_-8px_oklch(0.28_0.04_265/0.07)]";
+  "shadow-[0_20px_50px_-16px_rgba(26,95,168,0.18),0_8px_24px_-8px_rgba(26,39,68,0.07)]";
 
 const CARD_SHADOW_BACK =
-  "shadow-[0_20px_50px_-16px_oklch(0.62_0.13_178/0.2),0_8px_24px_-8px_oklch(0.28_0.04_265/0.07)]";
+  "shadow-[0_20px_50px_-16px_rgba(26,143,122,0.2),0_8px_24px_-8px_rgba(26,39,68,0.07)]";
 
 const HOVER_SPRING = { type: "spring" as const, bounce: 0.4, duration: 0.35 };
 
@@ -35,8 +35,8 @@ const GOT_IT_CLASS = [
 
 const MISSED_IT_CLASS = [
   ACTION_BASE,
-  "bg-highlight border-[oklch(0.58_0.14_75)] text-body",
-  "shadow-[0_6px_0_0_oklch(0.58_0.14_75)]",
+  "bg-highlight border-[#d49200] text-body",
+  "shadow-[0_6px_0_0_#d49200]",
   "hover:brightness-[1.03]",
   "focus-visible:outline-highlight",
 ].join(" ");
@@ -91,9 +91,9 @@ function ActionButton({
 }) {
   const controls = useAnimation();
 
-  const handleClick = async () => {
+  const handleClick = () => {
     if (burstOnClick) {
-      await controls.start({
+      void controls.start({
         scale: [1, 1.12, 0.96, 1.04, 1],
         transition: { type: "spring", bounce: 0.5, duration: 0.55 },
       });
@@ -105,7 +105,7 @@ function ActionButton({
     <motion.button
       type="button"
       aria-label={label}
-      onClick={() => void handleClick()}
+      onClick={handleClick}
       animate={controls}
       whileHover={{ scale: 1.05, rotate: 1 }}
       whileTap={{ scale: 0.95 }}

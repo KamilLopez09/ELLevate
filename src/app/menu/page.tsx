@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { curriculum } from "@/data/curriculum";
 import {
   isWeekPassed,
@@ -64,120 +65,124 @@ export default function MenuPage() {
 
   if (!ready) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+      <CampScreenLayout screen="menu" activeItemId="weeks">
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+      </CampScreenLayout>
     );
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-10 sm:px-8">
-      <div
-        aria-hidden
-        className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56"
-      />
-      <div
-        aria-hidden
-        className="canvas-blob canvas-blob-gold right-0 top-32 h-48 w-48"
-      />
-      <div
-        aria-hidden
-        className="canvas-blob canvas-blob-teal bottom-10 left-1/3 h-64 w-64"
-      />
+    <CampScreenLayout screen="menu" activeItemId="weeks">
+      <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-10 sm:px-8">
+        <div
+          aria-hidden
+          className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56"
+        />
+        <div
+          aria-hidden
+          className="canvas-blob canvas-blob-gold right-0 top-32 h-48 w-48"
+        />
+        <div
+          aria-hidden
+          className="canvas-blob canvas-blob-teal bottom-10 left-1/3 h-64 w-64"
+        />
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="relative mx-auto max-w-5xl"
-      >
-        <BentoGrid className="sm:auto-rows-[minmax(7rem,auto)]">
-          <BentoCard
-            index={0}
-            span="sm:col-span-6"
-            accent="gold"
-            tilt={-0.4}
-            className="!p-8"
-          >
-            <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
-              8-Week Camp Journey
-            </p>
-            <h1
-              className="mt-2 font-display font-extrabold text-ink"
-              style={{ fontSize: "var(--text-h1)" }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative mx-auto max-w-5xl"
+        >
+          <BentoGrid className="sm:auto-rows-[minmax(7rem,auto)]">
+            <BentoCard
+              index={0}
+              span="sm:col-span-6"
+              accent="gold"
+              tilt={-0.4}
+              className="!p-8"
             >
-              Hi, {firstName}! 👋
-            </h1>
-            <p
-              className="mt-4 text-ink/80"
-              style={{ fontSize: "var(--text-body)" }}
-            >
-              Pick a week to watch, paint, and unlock the next adventure.
-            </p>
-          </BentoCard>
+              <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
+                8-Week Camp Journey
+              </p>
+              <h1
+                className="mt-2 font-display font-extrabold text-ink"
+                style={{ fontSize: "var(--text-h1)" }}
+              >
+                Hi, {firstName}!
+              </h1>
+              <p
+                className="mt-4 text-ink/80"
+                style={{ fontSize: "var(--text-body)" }}
+              >
+                Pick a week to watch, paint, and unlock the next adventure.
+              </p>
+            </BentoCard>
 
-          {WEEK_NUMBERS.map((weekNumber, index) => {
-            const week = curriculum[weekNumber];
-            const unlocked = isWeekUnlocked(weekNumber);
-            const passed = isWeekPassed(weekNumber);
-            const tilt = POLAROID_TILTS[index] ?? 0;
-            const accent = POLAROID_ACCENTS[index] ?? "warm";
-            const span = POLAROID_SPANS[index] ?? "sm:col-span-3";
+            {WEEK_NUMBERS.map((weekNumber, index) => {
+              const week = curriculum[weekNumber];
+              const unlocked = isWeekUnlocked(weekNumber);
+              const passed = isWeekPassed(weekNumber);
+              const tilt = POLAROID_TILTS[index] ?? 0;
+              const accent = POLAROID_ACCENTS[index] ?? "warm";
+              const span = POLAROID_SPANS[index] ?? "sm:col-span-3";
 
-            if (!unlocked) {
+              if (!unlocked) {
+                return (
+                  <BentoCard
+                    key={weekNumber}
+                    index={index + 1}
+                    span={span}
+                    tilt={tilt}
+                    accent={accent}
+                    aria-disabled
+                    className="cursor-not-allowed opacity-60"
+                  >
+                    <WeekCardContent
+                      weekNumber={weekNumber}
+                      theme={week.theme}
+                      unlocked={false}
+                      passed={false}
+                    />
+                  </BentoCard>
+                );
+              }
+
               return (
                 <BentoCard
                   key={weekNumber}
+                  as="button"
                   index={index + 1}
                   span={span}
                   tilt={tilt}
                   accent={accent}
-                  aria-disabled
-                  className="cursor-not-allowed opacity-60"
+                  onClick={() => startWeek(weekNumber)}
+                  className="min-h-[64px] cursor-pointer text-left transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   <WeekCardContent
                     weekNumber={weekNumber}
                     theme={week.theme}
-                    unlocked={false}
-                    passed={false}
+                    unlocked
+                    passed={passed}
                   />
                 </BentoCard>
               );
-            }
+            })}
 
-            return (
-              <BentoCard
-                key={weekNumber}
-                as="button"
-                index={index + 1}
-                span={span}
-                tilt={tilt}
-                accent={accent}
-                onClick={() => startWeek(weekNumber)}
-                className="min-h-[64px] cursor-pointer text-left transition hover:border-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                <WeekCardContent
-                  weekNumber={weekNumber}
-                  theme={week.theme}
-                  unlocked
-                  passed={passed}
-                />
-              </BentoCard>
-            );
-          })}
-
-          <BentoCard
-            index={WEEK_NUMBERS.length + 1}
-            span="sm:col-span-6"
-            accent="warm"
-            tilt={0}
-            className="!py-4 text-center"
-          >
-            <p className="text-bento-label text-muted">
-              Completely free · Built for campers ages 5–14
-            </p>
-          </BentoCard>
-        </BentoGrid>
-      </motion.div>
-    </main>
+            <BentoCard
+              index={WEEK_NUMBERS.length + 1}
+              span="sm:col-span-6"
+              accent="warm"
+              tilt={0}
+              className="!py-4 text-center"
+            >
+              <p className="text-bento-label text-muted">
+                Completely free · Built for campers ages 5–14
+              </p>
+            </BentoCard>
+          </BentoGrid>
+        </motion.div>
+      </main>
+    </CampScreenLayout>
   );
 }
 
@@ -197,9 +202,7 @@ function WeekCardContent({
       <span
         className={[
           "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-extrabold",
-          unlocked
-            ? "bg-purple-accent text-card"
-            : "bg-ink/20 text-card",
+          unlocked ? "bg-purple-accent text-card" : "bg-ink/20 text-card",
         ].join(" ")}
       >
         {weekNumber}
@@ -218,7 +221,7 @@ function WeekCardContent({
       {unlocked ? (
         passed ? (
           <span className="mt-1 inline-flex min-h-[64px] items-center gap-1 rounded-full bg-success-accent/15 px-4 py-2 text-bento-label font-bold text-success-accent">
-            Passed ✓ · Replay
+            Passed · Replay
           </span>
         ) : (
           <span className="mt-1 inline-flex min-h-[64px] items-center gap-1 rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
@@ -227,7 +230,7 @@ function WeekCardContent({
         )
       ) : (
         <span className="mt-1 inline-flex min-h-[64px] items-center gap-1 rounded-full bg-ink/10 px-4 py-2 text-bento-label font-bold text-ink/50">
-          🔒 Finish Week {weekNumber - 1} to unlock
+          Finish Week {weekNumber - 1} to unlock
         </span>
       )}
     </div>
