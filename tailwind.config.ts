@@ -59,7 +59,13 @@ const config: Config = {
         "pushable-gray": "0 6px 0 0 oklch(0.62 0.025 265)",
         "pushable-pressed": "0 0px 0 0 transparent",
         "bento-card": "0 8px 32px -4px oklch(0.28 0.04 265 / 0.08)",
-        bento: "0 8px 32px -4px oklch(0.28 0.04 265 / 0.08)",
+        bento: "0 12px 40px -8px oklch(0.42 0.03 85 / 0.14), 0 4px 16px -4px oklch(0.28 0.04 268 / 0.06)",
+        "bento-purple":
+          "0 14px 44px -10px oklch(0.52 0.21 292 / 0.22), 0 6px 20px -6px oklch(0.28 0.04 268 / 0.07)",
+        "bento-teal":
+          "0 14px 44px -10px oklch(0.62 0.13 178 / 0.2), 0 6px 20px -6px oklch(0.28 0.04 268 / 0.07)",
+        "bento-gold":
+          "0 14px 44px -10px oklch(0.72 0.16 75 / 0.22), 0 6px 20px -6px oklch(0.28 0.04 268 / 0.07)",
       },
     },
   },

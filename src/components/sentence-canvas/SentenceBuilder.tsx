@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, useAnimation } from "framer-motion";
 import { calculateScoreForMode } from "@/lib/gamification";
 import {
   dragMatchAnswer,
@@ -15,15 +16,13 @@ import type { GameModeProps } from "@/types/game-modes";
 import type { Prompt } from "@/data/curriculum";
 
 const TOUCH_TARGET =
-  "min-h-[56px] min-w-[56px] px-6 py-3";
+  "min-h-[64px] min-w-[64px] px-6 py-3";
 
 const OPTION_BASE = [
   "inline-flex items-center justify-center",
   TOUCH_TARGET,
-  "rounded-2xl border-2 font-display font-bold text-h2",
+  "rounded-2xl border-2 font-display font-bold",
   "bg-card text-body border-border",
-  "transition-all duration-200 transition-decel",
-  "active:translate-y-[6px] active:shadow-pushable-pressed",
   "cursor-pointer select-none",
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
   "disabled:cursor-not-allowed disabled:opacity-60",
@@ -44,11 +43,13 @@ const OPTION_SECONDARY = [
 const OPTION_SUCCESS = [
   "inline-flex items-center justify-center",
   TOUCH_TARGET,
-  "rounded-2xl border-2 font-display font-bold text-h2",
+  "rounded-2xl border-2 font-display font-bold",
   "bg-secondary border-secondary-dark text-card",
-  "shadow-pushable-teal animate-spring",
+  "shadow-pushable-teal",
   "pointer-events-none",
 ].join(" ");
+
+const HOVER_SPRING = { type: "spring" as const, bounce: 0.4, duration: 0.35 };
 
 function getOptionButtonClass(
   option: string,
@@ -57,21 +58,17 @@ function getOptionButtonClass(
     filledAnswer,
     correctAnswer,
     isAdvancing,
-    shakingOption,
   }: {
     filledAnswer: string | null;
     correctAnswer: string;
     isAdvancing: boolean;
-    shakingOption: string | null;
   },
 ): string {
   if (isAdvancing && filledAnswer === correctAnswer && option === filledAnswer) {
     return OPTION_SUCCESS;
   }
 
-  const accent = index % 2 === 0 ? OPTION_PRIMARY : OPTION_SECONDARY;
-  const shake = shakingOption === option ? " animate-shake" : "";
-  return `${accent}${shake}`;
+  return index % 2 === 0 ? OPTION_PRIMARY : OPTION_SECONDARY;
 }
 
 function TargetBlank({
@@ -85,7 +82,7 @@ function TargetBlank({
 
   return (
     <span
-      className={`mx-2 inline-flex min-h-[56px] min-w-[7rem] items-center justify-center rounded-2xl border-2 border-dashed align-middle transition-colors duration-200 transition-decel ${
+      className={`mx-2 inline-flex min-h-[64px] min-w-[7rem] items-center justify-center rounded-2xl border-2 border-dashed align-middle transition-colors duration-200 transition-decel ${
         filled
           ? "border-primary bg-primary/10 font-extrabold text-primary"
           : "border-border bg-surface-muted text-muted"
@@ -94,6 +91,76 @@ function TargetBlank({
     >
       {filled ? displayValue : "___"}
     </span>
+  );
+}
+
+function OptionButton({
+  option,
+  index,
+  filledAnswer,
+  correctAnswer,
+  isAdvancing,
+  onSelect,
+}: {
+  option: string;
+  index: number;
+  filledAnswer: string | null;
+  correctAnswer: string;
+  isAdvancing: boolean;
+  onSelect: (option: string) => void;
+}) {
+  const controls = useAnimation();
+  const isSuccess =
+    isAdvancing && filledAnswer === correctAnswer && option === filledAnswer;
+
+  const handleClick = async () => {
+    if (isAdvancing) return;
+    onSelect(option);
+  };
+
+  useEffect(() => {
+    if (!isSuccess) return;
+    void controls.start({
+      scale: [1, 1.18, 0.96, 1.04, 1],
+      transition: { type: "spring", bounce: 0.5, duration: 0.55 },
+    });
+  }, [controls, isSuccess]);
+
+  if (isSuccess) {
+    return (
+      <motion.span
+        animate={controls}
+        className={getOptionButtonClass(option, index, {
+          filledAnswer,
+          correctAnswer,
+          isAdvancing,
+        })}
+        style={{ fontSize: "var(--text-h2)" }}
+      >
+        {option}
+      </motion.span>
+    );
+  }
+
+  return (
+    <motion.button
+      type="button"
+      disabled={isAdvancing}
+      aria-label={`Choose answer ${option}`}
+      onClick={() => void handleClick()}
+      animate={controls}
+      whileHover={{ scale: 1.05, rotate: 1 }}
+      whileTap={{ scale: 0.95 }}
+      transition={HOVER_SPRING}
+      className={getOptionButtonClass(option, index, {
+        filledAnswer,
+        correctAnswer,
+        isAdvancing,
+      })}
+      style={{ fontSize: "var(--text-h2)" }}
+    >
+      {option}
+    </motion.button>
   );
 }
 
@@ -112,40 +179,51 @@ function OptionButtons({
   shakingOption: string | null;
   onSelect: (option: string) => void;
 }) {
+  const shakeControls = useAnimation();
+
+  useEffect(() => {
+    if (!shakingOption) return;
+    void shakeControls.start({
+      x: [0, -10, 10, -8, 8, -4, 4, 0],
+      transition: { duration: 0.45, ease: "easeInOut" },
+    });
+  }, [shakeControls, shakingOption]);
+
   return (
-    <div
+    <motion.div
       className="mt-14 flex w-full flex-wrap justify-center gap-4 md:mt-16 md:gap-5"
       role="group"
       aria-label="Answer choices"
     >
       {options.map((option, index) => (
-        <button
+        <motion.div
           key={option}
-          type="button"
-          disabled={isAdvancing}
-          aria-label={`Choose answer ${option}`}
-          onClick={() => onSelect(option)}
-          className={getOptionButtonClass(option, index, {
-            filledAnswer,
-            correctAnswer,
-            isAdvancing,
-            shakingOption,
-          })}
+          animate={shakingOption === option ? shakeControls : undefined}
+          className="inline-flex"
         >
-          {option}
-        </button>
+          <OptionButton
+            option={option}
+            index={index}
+            filledAnswer={filledAnswer}
+            correctAnswer={correctAnswer}
+            isAdvancing={isAdvancing}
+            onSelect={onSelect}
+          />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
 function renderPromptContent(prompt: Prompt, filledAnswer: string | null) {
   const promptClass =
-    "font-display text-h1 font-extrabold leading-[1.15] text-body text-balance";
+    "font-display font-extrabold leading-[1.15] text-body text-balance";
 
   if (isDragMatchPrompt(prompt)) {
     return (
-      <p className={promptClass}>{dragMatchQuestion(prompt)}</p>
+      <p className={promptClass} style={{ fontSize: "var(--text-h1)" }}>
+        {dragMatchQuestion(prompt)}
+      </p>
     );
   }
 
@@ -153,7 +231,11 @@ function renderPromptContent(prompt: Prompt, filledAnswer: string | null) {
   const displayValue = filledAnswer ?? "";
 
   return (
-    <p className={promptClass} aria-live="polite">
+    <p
+      className={promptClass}
+      style={{ fontSize: "var(--text-h1)" }}
+      aria-live="polite"
+    >
       {clickParts[0]}
       <TargetBlank filledAnswer={filledAnswer} displayValue={displayValue} />
       {clickParts[1] ?? ""}
@@ -192,16 +274,15 @@ export function SentenceBuilder({
   const prompt = dragPrompt ?? clickPrompt;
 
   const [filledAnswer, setFilledAnswer] = useState<string | null>(null);
-  const [feedbackClass, setFeedbackClass] = useState("");
   const [hasAttempted, setHasAttempted] = useState(false);
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [shakingOption, setShakingOption] = useState<string | null>(null);
+  const promptControls = useAnimation();
   const startTimeRef = useRef(Date.now());
 
   useEffect(() => {
     startTimeRef.current = Date.now();
     setFilledAnswer(null);
-    setFeedbackClass("");
     setHasAttempted(false);
     setIsAdvancing(false);
     setShakingOption(null);
@@ -214,8 +295,12 @@ export function SentenceBuilder({
       }
 
       setFilledAnswer(displayAnswer);
-      setFeedbackClass("animate-spring");
       setIsAdvancing(true);
+
+      void promptControls.start({
+        scale: [1, 1.08, 0.98, 1.02, 1],
+        transition: { type: "spring", bounce: 0.45, duration: 0.6 },
+      });
 
       const firstTry = !hasAttempted;
       const scoreResult = calculateScoreForMode(gameModeId, {
@@ -228,7 +313,7 @@ export function SentenceBuilder({
         onComplete({ scoreResult, firstTry, correct: true });
       }, 600);
     },
-    [gameModeId, hasAttempted, isAdvancing, onComplete, prompt],
+    [gameModeId, hasAttempted, isAdvancing, onComplete, prompt, promptControls],
   );
 
   const handleSelect = (option: string) => {
@@ -245,11 +330,9 @@ export function SentenceBuilder({
 
     setHasAttempted(true);
     setShakingOption(option);
-    setFeedbackClass("animate-shake");
     window.setTimeout(() => {
       setShakingOption(null);
-      setFeedbackClass("");
-    }, 400);
+    }, 450);
   };
 
   if (!prompt) {
@@ -263,9 +346,12 @@ export function SentenceBuilder({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 py-10 md:px-8 md:py-16">
-      <div className={`w-full text-center ${feedbackClass}`}>
+      <motion.div
+        animate={promptControls}
+        className="w-full text-center"
+      >
         {renderPromptContent(prompt, filledAnswer)}
-      </div>
+      </motion.div>
 
       <OptionButtons
         options={options}

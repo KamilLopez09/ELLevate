@@ -5,13 +5,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap");
 
 :root {
-  /* Tinted neutrals */
-  --background: oklch(0.98 0.01 85);
-  --card: oklch(0.995 0.012 85);
-  --text: oklch(0.28 0.04 265);
-  --muted: oklch(0.5 0.035 265);
-  --border: oklch(0.88 0.018 85);
-  --surface-muted: oklch(0.94 0.016 85);
+  /* Impeccable OKLCH tinted neutrals — warm canvas, no pure white/black */
+  --background: oklch(0.965 0.014 82);
+  --card: oklch(0.985 0.013 85);
+  --text: oklch(0.28 0.038 268);
+  --muted: oklch(0.48 0.032 268);
+  --border: oklch(0.86 0.02 85);
+  --surface-muted: oklch(0.93 0.018 85);
 
   /* Brand accents */
   --primary: oklch(0.52 0.21 292);
@@ -21,10 +21,12 @@
   --highlight: oklch(0.72 0.16 75);
   --success: oklch(0.58 0.14 145);
 
-  /* Fluid typography */
+  /* Fluid typography — scales inside animated bento cards */
   --text-body: clamp(1rem, 0.94rem + 0.28vw, 1.125rem);
-  --text-h2: clamp(1.5rem, 1.2rem + 1.35vw, 2.25rem);
-  --text-h1: clamp(2rem, 1.45rem + 2.75vw, 3.5rem);
+  --text-h2: clamp(1.375rem, 1.1rem + 1.2vw, 2.125rem);
+  --text-h1: clamp(1.75rem, 1.35rem + 2.2vw, 3.25rem);
+  --text-bento-title: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  --text-bento-label: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
 
   /* Motion */
   --ease-decel: cubic-bezier(0.2, 0, 0, 1);
@@ -144,6 +146,20 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 0.625rem;
+  }
+
+  .bento-card {
+    border-radius: 1.25rem;
+  }
+
+  .text-bento-title {
+    font-size: var(--text-bento-title);
+    line-height: 1.2;
+  }
+
+  .text-bento-label {
+    font-size: var(--text-bento-label);
+    line-height: 1.4;
   }
 }
 

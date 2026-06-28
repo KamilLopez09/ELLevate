@@ -69,7 +69,7 @@ export function PracticeProgressHeader({
         aria-label={exitLabel}
         className={[
           "inline-flex shrink-0 items-center justify-center gap-2",
-          "min-h-[56px] min-w-[56px] rounded-2xl border-2 border-border bg-card",
+          "min-h-[64px] min-w-[64px] rounded-2xl border-2 border-border bg-card",
           "px-4 font-display text-sm font-bold text-body",
           "transition-all duration-200 transition-decel",
           "hover:border-primary hover:text-primary",
