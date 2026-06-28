@@ -1,8 +1,18 @@
-import type { CamperSessionData } from "@/types/sentence-canvas";
+import type { CamperSessionData, AgeBracket } from "@/types/sentence-canvas";
 
 export const CAMPER_SESSION_KEY = "camperSessionData";
 export const LESSON_COMPLETE_KEY = "lesson_complete";
-export const LESSON_1_PASSED_KEY = "lesson_1_passed";
+export const SELECTED_GAME_MODE_KEY = "selectedGameMode";
+
+function migrateAgeBracket(bracket: string): AgeBracket {
+  if (bracket === "5-7" || bracket === "8-10" || bracket === "5-9") {
+    return "5-9";
+  }
+  if (bracket === "11-14" || bracket === "10-14") {
+    return "10-14";
+  }
+  return "5-9";
+}
 
 /**
  * Converts a display name into a URL/DB-safe id.
@@ -18,6 +28,30 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function normalizeSession(
+  parsed: Partial<CamperSessionData>,
+): CamperSessionData | null {
+  if (
+    !parsed.camper_id ||
+    !parsed.display_name ||
+    !parsed.age_bracket ||
+    !parsed.native_language ||
+    !parsed.group_letter
+  ) {
+    return null;
+  }
+
+  return {
+    camper_id: parsed.camper_id,
+    display_name: parsed.display_name,
+    age_bracket: migrateAgeBracket(parsed.age_bracket),
+    native_language: parsed.native_language,
+    group_letter: parsed.group_letter,
+    cumulativeScore: parsed.cumulativeScore ?? 0,
+    completedModes: parsed.completedModes ?? [],
+  };
+}
+
 export function readCamperSession(): CamperSessionData | null {
   if (typeof window === "undefined") {
     return null;
@@ -29,16 +63,7 @@ export function readCamperSession(): CamperSessionData | null {
       return null;
     }
     const parsed = JSON.parse(raw) as Partial<CamperSessionData>;
-    if (
-      !parsed.camper_id ||
-      !parsed.display_name ||
-      !parsed.age_bracket ||
-      !parsed.native_language ||
-      !parsed.group_letter
-    ) {
-      return null;
-    }
-    return parsed as CamperSessionData;
+    return normalizeSession(parsed);
   } catch {
     return null;
   }
@@ -49,6 +74,23 @@ export function writeCamperSession(data: CamperSessionData): void {
     return;
   }
   window.sessionStorage.setItem(CAMPER_SESSION_KEY, JSON.stringify(data));
+}
+
+export function addSessionScore(points: number, modeId: string): void {
+  const session = readCamperSession();
+  if (!session) {
+    return;
+  }
+
+  const completedModes = session.completedModes.includes(modeId)
+    ? session.completedModes
+    : [...session.completedModes, modeId];
+
+  writeCamperSession({
+    ...session,
+    cumulativeScore: session.cumulativeScore + points,
+    completedModes,
+  });
 }
 
 /** Marks the lesson step as watched so the application step unlocks. */
@@ -66,17 +108,31 @@ export function isLessonComplete(): boolean {
   return window.sessionStorage.getItem(LESSON_COMPLETE_KEY) === "true";
 }
 
-/** Records that the camper cleared Lesson 1's 80% accuracy gate. */
-export function setLesson1Passed(): void {
+/** Clears the lesson-stage gate so a new week must be watched before painting. */
+export function clearLessonComplete(): void {
   if (typeof window === "undefined") {
     return;
   }
-  window.sessionStorage.setItem(LESSON_1_PASSED_KEY, "true");
+  window.sessionStorage.removeItem(LESSON_COMPLETE_KEY);
 }
 
-export function isLesson1Passed(): boolean {
+export function getSelectedGameMode(): string | null {
   if (typeof window === "undefined") {
-    return false;
+    return null;
   }
-  return window.sessionStorage.getItem(LESSON_1_PASSED_KEY) === "true";
+  return window.sessionStorage.getItem(SELECTED_GAME_MODE_KEY);
+}
+
+export function setSelectedGameMode(modeId: string): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.setItem(SELECTED_GAME_MODE_KEY, modeId);
+}
+
+export function clearSelectedGameMode(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.sessionStorage.removeItem(SELECTED_GAME_MODE_KEY);
 }

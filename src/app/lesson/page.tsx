@@ -1,76 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Tabs, type TabItem } from "@/components/ui/Tabs";
 import { StepRail } from "@/components/ui/StepRail";
+import {
+  getBracketContent,
+  getCurrentWeek,
+  getLessonPracticePlan,
+  getLessonWeek,
+  getVideoEmbedUrl,
+} from "@/lib/curriculum-engine";
 import { readCamperSession, setLessonComplete } from "@/lib/camper-session";
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
-const LESSON_TABS: TabItem[] = [
-  {
-    id: "verbs",
-    label: "Key Verbs",
-    content: (
-      <ul className="flex flex-col gap-2">
-        <li>
-          <span className="font-bold text-ink">to paint</span> — pintar
-        </li>
-        <li>
-          <span className="font-bold text-ink">to play</span> — jugar
-        </li>
-        <li>
-          <span className="font-bold text-ink">to run</span> — correr
-        </li>
-        <li>
-          <span className="font-bold text-ink">to sing</span> — cantar
-        </li>
-      </ul>
-    ),
-  },
-  {
-    id: "examples",
-    label: "Examples",
-    content: (
-      <ul className="flex flex-col gap-2">
-        <li>
-          She <span className="font-bold text-teal-accent">paints</span> a big
-          rainbow. / Ella pinta un arcoíris grande.
-        </li>
-        <li>
-          We <span className="font-bold text-teal-accent">play</span> in the
-          park. / Nosotros jugamos en el parque.
-        </li>
-        <li>
-          They <span className="font-bold text-teal-accent">sing</span> a happy
-          song. / Ellos cantan una canción feliz.
-        </li>
-      </ul>
-    ),
-  },
-  {
-    id: "tips",
-    label: "Tips",
-    content: (
-      <p>
-        For <span className="font-bold text-ink">he</span>,{" "}
-        <span className="font-bold text-ink">she</span>, or{" "}
-        <span className="font-bold text-ink">it</span>, English verbs usually
-        add an <span className="font-bold text-teal-accent">-s</span> (play →
-        plays). Listen for that little sound in the video!
-      </p>
-    ),
-  },
-];
-
 export default function LessonPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
+  const weekNumber = getCurrentWeek();
+  const week = getLessonWeek(weekNumber);
+  const bracket = camper
+    ? getBracketContent(weekNumber, camper.age_bracket)
+    : null;
 
   useEffect(() => {
-    // Locked chain: a camper must sign in before the lesson is shown.
     if (!readCamperSession()) {
       router.replace("/");
       return;
@@ -83,7 +40,7 @@ export default function LessonPage() {
     router.push("/application");
   };
 
-  if (!ready) {
+  if (!ready || !week || !bracket) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
     );
@@ -118,45 +75,57 @@ export default function LessonPage() {
           transition={SPRING}
           className="rounded-3xl bg-paper p-6 shadow-bento sm:p-10"
         >
-          <h1 className="text-3xl font-extrabold text-ink">
-            Action Verbs in Motion
+          <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
+            Week {weekNumber} · {week.theme}
+          </p>
+          <h1 className="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">
+            {bracket.title}
           </h1>
-          <p className="mt-2 text-ink/70">
-            Watch the clip, then peek at the tabs below before you start
-            painting sentences.
+          <p className="mt-1 text-sm text-ink/60">{bracket.channel}</p>
+          <p className="mt-4 text-ink/70">
+            Watch the clip — it matches this week&apos;s main lesson. Then tap
+            Ready to Practice.
+          </p>
+          <p className="mt-2 text-sm font-semibold text-teal-accent">
+            {getLessonPracticePlan(weekNumber)}
           </p>
 
-          <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border-2 border-dashed border-purple-accent/30 bg-camp-blue/40">
-            {/* Replace this placeholder with a VOA / British Council embed:
-                <iframe className="h-full w-full" src="..." title="Lesson video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen /> */}
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-accent text-2xl text-white shadow-bento">
-                ▶
-              </span>
-              <p className="text-sm font-semibold text-ink/70">
-                Lesson video goes here
-              </p>
-              <p className="text-xs text-ink/50">
-                VOA Learning English · British Council Kids
-              </p>
-            </div>
+          <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border-2 border-purple-accent/20 bg-camp-blue/40 shadow-bento">
+            <iframe
+              className="h-full w-full"
+              src={getVideoEmbedUrl(bracket.videoId)}
+              title={bracket.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              onLoad={() => setVideoReady(true)}
+            />
           </div>
 
-          <div className="mt-8">
-            <Tabs items={LESSON_TABS} />
-          </div>
+          <ul className="mt-6 flex flex-col gap-2 text-sm text-ink/70">
+            <li>
+              <span className="font-bold text-teal-accent">
+                {bracket.prompts.length}
+              </span>{" "}
+              painting prompt{bracket.prompts.length === 1 ? "" : "s"} waiting
+            </li>
+            <li>
+              Mode:{" "}
+              <span className="font-bold text-ink">
+                {bracket.mode === "drag-match" ? "Drag & Match" : "Click to Paint"}
+              </span>
+            </li>
+          </ul>
         </motion.section>
 
         <motion.button
           type="button"
           onClick={handleReady}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-4 text-xl font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+          disabled={!videoReady}
+          whileHover={videoReady ? { scale: 1.02 } : undefined}
+          whileTap={videoReady ? { scale: 0.97 } : undefined}
+          className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-4 text-xl font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
-          Ready to Paint! →
+          Ready to Practice! →
         </motion.button>
       </div>
     </main>

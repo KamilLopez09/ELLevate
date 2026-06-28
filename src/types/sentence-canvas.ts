@@ -17,7 +17,7 @@ export interface SessionStats {
   errorCount: number;
 }
 
-export type AgeBracket = "5-7" | "8-10" | "11-14";
+export type AgeBracket = "5-9" | "10-14";
 
 export type NativeLanguage = "English" | "Spanish";
 
@@ -27,12 +27,24 @@ export interface CamperSessionData {
   age_bracket: AgeBracket;
   native_language: NativeLanguage;
   group_letter: string;
+  cumulativeScore: number;
+  completedModes: string[];
 }
 
 export interface CamperTelemetryRow {
   module_name: "sentence_canvas";
   score: number;
   error_count: number;
+  game_mode: string;
+  base_points: number;
+  first_try_bonus: number;
+  speed_bonus: number;
+  total_points: number;
+  week_number: number;
+  correct_first_try: number;
+  cumulative_score: number;
+  speed_bonuses_earned: number;
+  accuracy_rate: number;
   camper_id: string;
   display_name: string;
   age_bracket: AgeBracket;

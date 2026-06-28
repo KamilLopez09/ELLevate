@@ -3,6 +3,18 @@
 A chronological record of how the project was built and deployed, including the
 decisions and course-corrections along the way. Newest entries at the top.
 
+## Milestone 10 — 8-Week Dynamic Content Engine
+
+Replaced hardcoded sentence prompts with a full 8-week curriculum catalog indexed by `curriculum[week][ageBracket]`.
+
+- **`src/data/curriculum.ts`**: immutable 8-week catalog (weeks 1–8, three age brackets each) with YouTube embed URLs, channel/title metadata, per-bracket `mode` (`drag-match` for 5–7, `click-paint` for 8–14), and `Prompt[]` arrays.
+- **`src/lib/curriculum-engine.ts`**: `currentWeek` session key, `lesson_{n}_passed` unlock flags, week unlock logic (week N requires week N−1 passed), and bracket content lookup.
+- **`src/lib/prompt-parser.ts`**: splits prompt text around target keyword(s), supports multi-blank prompts (e.g. "big and blue"), and stable option ids.
+- **`/menu`**: dynamic 8-week grid from curriculum; selecting a week sets `currentWeek`, clears `lesson_complete`, and routes to `/lesson`.
+- **`/lesson`**: reads age bracket + current week, embeds the matching YouTube iframe, enables "Ready to Paint!" after iframe load (sets `lesson_complete`).
+- **`/application`**: mode is derived from curriculum (no manual selector); mounts `SentenceCanvas` with dynamic prompts.
+- **`SentenceCanvas`**: curriculum-driven Click to Paint (teal dashed blanks, 0.5s incorrect lockout) and Drag & Match (Swapy, decoys locked, target draggable, 56px targets); 80% first-try gate sets `lesson_{week}_passed` with confetti on pass.
+
 ## Milestone 9 — Lesson-select menu hub
 
 Added a `/menu` hub so the flow now reads: `/` (Intake) → `/menu` → `/lesson` → `/application` → back to `/menu`.

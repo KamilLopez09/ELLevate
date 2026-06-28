@@ -1,85 +1,75 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { GameMode } from "@/types/sentence-canvas";
+import {
+  GAME_MODE_LABELS,
+  getMaxPromptScore,
+  type GameModeId,
+} from "@/lib/gamification";
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
-interface ModeCardProps {
-  emoji: string;
-  title: string;
-  description: string;
-  accent: "purple" | "teal";
-  onClick: () => void;
-}
+const MODE_ORDER: GameModeId[] = [
+  "flashcard_drill",
+  "match_blitz",
+  "sentence_builder",
+  "rapid_fire",
+];
 
-function ModeCard({ emoji, title, description, accent, onClick }: ModeCardProps) {
-  const accentRing =
-    accent === "purple"
-      ? "hover:border-purple-accent focus-visible:outline-purple-accent"
-      : "hover:border-teal-accent focus-visible:outline-teal-accent";
-  const badge =
-    accent === "purple"
-      ? "bg-purple-accent text-white"
-      : "bg-teal-accent text-white";
-
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      className={`flex min-h-[56px] flex-col items-start gap-3 rounded-3xl border-2 border-ink/10 bg-white p-6 text-left shadow-bento transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${accentRing}`}
-    >
-      <span
-        className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${badge}`}
-      >
-        {emoji}
-      </span>
-      <span className="text-2xl font-extrabold text-ink">{title}</span>
-      <span className="text-base text-ink/70">{description}</span>
-    </motion.button>
-  );
-}
+const ACCENT_CLASSES: Record<string, string> = {
+  "teal-accent": "border-teal-accent bg-teal-accent/10 hover:bg-teal-accent/20",
+  "purple-accent":
+    "border-purple-accent bg-purple-accent/10 hover:bg-purple-accent/20",
+  "gold-accent": "border-gold-accent bg-gold-accent/10 hover:bg-gold-accent/20",
+};
 
 export function GameModeSelector({
   onSelect,
 }: {
-  onSelect: (mode: GameMode) => void;
+  onSelect: (modeId: GameModeId) => void;
 }) {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={SPRING}
-      className="rounded-3xl bg-paper p-6 shadow-bento sm:p-10"
-    >
+    <section className="rounded-3xl bg-paper p-6 shadow-bento sm:p-10">
       <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
-        Almost there
+        Choose Your Style
       </p>
       <h2 className="mt-2 text-3xl font-extrabold text-ink">
-        Choose Your Painting Style!
+        Pick a game mode
       </h2>
-      <p className="mt-2 text-ink/70">
-        Pick how you want to fill in the blanks today.
+      <p className="mt-3 text-lg text-ink/70">
+        All 10 prompts use the mode you choose. Each mode has its own point
+        values.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <ModeCard
-          emoji="🖌️"
-          title="Click to Paint"
-          description="Tap a colorful word swatch to fill the blank."
-          accent="purple"
-          onClick={() => onSelect("click")}
-        />
-        <ModeCard
-          emoji="✋"
-          title="Drag & Match"
-          description="Drag a word block into the blank space."
-          accent="teal"
-          onClick={() => onSelect("drag")}
-        />
+        {MODE_ORDER.map((modeId, index) => {
+          const meta = GAME_MODE_LABELS[modeId];
+          const maxPoints = getMaxPromptScore(modeId);
+
+          return (
+            <motion.button
+              key={modeId}
+              type="button"
+              onClick={() => onSelect(modeId)}
+              aria-label={`Select ${meta.title} game mode`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...SPRING, delay: index * 0.05 }}
+              className={`flex min-h-[56px] flex-col items-start gap-2 rounded-3xl border-2 p-6 text-left shadow-bento transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent ${ACCENT_CLASSES[meta.accent] ?? ACCENT_CLASSES["purple-accent"]}`}
+            >
+              <span className="text-xl font-extrabold text-ink">
+                {meta.title}
+              </span>
+              <span className="text-sm text-ink/70">{meta.description}</span>
+              <span className="mt-1 text-xs font-bold uppercase tracking-widest text-ink/50">
+                Up to {maxPoints} pts / prompt
+              </span>
+            </motion.button>
+          );
+        })}
       </div>
-    </motion.section>
+    </section>
   );
 }

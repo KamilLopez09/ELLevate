@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SentenceCanvas } from "@/components/sentence-canvas/SentenceCanvas";
 import { GameModeSelector } from "@/components/sentence-canvas/GameModeSelector";
+import { LessonCanvas } from "@/components/LessonCanvas";
 import { StepRail } from "@/components/ui/StepRail";
-import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
-import type { GameMode } from "@/types/sentence-canvas";
+import { getCurrentWeek, toAgeGroup } from "@/lib/curriculum-engine";
+import {
+  getSelectedGameMode,
+  clearSelectedGameMode,
+  isLessonComplete,
+  readCamperSession,
+  setSelectedGameMode,
+} from "@/lib/camper-session";
+import { isGameModeId, type GameModeId } from "@/lib/gamification";
 
 export default function ApplicationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<GameMode | null>(null);
+  const [selectedMode, setSelectedMode] = useState<GameModeId | null>(null);
+
+  const weekNumber = getCurrentWeek();
+  const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
 
   useEffect(() => {
-    // Locked chain guardrails: enforce intake, then the lesson, before painting.
     if (!readCamperSession()) {
       router.replace("/");
       return;
@@ -23,10 +32,21 @@ export default function ApplicationPage() {
       router.replace("/lesson");
       return;
     }
+
+    const stored = getSelectedGameMode();
+    if (stored && isGameModeId(stored)) {
+      setSelectedMode(stored);
+    }
+
     setReady(true);
   }, [router]);
 
-  if (!ready) {
+  const handleModeSelect = (modeId: GameModeId) => {
+    setSelectedGameMode(modeId);
+    setSelectedMode(modeId);
+  };
+
+  if (!ready || !camper) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
     );
@@ -46,15 +66,23 @@ export default function ApplicationPage() {
       <div className="relative mx-auto max-w-3xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
-            Sentence Canvas
+            Week {weekNumber} · Practice
           </p>
           <StepRail current={3} />
         </header>
 
-        {mode === null ? (
-          <GameModeSelector onSelect={setMode} />
+        {!selectedMode ? (
+          <GameModeSelector onSelect={handleModeSelect} />
         ) : (
-          <SentenceCanvas mode={mode} />
+          <LessonCanvas
+            weekNumber={weekNumber}
+            ageGroup={toAgeGroup(camper.age_bracket)}
+            selectedGameMode={selectedMode}
+            onChangeMode={() => {
+              clearSelectedGameMode();
+              setSelectedMode(null);
+            }}
+          />
         )}
       </div>
     </main>
