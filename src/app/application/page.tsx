@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LessonCanvas } from "@/components/LessonCanvas";
-import { StepRail } from "@/components/ui/StepRail";
+import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
 import { curriculum } from "@/data/curriculum";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
 import { resolveAgeGroup } from "@/lib/curriculum-engine";
+import {
+  createInitialProgress,
+  type LessonProgressState,
+} from "@/types/lesson-progress";
 
 /** Vertical slice demo: Week 2, Ages 8–10 cohort (stored as 5-9). */
 const DEMO_WEEK = 2;
@@ -15,6 +19,9 @@ const DEMO_AGE_BRACKET = "8-10";
 export default function ApplicationPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState<LessonProgressState>(
+    createInitialProgress(),
+  );
 
   const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
 
@@ -31,6 +38,10 @@ export default function ApplicationPage() {
     };
   }, [ageGroup]);
 
+  const handleProgressChange = useCallback((state: LessonProgressState) => {
+    setProgress(state);
+  }, []);
+
   useEffect(() => {
     if (!readCamperSession()) {
       router.replace("/");
@@ -43,6 +54,10 @@ export default function ApplicationPage() {
 
     setReady(true);
   }, [router]);
+
+  useEffect(() => {
+    setProgress(createInitialProgress(sessionPrompts.length || 10));
+  }, [sessionPrompts.length]);
 
   if (!ready || !camper) {
     return (
@@ -72,12 +87,11 @@ export default function ApplicationPage() {
       />
 
       <div className="relative mx-auto max-w-3xl">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
-            Week {DEMO_WEEK} · Practice
-          </p>
-          <StepRail current={3} />
-        </header>
+        <PracticeProgressHeader
+          promptIndex={progress.promptIndex}
+          outcomes={progress.outcomes}
+          totalSteps={sessionPrompts.length}
+        />
 
         <LessonCanvas
           weekNumber={DEMO_WEEK}
@@ -85,6 +99,8 @@ export default function ApplicationPage() {
           sessionPrompts={sessionPrompts}
           reviewPrompts={reviewPrompts}
           builderPrompts={builderPrompts}
+          externalProgress
+          onProgressChange={handleProgressChange}
         />
       </div>
     </main>

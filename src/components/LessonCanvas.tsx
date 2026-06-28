@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/styles/animations.css";
 import { FlashcardDrill } from "@/components/sentence-canvas/FlashcardDrill";
@@ -25,6 +25,7 @@ import {
 import { createBrowserClient } from "@/lib/supabase/client";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
+import type { LessonProgressState } from "@/types/lesson-progress";
 
 const TOTAL_PROMPTS = 10;
 const PASS_THRESHOLD = 8;
@@ -40,52 +41,13 @@ export interface LessonCanvasProps {
   reviewPrompts?: Prompt[];
   /** Core + generative prompts routed to SentenceBuilder. */
   builderPrompts?: Prompt[];
+  /** When true, progress rail is rendered by the parent (e.g. application page header). */
+  externalProgress?: boolean;
+  onProgressChange?: (state: LessonProgressState) => void;
 }
 
 function gameModeForPrompt(prompt: Prompt): GameModeId {
   return prompt.category === "review" ? "flashcard_drill" : "sentence_builder";
-}
-
-function ProgressRail({
-  promptIndex,
-  outcomes,
-}: {
-  promptIndex: number;
-  outcomes: NodeOutcome[];
-}) {
-  return (
-    <div
-      role="progressbar"
-      aria-valuenow={Math.min(promptIndex, TOTAL_PROMPTS)}
-      aria-valuemin={0}
-      aria-valuemax={TOTAL_PROMPTS}
-      aria-label="Lesson progress"
-      className="flex items-center justify-center gap-2"
-    >
-      {outcomes.map((outcome, index) => {
-        const isActive = index === promptIndex && promptIndex < TOTAL_PROMPTS;
-        let className =
-          "flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white border-ink/20";
-
-        if (outcome === "correct") {
-          className =
-            "flex h-8 w-8 items-center justify-center rounded-full bg-teal-accent text-sm font-bold text-white";
-        } else if (outcome === "incorrect") {
-          className =
-            "flex h-8 w-8 items-center justify-center rounded-full bg-red-300/60 border-2 border-red-300/80";
-        } else if (isActive) {
-          className =
-            "flex h-8 w-8 items-center justify-center rounded-full border-2 border-teal-accent bg-white animate-pulse-ring";
-        }
-
-        return (
-          <div key={index} aria-hidden={!isActive} className={className}>
-            {outcome === "correct" && "✓"}
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 function RetryModal({
@@ -149,6 +111,8 @@ export function LessonCanvas({
   sessionPrompts,
   reviewPrompts,
   builderPrompts,
+  externalProgress = false,
+  onProgressChange,
 }: LessonCanvasProps) {
   const router = useRouter();
   const [promptIndex, setPromptIndex] = useState(0);
@@ -164,7 +128,7 @@ export function LessonCanvas({
   const scoreResultsRef = useRef<ScoreResult[]>([]);
   const modesUsedRef = useRef<Set<GameModeId>>(new Set());
   const errorCountRef = useRef(0);
-  const [, bumpOutcomes] = useState(0);
+  const [outcomeVersion, bumpOutcomes] = useState(0);
 
   const bracket = useMemo(() => {
     const week = curriculum[weekNumber];
@@ -192,6 +156,13 @@ export function LessonCanvas({
   const refreshOutcomes = useCallback(() => {
     bumpOutcomes((value) => value + 1);
   }, []);
+
+  useEffect(() => {
+    onProgressChange?.({
+      promptIndex,
+      outcomes: [...outcomesRef.current],
+    });
+  }, [onProgressChange, promptIndex, outcomeVersion]);
 
   const resetSession = useCallback(() => {
     outcomesRef.current = Array.from({ length: TOTAL_PROMPTS }, () => "pending");
@@ -365,17 +336,14 @@ export function LessonCanvas({
         />
       )}
 
-      <section className="flex flex-col gap-6 rounded-3xl bg-paper p-6 shadow-bento sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-widest text-ink/60">
-          {prompt.category === "review"
-            ? "Review · Flashcard Drill"
-            : "Practice · Sentence Builder"}
-        </p>
-
-        <ProgressRail
-          promptIndex={promptIndex}
-          outcomes={outcomesRef.current}
-        />
+      <section className="flex flex-col">
+        {!externalProgress && (
+          <p className="mb-6 text-sm font-semibold text-muted">
+            {prompt.category === "review"
+              ? "Review · Flashcard Drill"
+              : "Practice · Sentence Builder"}
+          </p>
+        )}
 
         {renderPromptByCategory(
           prompt,
