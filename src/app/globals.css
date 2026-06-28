@@ -117,6 +117,20 @@
   animation: spring 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
+@keyframes progress-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.52 0.21 292 / 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 6px oklch(0.52 0.21 292 / 0);
+  }
+}
+
+.progress-pulse {
+  animation: progress-pulse 1.6s var(--ease-decel) infinite;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -168,5 +182,9 @@
 
   .transition-decel {
     transition-duration: 0.01ms !important;
+  }
+
+  .progress-pulse {
+    animation: none;
   }
 }
