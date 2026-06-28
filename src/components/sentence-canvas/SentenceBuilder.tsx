@@ -13,6 +13,9 @@ import {
 } from "@/lib/prompt-utils";
 import type { GameModeProps } from "@/types/game-modes";
 
+const choiceButtonClass =
+  "min-h-[56px] min-w-[56px] flex-1 rounded-2xl bg-purple-accent text-lg font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent";
+
 export function SentenceBuilder({
   prompts,
   gameModeId,
@@ -82,8 +85,8 @@ export function SentenceBuilder({
   if (dragPrompt) {
     const options = dragMatchToChoices(dragPrompt);
     return (
-      <div className="flex flex-col gap-6">
-        <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
+      <div className="flex flex-col">
+        <p className="min-h-[56px] min-w-[56px] text-sm font-semibold uppercase tracking-widest text-purple-accent">
           Sentence Builder
         </p>
         <p
@@ -91,7 +94,7 @@ export function SentenceBuilder({
         >
           {dragMatchQuestion(dragPrompt)}
         </p>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col sm:flex-row">
           {options.map((option) => (
             <button
               key={option}
@@ -105,7 +108,7 @@ export function SentenceBuilder({
                     : option,
                 )
               }
-              className="min-h-[56px] flex-1 rounded-2xl bg-purple-accent px-4 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+              className={choiceButtonClass}
             >
               {option}
             </button>
@@ -118,8 +121,8 @@ export function SentenceBuilder({
   const clickParts = clickPrompt!.text.split("___");
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="text-sm font-semibold uppercase tracking-widest text-purple-accent">
+    <div className="flex flex-col">
+      <p className="min-h-[56px] min-w-[56px] text-sm font-semibold uppercase tracking-widest text-purple-accent">
         Sentence Builder
       </p>
 
@@ -128,13 +131,13 @@ export function SentenceBuilder({
         aria-live="polite"
       >
         {clickParts[0]}
-        <span className="mx-1 inline-flex min-h-[56px] min-w-[5rem] items-center justify-center rounded-xl border-2 border-dashed border-teal-accent px-2 align-middle">
+        <span className="inline-flex min-h-[56px] min-w-[56px] items-center justify-center rounded-xl border-2 border-dashed border-teal-accent align-middle">
           {filledAnswer ?? "___"}
         </span>
         {clickParts[1] ?? ""}
       </p>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col sm:flex-row">
         {clickPrompt!.options.map((option) => (
           <button
             key={option}
@@ -142,7 +145,7 @@ export function SentenceBuilder({
             disabled={isAdvancing}
             aria-label={`Choose answer ${option}`}
             onClick={() => handleSelect(option)}
-            className="min-h-[56px] flex-1 rounded-2xl bg-purple-accent px-4 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+            className={choiceButtonClass}
           >
             {option}
           </button>

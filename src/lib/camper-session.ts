@@ -14,12 +14,21 @@ function migrateAgeBracket(bracket: string): AgeBracket {
   return "5-9";
 }
 
+/** COPPA-safe: keep only the first letter of a last name. */
+export function toLastInitial(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed.charAt(0).toUpperCase();
+}
+
 /**
- * Converts a display name into a URL/DB-safe id.
- * "María G." -> "maria-g"
+ * Converts a COPPA-safe name into a URL/DB-safe id.
+ * "Maria" + "G" -> "maria-g"
  */
-export function slugify(value: string): string {
-  return value
+export function slugify(firstName: string, lastInitial: string): string {
+  return `${firstName} ${lastInitial}`
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -28,12 +37,34 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function migrateLegacyName(parsed: Partial<CamperSessionData>): {
+  first_name: string;
+  last_initial: string;
+} | null {
+  const legacyDisplay = (parsed as { display_name?: string }).display_name;
+  if (legacyDisplay) {
+    const [first = "", rest = ""] = legacyDisplay.trim().split(/\s+/);
+    const initial = toLastInitial(rest || first.slice(-1));
+    if (first && initial) {
+      return { first_name: first, last_initial: initial };
+    }
+  }
+  return null;
+}
+
 function normalizeSession(
   parsed: Partial<CamperSessionData>,
 ): CamperSessionData | null {
+  const legacyName = migrateLegacyName(parsed);
+  const first_name = parsed.first_name ?? legacyName?.first_name;
+  const last_initial = parsed.last_initial
+    ? toLastInitial(parsed.last_initial)
+    : legacyName?.last_initial;
+
   if (
     !parsed.camper_id ||
-    !parsed.display_name ||
+    !first_name ||
+    !last_initial ||
     !parsed.age_bracket ||
     !parsed.native_language ||
     !parsed.group_letter
@@ -43,7 +74,8 @@ function normalizeSession(
 
   return {
     camper_id: parsed.camper_id,
-    display_name: parsed.display_name,
+    first_name: first_name.trim(),
+    last_initial,
     age_bracket: migrateAgeBracket(parsed.age_bracket),
     native_language: parsed.native_language,
     group_letter: parsed.group_letter,

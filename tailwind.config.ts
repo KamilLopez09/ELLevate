@@ -9,12 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        paper: "#FAF7F2",
-        "camp-blue": "#C3E3F0",
+        paper: "var(--color-bg-card)",
+        "camp-blue": "var(--color-bg-canvas)",
         ink: "#2D2A26",
-        "purple-accent": "#7C3AED",
+        "purple-accent": "var(--color-purple-accent)",
         "gold-accent": "#F5B942",
-        "teal-accent": "#14B8A6",
+        "teal-accent": "var(--color-teal-accent)",
         "success-accent": "#22C55E",
       },
       fontFamily: {

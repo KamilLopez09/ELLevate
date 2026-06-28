@@ -30,7 +30,7 @@ export default function MenuPage() {
       router.replace("/");
       return;
     }
-    setFirstName(camper.display_name.split(" ")[0] ?? camper.display_name);
+    setFirstName(camper.first_name);
     setReady(true);
   }, [router]);
 

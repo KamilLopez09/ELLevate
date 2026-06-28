@@ -3,18 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --paper: #faf7f2;
-  --camp-blue: #c3e3f0;
+  --color-bg-canvas: #c3e3f0;
+  --color-bg-card: #faf7f2;
+  --color-purple-accent: #7c3aed;
+  --color-teal-accent: #14b8a6;
+
+  --paper: var(--color-bg-card);
+  --camp-blue: var(--color-bg-canvas);
   --ink: #2d2a26;
-  --purple-accent: #7c3aed;
+  --purple-accent: var(--color-purple-accent);
   --gold-accent: #f5b942;
-  --teal-accent: #14b8a6;
+  --teal-accent: var(--color-teal-accent);
   --success-accent: #22c55e;
 }
 
 body {
   color: var(--ink);
-  background: var(--camp-blue);
+  background: var(--color-bg-canvas);
 }
 
 @layer utilities {
@@ -32,7 +37,7 @@ body {
 }
 
 .canvas-blob-purple {
-  background: var(--purple-accent);
+  background: var(--color-purple-accent);
 }
 
 .canvas-blob-gold {
@@ -40,7 +45,7 @@ body {
 }
 
 .canvas-blob-teal {
-  background: var(--teal-accent);
+  background: var(--color-teal-accent);
 }
 
 [data-swapy-item],
