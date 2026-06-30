@@ -96,7 +96,7 @@ export function RapidFire({ prompts, gameModeId, onComplete }: GameModeProps) {
 
   const secondsLeft = (remainingMs / 1000).toFixed(1);
   const urgency =
-    remainingMs <= 3000 ? "text-red-500" : "text-teal-accent";
+    remainingMs <= 3000 ? "text-destructive" : "text-teal-accent";
 
   const questionText = dragPrompt
     ? dragMatchQuestion(dragPrompt)
