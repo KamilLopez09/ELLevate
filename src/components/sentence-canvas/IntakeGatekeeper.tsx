@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -25,18 +25,20 @@ const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
-const selectClasses =
-  "min-h-[56px] min-w-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
+const labelClasses = "mb-2 block text-sm font-bold text-ink/80";
+
+const fieldClasses =
+  "min-h-[56px] min-w-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm transition focus:border-purple-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent";
 
 function handleLastNameInput(raw: string): string {
   return toLastInitial(raw.replace(/[^a-zA-ZÀ-ÿ]/g, " ").trim().split(/\s+/)[0] ?? "");
 }
 
-function isAgeBracket(value: AgeBracket | ""): value is AgeBracket {
+function isAgeBracket(value: string): value is AgeBracket {
   return value === "5-9" || value === "10-14";
 }
 
-function isNativeLanguage(value: NativeLanguage | ""): value is NativeLanguage {
+function isNativeLanguage(value: string): value is NativeLanguage {
   return value === "English" || value === "Spanish";
 }
 
@@ -50,6 +52,12 @@ export function IntakeGatekeeper() {
   const [nativeLanguage, setNativeLanguage] = useState<NativeLanguage | "">("");
   const [groupLetter, setGroupLetter] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastInitialRef = useRef<HTMLInputElement>(null);
+  const ageBracketRef = useRef<HTMLSelectElement>(null);
+  const nativeLanguageRef = useRef<HTMLSelectElement>(null);
+  const groupLetterRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (readCamperSession()) {
@@ -74,11 +82,23 @@ export function IntakeGatekeeper() {
       !cleanGroup
     ) {
       setError("Please fill in every box so we can set up your canvas!");
+      if (!cleanFirst) {
+        firstNameRef.current?.focus();
+      } else if (!cleanInitial) {
+        lastInitialRef.current?.focus();
+      } else if (!isAgeBracket(ageBracket)) {
+        ageBracketRef.current?.focus();
+      } else if (!isNativeLanguage(nativeLanguage)) {
+        nativeLanguageRef.current?.focus();
+      } else {
+        groupLetterRef.current?.focus();
+      }
       return;
     }
 
     if (!/^[A-Z]$/.test(cleanGroup)) {
       setError("Your camp group should be a single letter (like A).");
+      groupLetterRef.current?.focus();
       return;
     }
 
@@ -86,6 +106,7 @@ export function IntakeGatekeeper() {
 
     if (!camperId) {
       setError("Please use letters or numbers in your name.");
+      firstNameRef.current?.focus();
       return;
     }
 
@@ -128,35 +149,37 @@ export function IntakeGatekeeper() {
         Tell us a little about you, then we&apos;ll start painting with words.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6" noValidate>
         <div className="flex flex-col gap-4 sm:flex-row">
           <label className="flex-1">
-            <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-              First name
-            </span>
+            <span className={labelClasses}>First name</span>
             <input
+              ref={firstNameRef}
               type="text"
+              name="first_name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Maria"
-              autoComplete="off"
-              className={selectClasses}
+              autoComplete="given-name"
+              autoCapitalize="words"
+              className={fieldClasses}
             />
           </label>
 
           <label className="sm:w-32">
-            <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-              Last initial
-            </span>
+            <span className={labelClasses}>Last initial</span>
             <input
+              ref={lastInitialRef}
               type="text"
+              name="last_initial"
               value={lastInitial}
               onChange={(e) => setLastInitial(handleLastNameInput(e.target.value))}
               placeholder="G"
               maxLength={26}
-              autoComplete="off"
+              autoComplete="family-name"
+              autoCapitalize="characters"
               aria-describedby="last-initial-hint"
-              className={selectClasses}
+              className={fieldClasses}
             />
             <span id="last-initial-hint" className="sr-only">
               Enter your last name; only the first letter is saved.
@@ -165,13 +188,16 @@ export function IntakeGatekeeper() {
         </div>
 
         <label>
-          <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-            How old are you?
-          </span>
+          <span className={labelClasses}>How old are you?</span>
           <select
+            ref={ageBracketRef}
+            name="age_bracket"
             value={ageBracket}
-            onChange={(e) => setAgeBracket(e.target.value as AgeBracket)}
-            className={selectClasses}
+            onChange={(e) => {
+              const value = e.target.value;
+              setAgeBracket(isAgeBracket(value) ? value : "");
+            }}
+            className={fieldClasses}
           >
             <option value="" disabled>
               Pick your age group
@@ -185,15 +211,16 @@ export function IntakeGatekeeper() {
         </label>
 
         <label>
-          <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-            Home language
-          </span>
+          <span className={labelClasses}>Home language</span>
           <select
+            ref={nativeLanguageRef}
+            name="native_language"
             value={nativeLanguage}
-            onChange={(e) =>
-              setNativeLanguage(e.target.value as NativeLanguage)
-            }
-            className={selectClasses}
+            onChange={(e) => {
+              const value = e.target.value;
+              setNativeLanguage(isNativeLanguage(value) ? value : "");
+            }}
+            className={fieldClasses}
           >
             <option value="" disabled>
               Pick your language
@@ -207,11 +234,11 @@ export function IntakeGatekeeper() {
         </label>
 
         <label className="sm:w-40">
-          <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-            Camp group
-          </span>
+          <span className={labelClasses}>Camp group</span>
           <input
+            ref={groupLetterRef}
             type="text"
+            name="group_letter"
             value={groupLetter}
             onChange={(e) =>
               setGroupLetter(
@@ -221,19 +248,24 @@ export function IntakeGatekeeper() {
             placeholder="A"
             maxLength={1}
             autoComplete="off"
+            autoCapitalize="characters"
             aria-label="Camp group letter"
-            className={`${selectClasses} text-center uppercase`}
+            className={`${fieldClasses} text-center uppercase`}
           />
         </label>
 
-        {error && (
-          <p
-            role="alert"
-            className="rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
-          >
-            {error}
-          </p>
-        )}
+        <div
+          role="alert"
+          aria-live="polite"
+          aria-atomic="true"
+          className={
+            error
+              ? "rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
+              : "sr-only"
+          }
+        >
+          {error ?? ""}
+        </div>
 
         <motion.button
           type="submit"
