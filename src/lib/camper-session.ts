@@ -1,8 +1,23 @@
 import type { CamperSessionData, AgeBracket } from "@/types/sentence-canvas";
+import {
+  allCampSessionKeys,
+  CAMPER_SESSION_KEY,
+  LESSON_COMPLETE_KEY,
+  SELECTED_GAME_MODE_KEY,
+} from "@/lib/camp-session-keys";
+import {
+  clearCampSessionStorage,
+  getCampSessionItem,
+  removeCampSessionItem,
+  setCampSessionItem,
+  touchCampSessionClock,
+} from "@/lib/session-store";
 
-export const CAMPER_SESSION_KEY = "camperSessionData";
-export const LESSON_COMPLETE_KEY = "lesson_complete";
-export const SELECTED_GAME_MODE_KEY = "selectedGameMode";
+export {
+  CAMPER_SESSION_KEY,
+  LESSON_COMPLETE_KEY,
+  SELECTED_GAME_MODE_KEY,
+} from "@/lib/camp-session-keys";
 
 function migrateAgeBracket(bracket: string): AgeBracket {
   if (bracket === "5-7" || bracket === "8-10" || bracket === "5-9") {
@@ -85,12 +100,8 @@ function normalizeSession(
 }
 
 export function readCamperSession(): CamperSessionData | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
   try {
-    const raw = window.sessionStorage.getItem(CAMPER_SESSION_KEY);
+    const raw = getCampSessionItem(CAMPER_SESSION_KEY);
     if (!raw) {
       return null;
     }
@@ -102,10 +113,8 @@ export function readCamperSession(): CamperSessionData | null {
 }
 
 export function writeCamperSession(data: CamperSessionData): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.setItem(CAMPER_SESSION_KEY, JSON.stringify(data));
+  touchCampSessionClock();
+  setCampSessionItem(CAMPER_SESSION_KEY, JSON.stringify(data));
 }
 
 export function addSessionScore(points: number, modeId: string): void {
@@ -125,46 +134,33 @@ export function addSessionScore(points: number, modeId: string): void {
   });
 }
 
+/** Wipes all camper progress on this browser (use between campers on a shared device). */
+export function clearCampSession(): void {
+  clearCampSessionStorage(allCampSessionKeys());
+}
+
 /** Marks the lesson step as watched so the application step unlocks. */
 export function setLessonComplete(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.setItem(LESSON_COMPLETE_KEY, "true");
+  setCampSessionItem(LESSON_COMPLETE_KEY, "true");
 }
 
 export function isLessonComplete(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  return window.sessionStorage.getItem(LESSON_COMPLETE_KEY) === "true";
+  return getCampSessionItem(LESSON_COMPLETE_KEY) === "true";
 }
 
 /** Clears the lesson-stage gate so a new week must be watched before painting. */
 export function clearLessonComplete(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.removeItem(LESSON_COMPLETE_KEY);
+  removeCampSessionItem(LESSON_COMPLETE_KEY);
 }
 
 export function getSelectedGameMode(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  return window.sessionStorage.getItem(SELECTED_GAME_MODE_KEY);
+  return getCampSessionItem(SELECTED_GAME_MODE_KEY);
 }
 
 export function setSelectedGameMode(modeId: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.setItem(SELECTED_GAME_MODE_KEY, modeId);
+  setCampSessionItem(SELECTED_GAME_MODE_KEY, modeId);
 }
 
 export function clearSelectedGameMode(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.removeItem(SELECTED_GAME_MODE_KEY);
+  removeCampSessionItem(SELECTED_GAME_MODE_KEY);
 }

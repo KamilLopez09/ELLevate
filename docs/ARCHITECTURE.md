@@ -28,8 +28,8 @@ There is **no application server**. All logic runs client-side; Supabase is the 
 
 | Route | Component | Guard | Purpose |
 |-------|-----------|-------|---------|
-| `/` | `IntakeGatekeeper` | Redirect to `/menu` if session exists | Collect camper identity (sessionStorage) |
-| `/menu` | Week grid (`BentoGrid`) | Requires session | Select curriculum week; shows lock/pass state |
+| `/` | `IntakeGatekeeper` | Redirect to `/menu` if session exists | Collect camper identity (localStorage) |
+| `/menu` | Week grid (`BentoGrid`) | Requires session | Select week; **New camper** resets device storage |
 | `/lesson` | YouTube embed + tabs | Requires session | Watch week video; sets `lesson_complete` |
 | `/application` | `LessonCanvas` | Session + `lesson_complete` | 10-prompt practice session; telemetry on pass |
 
@@ -37,17 +37,22 @@ Navigation shell: `CampScreenLayout` (sidebar on desktop, modal drawer on mobile
 
 ---
 
-## Client session state (`sessionStorage`)
+## Client session state (`localStorage`)
+
+Persistence: `src/lib/session-store.ts` — **localStorage** with a **12-hour TTL** from intake. Legacy `sessionStorage` keys from older builds are cleared on reset.
 
 | Key | Writer | Reader | Value |
 |-----|--------|--------|-------|
+| `elle_session_started_at` | Intake (`touchCampSessionClock`) | session-store | Timestamp for TTL expiry |
 | `camperSessionData` | IntakeGatekeeper | All routes | JSON `CamperSessionData` |
 | `currentWeek` | Menu | Application, curriculum engine | Week number (1–8) |
 | `lesson_complete` | Lesson page | Application guard | `"true"` after video step |
 | `lesson_{n}_passed` | LessonCanvas | Menu unlock logic | `"true"` when week passed |
 | `selectedGameMode` | Legacy / cleared on menu | — | Deprecated path |
 
-Session data does **not** survive tab close. No cookies or server sessions.
+**Reset:** `clearCampSession()` in `camper-session.ts` wipes all keys — triggered by **New camper (reset this device)** on the menu for shared tablets.
+
+Session data does **not** sync across devices. No cookies or server sessions.
 
 ### Camper identity (COPPA-aware)
 
@@ -148,6 +153,8 @@ Cursor MCP servers and Vercel agent skills are configured for AI-assisted develo
 
 ## Known constraints & follow-ups
 
+See [CONSTRAINTS.md](CONSTRAINTS.md) and [RESOLVE.md](RESOLVE.md). Organizer analytics: [ANALYTICS.md](ANALYTICS.md).
+
 | Item | Notes |
 |------|-------|
 | Static export | Cannot hide Supabase table shape from determined clients |
@@ -155,3 +162,4 @@ Cursor MCP servers and Vercel agent skills are configured for AI-assisted develo
 | Match Blitz / Rapid Fire | UI present; not wired into main lesson flow |
 | `certified-angels-site/` | Legacy static HTML/CSS; not part of Next app |
 | Telemetry without env | App works; INSERT skipped with user-visible notice |
+| Cross-device progress | Not in v1; localStorage + menu reset on shared tablets |

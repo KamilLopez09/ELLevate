@@ -5,9 +5,17 @@ import {
   type LessonWeek,
   type Prompt,
 } from "@/data/curriculum";
+import {
+  CURRENT_WEEK_KEY,
+  weekPassedKey,
+} from "@/lib/camp-session-keys";
+import {
+  getCampSessionItem,
+  setCampSessionItem,
+} from "@/lib/session-store";
 import type { AgeBracket } from "@/types/sentence-canvas";
 
-export const CURRENT_WEEK_KEY = "currentWeek";
+export { CURRENT_WEEK_KEY, weekPassedKey } from "@/lib/camp-session-keys";
 
 export const WEEK_NUMBERS = Object.keys(curriculum)
   .map(Number)
@@ -15,15 +23,11 @@ export const WEEK_NUMBERS = Object.keys(curriculum)
 
 export const TOTAL_WEEKS = WEEK_NUMBERS.length;
 
-export function weekPassedKey(weekNumber: number): string {
-  return `lesson_${weekNumber}_passed`;
-}
-
 export function getCurrentWeek(): number {
   if (typeof window === "undefined") {
     return 1;
   }
-  const raw = window.sessionStorage.getItem(CURRENT_WEEK_KEY);
+  const raw = getCampSessionItem(CURRENT_WEEK_KEY);
   const parsed = raw ? Number.parseInt(raw, 10) : 1;
   return curriculum[parsed] ? parsed : 1;
 }
@@ -32,14 +36,14 @@ export function setCurrentWeek(weekNumber: number): void {
   if (typeof window === "undefined") {
     return;
   }
-  window.sessionStorage.setItem(CURRENT_WEEK_KEY, String(weekNumber));
+  setCampSessionItem(CURRENT_WEEK_KEY, String(weekNumber));
 }
 
 export function isWeekPassed(weekNumber: number): boolean {
   if (typeof window === "undefined") {
     return false;
   }
-  return window.sessionStorage.getItem(weekPassedKey(weekNumber)) === "true";
+  return getCampSessionItem(weekPassedKey(weekNumber)) === "true";
 }
 
 export function setWeekPassed(weekNumber: number): void {
@@ -47,7 +51,7 @@ export function setWeekPassed(weekNumber: number): void {
     return;
   }
   const completedWeek = Math.max(1, Math.floor(weekNumber));
-  window.sessionStorage.setItem(weekPassedKey(completedWeek), "true");
+  setCampSessionItem(weekPassedKey(completedWeek), "true");
 }
 
 /**

@@ -10,9 +10,9 @@ Free, interactive ESL web application for **Certified Angels** — an arts-based
 
 | Area | Description |
 |------|-------------|
-| **Intake** | COPPA-aware session gate (`first_name`, last initial, age bracket `5-9` / `10-14`, language, camp group) stored in `sessionStorage` |
+| **Intake** | COPPA-aware session gate (`first_name`, last initial, age bracket `5-9` / `10-14`, language, camp group) stored in **localStorage** (12-hour TTL) |
 | **8-week curriculum** | Week themes, YouTube embeds, age-bracket prompts in `src/data/curriculum.ts` |
-| **Lesson flow** | `/` → `/menu` → `/lesson` (video) → `/application` (practice) with week unlock progression |
+| **Lesson flow** | `/` → `/menu` → `/lesson` (video) → `/application` (practice) with week unlock progression; **New camper** reset on menu for shared tablets |
 | **Practice modes** | Flashcard Drill (review) and Sentence Builder (production); Match Blitz and Rapid Fire scaffolded for post-launch |
 | **Gamification** | Per-prompt scoring (base + first-try + speed bonus); pass threshold 8/10 first-try correct to unlock next week |
 | **Telemetry** | Single Supabase INSERT per completed session; RLS restricts anon to INSERT only |
@@ -135,6 +135,9 @@ components.json                   # shadcn/ui config
 | Doc | Audience | Contents |
 |-----|----------|----------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | SWE review | Routes, session state, scoring, build/deploy |
+| [docs/ANALYTICS.md](docs/ANALYTICS.md) | **Camp organizers** | View camper results in Supabase (Table Editor + SQL) |
+| [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) | Team | Known limits (static app, telemetry timing, RLS) |
+| [docs/RESOLVE.md](docs/RESOLVE.md) | Team | Phased roadmap (session, telemetry, admin UI) |
 | [docs/DESIGN.md](docs/DESIGN.md) | SWE / PM | Architecture decision records |
 | [docs/PROGRESS.md](docs/PROGRESS.md) | Team | Chronological build log |
 | [docs/PUBLISH.md](docs/PUBLISH.md) | DevOps | GitHub + Cloudflare workflow |

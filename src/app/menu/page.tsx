@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { curriculum } from "@/data/curriculum";
@@ -15,6 +16,7 @@ import {
   WEEK_NUMBERS,
 } from "@/lib/curriculum-engine";
 import {
+  clearCampSession,
   clearLessonComplete,
   clearSelectedGameMode,
   readCamperSession,
@@ -62,6 +64,17 @@ export default function MenuPage() {
     clearLessonComplete();
     clearSelectedGameMode();
     router.push("/lesson");
+  };
+
+  const startNewCamper = () => {
+    const confirmed = window.confirm(
+      "Start over for a new camper? This clears all progress on this device.",
+    );
+    if (!confirmed) {
+      return;
+    }
+    clearCampSession();
+    router.replace("/");
   };
 
   if (!ready) {
@@ -123,6 +136,17 @@ export default function MenuPage() {
               >
                 Pick a week to watch, paint, and unlock the next adventure.
               </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xl"
+                  onClick={startNewCamper}
+                  className="min-h-[56px] border-ink/20 bg-paper/80 text-ink hover:bg-paper"
+                >
+                  New camper (reset this device)
+                </Button>
+              </div>
             </BentoCard>
 
             {WEEK_NUMBERS.map((weekNumber, index) => {
