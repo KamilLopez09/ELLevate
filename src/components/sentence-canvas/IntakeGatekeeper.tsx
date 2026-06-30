@@ -25,13 +25,21 @@ const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
-const selectClasses =
-  "min-h-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm transition focus-visible:border-purple-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent aria-[invalid=true]:border-destructive";
+const labelClasses = "mb-2 block text-sm font-bold text-ink/80";
 
-const labelTextClasses = "mb-2 block text-sm font-bold text-ink/80";
+const fieldClasses =
+  "min-h-[56px] min-w-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm transition focus:border-purple-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent";
 
 function handleLastNameInput(raw: string): string {
   return toLastInitial(raw.replace(/[^a-zA-ZÀ-ÿ]/g, " ").trim().split(/\s+/)[0] ?? "");
+}
+
+function isAgeBracket(value: string): value is AgeBracket {
+  return value === "5-9" || value === "10-14";
+}
+
+function isNativeLanguage(value: string): value is NativeLanguage {
+  return value === "English" || value === "Spanish";
 }
 
 export function IntakeGatekeeper() {
@@ -44,7 +52,6 @@ export function IntakeGatekeeper() {
   const [nativeLanguage, setNativeLanguage] = useState<NativeLanguage | "">("");
   const [groupLetter, setGroupLetter] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [attempted, setAttempted] = useState(false);
 
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastInitialRef = useRef<HTMLInputElement>(null);
@@ -62,27 +69,30 @@ export function IntakeGatekeeper() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setAttempted(true);
 
     const cleanFirst = firstName.trim();
     const cleanInitial = toLastInitial(lastInitial);
     const cleanGroup = groupLetter.trim().toUpperCase();
 
-    const firstInvalidRef = !cleanFirst
-      ? firstNameRef
-      : !cleanInitial
-        ? lastInitialRef
-        : !ageBracket
-          ? ageBracketRef
-          : !nativeLanguage
-            ? nativeLanguageRef
-            : !cleanGroup
-              ? groupLetterRef
-              : null;
-
-    if (firstInvalidRef) {
+    if (
+      !cleanFirst ||
+      !cleanInitial ||
+      !isAgeBracket(ageBracket) ||
+      !isNativeLanguage(nativeLanguage) ||
+      !cleanGroup
+    ) {
       setError("Please fill in every box so we can set up your canvas!");
-      firstInvalidRef.current?.focus();
+      if (!cleanFirst) {
+        firstNameRef.current?.focus();
+      } else if (!cleanInitial) {
+        lastInitialRef.current?.focus();
+      } else if (!isAgeBracket(ageBracket)) {
+        ageBracketRef.current?.focus();
+      } else if (!isNativeLanguage(nativeLanguage)) {
+        nativeLanguageRef.current?.focus();
+      } else {
+        groupLetterRef.current?.focus();
+      }
       return;
     }
 
@@ -96,18 +106,16 @@ export function IntakeGatekeeper() {
 
     if (!camperId) {
       setError("Please use letters or numbers in your name.");
+      firstNameRef.current?.focus();
       return;
     }
-
-    const bracket: AgeBracket = ageBracket;
-    const language: NativeLanguage = nativeLanguage;
 
     const data: CamperSessionData = {
       camper_id: camperId,
       first_name: cleanFirst,
       last_initial: cleanInitial,
-      age_bracket: bracket,
-      native_language: language,
+      age_bracket: ageBracket,
+      native_language: nativeLanguage,
       group_letter: cleanGroup,
       cumulativeScore: 0,
       completedModes: [],
@@ -141,41 +149,37 @@ export function IntakeGatekeeper() {
         Tell us a little about you, then we&apos;ll start painting with words.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6" noValidate>
         <div className="flex flex-col gap-4 sm:flex-row">
           <label className="flex-1">
-            <span className={labelTextClasses}>First name</span>
+            <span className={labelClasses}>First name</span>
             <input
               ref={firstNameRef}
               type="text"
-              name="firstName"
+              name="first_name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Maria"
               autoComplete="given-name"
               autoCapitalize="words"
-              enterKeyHint="next"
-              aria-invalid={attempted && !firstName.trim() ? true : undefined}
-              className={selectClasses}
+              className={fieldClasses}
             />
           </label>
 
           <label className="sm:w-32">
-            <span className={labelTextClasses}>Last initial</span>
+            <span className={labelClasses}>Last initial</span>
             <input
               ref={lastInitialRef}
               type="text"
-              name="lastInitial"
+              name="last_initial"
               value={lastInitial}
               onChange={(e) => setLastInitial(handleLastNameInput(e.target.value))}
               placeholder="G"
               maxLength={26}
-              autoComplete="off"
+              autoComplete="family-name"
               autoCapitalize="characters"
-              spellCheck={false}
               aria-describedby="last-initial-hint"
-              aria-invalid={attempted && !lastInitial ? true : undefined}
-              className={selectClasses}
+              className={fieldClasses}
             />
             <span id="last-initial-hint" className="sr-only">
               Enter your last name; only the first letter is saved.
@@ -184,14 +188,16 @@ export function IntakeGatekeeper() {
         </div>
 
         <label>
-          <span className={labelTextClasses}>How old are you?</span>
+          <span className={labelClasses}>How old are you?</span>
           <select
             ref={ageBracketRef}
-            name="ageBracket"
+            name="age_bracket"
             value={ageBracket}
-            onChange={(e) => setAgeBracket(e.target.value as AgeBracket)}
-            aria-invalid={attempted && !ageBracket ? true : undefined}
-            className={selectClasses}
+            onChange={(e) => {
+              const value = e.target.value;
+              setAgeBracket(isAgeBracket(value) ? value : "");
+            }}
+            className={fieldClasses}
           >
             <option value="" disabled>
               Pick your age group
@@ -205,16 +211,16 @@ export function IntakeGatekeeper() {
         </label>
 
         <label>
-          <span className={labelTextClasses}>Home language</span>
+          <span className={labelClasses}>Home language</span>
           <select
             ref={nativeLanguageRef}
-            name="nativeLanguage"
+            name="native_language"
             value={nativeLanguage}
-            onChange={(e) =>
-              setNativeLanguage(e.target.value as NativeLanguage)
-            }
-            aria-invalid={attempted && !nativeLanguage ? true : undefined}
-            className={selectClasses}
+            onChange={(e) => {
+              const value = e.target.value;
+              setNativeLanguage(isNativeLanguage(value) ? value : "");
+            }}
+            className={fieldClasses}
           >
             <option value="" disabled>
               Pick your language
@@ -228,11 +234,11 @@ export function IntakeGatekeeper() {
         </label>
 
         <label className="sm:w-40">
-          <span className={labelTextClasses}>Camp group</span>
+          <span className={labelClasses}>Camp group</span>
           <input
             ref={groupLetterRef}
             type="text"
-            name="groupLetter"
+            name="group_letter"
             value={groupLetter}
             onChange={(e) =>
               setGroupLetter(
@@ -243,19 +249,22 @@ export function IntakeGatekeeper() {
             maxLength={1}
             autoComplete="off"
             autoCapitalize="characters"
-            spellCheck={false}
             aria-label="Camp group letter"
-            aria-invalid={attempted && !groupLetter.trim() ? true : undefined}
-            className={`${selectClasses} text-center uppercase`}
+            className={`${fieldClasses} text-center uppercase`}
           />
         </label>
 
-        <div aria-live="assertive" role="alert">
-          {error ? (
-            <p className="rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80">
-              {error}
-            </p>
-          ) : null}
+        <div
+          role="alert"
+          aria-live="polite"
+          aria-atomic="true"
+          className={
+            error
+              ? "rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
+              : "sr-only"
+          }
+        >
+          {error ?? ""}
         </div>
 
         <motion.button
