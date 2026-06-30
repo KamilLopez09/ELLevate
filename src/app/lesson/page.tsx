@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { StepRail } from "@/components/ui/StepRail";
 import {
@@ -36,6 +38,13 @@ export default function LessonPage() {
     setReady(true);
   }, [router]);
 
+  // Failsafe: never trap a camper if the iframe load event doesn't fire.
+  useEffect(() => {
+    if (!ready) return;
+    const timer = window.setTimeout(() => setVideoReady(true), 4000);
+    return () => window.clearTimeout(timer);
+  }, [ready]);
+
   const handleReady = () => {
     setLessonComplete();
     router.push("/application");
@@ -44,7 +53,9 @@ export default function LessonPage() {
   if (!ready || !week || !bracket) {
     return (
       <CampScreenLayout screen="lesson" activeItemId="watch">
-        <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue">
+          <CampLoading label="Loading this week's lesson…" />
+        </main>
       </CampScreenLayout>
     );
   }
@@ -67,13 +78,12 @@ export default function LessonPage() {
 
       <div className="relative mx-auto flex max-w-3xl flex-col gap-6">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/menu")}
-            className="rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:scale-[1.03] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
+          <Link
+            href="/menu"
+            className="inline-flex min-h-[44px] items-center rounded-full bg-paper px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:scale-[1.03] active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
           >
             ← Menu
-          </button>
+          </Link>
           <StepRail current={2} />
         </header>
 

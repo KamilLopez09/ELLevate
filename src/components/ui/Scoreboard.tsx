@@ -57,12 +57,14 @@ export function Scoreboard({
       </p>
       <p className="mt-2 text-lg text-ink/70">
         You earned{" "}
-        <span className="font-extrabold text-purple-accent">{sessionPoints}</span>{" "}
+        <span className="font-extrabold tabular-nums text-purple-accent">
+          {sessionPoints}
+        </span>{" "}
         points this round
         {retryCount > 0 ? " — nice persistence!" : ""}
       </p>
 
-      <dl className="mt-8 grid w-full max-w-md gap-3 text-left">
+      <dl className="mt-8 grid w-full max-w-md gap-3 text-left tabular-nums">
         <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
           <dt className="font-semibold text-ink/70">Base points</dt>
           <dd className="text-lg font-extrabold text-ink">

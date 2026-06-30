@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { LessonCanvas } from "@/components/LessonCanvas";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
 import { curriculum } from "@/data/curriculum";
@@ -77,7 +78,9 @@ export default function ApplicationPage() {
   if (!ready || !camper) {
     return (
       <CampScreenLayout screen="application" activeItemId="paint">
-        <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue">
+          <CampLoading label="Setting up your canvas…" />
+        </main>
       </CampScreenLayout>
     );
   }
@@ -119,6 +122,9 @@ export default function ApplicationPage() {
           transition={{ duration: 0.35 }}
           className="relative mx-auto max-w-5xl"
         >
+          <h1 className="sr-only">
+            Paint Mode — Week {weekNumber}: {weekTheme}
+          </h1>
           <BentoGrid className="sm:auto-rows-[minmax(4rem,auto)]">
             {!sessionEnded ? (
               <>

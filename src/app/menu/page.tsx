@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { curriculum } from "@/data/curriculum";
 import {
@@ -66,7 +67,9 @@ export default function MenuPage() {
   if (!ready) {
     return (
       <CampScreenLayout screen="menu" activeItemId="weeks">
-        <main className="flex min-h-screen items-center justify-center bg-camp-blue" />
+        <main className="flex min-h-screen items-center justify-center bg-camp-blue">
+          <CampLoading label="Loading your camp weeks…" />
+        </main>
       </CampScreenLayout>
     );
   }
@@ -224,16 +227,16 @@ function WeekCardContent({
       </span>
       {unlocked ? (
         passed ? (
-          <span className="mt-1 inline-flex min-h-[64px] items-center gap-1 rounded-full bg-success-accent/15 px-4 py-2 text-bento-label font-bold text-success-accent">
+          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success-accent/15 px-4 py-2 text-bento-label font-bold text-success-accent">
             Passed · Replay
           </span>
         ) : (
-          <span className="mt-1 inline-flex min-h-[64px] items-center gap-1 rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
+          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
             Start →
           </span>
         )
       ) : (
-        <span className="mt-1 inline-flex min-h-[64px] items-center gap-1 rounded-full bg-ink/10 px-4 py-2 text-bento-label font-bold text-ink/50">
+        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-ink/10 px-4 py-2 text-bento-label font-bold text-ink/50">
           Finish Week {weekNumber - 1} to unlock
         </span>
       )}
