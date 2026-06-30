@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "supabase:deploy-organizer": "bash scripts/deploy-organizer-telemetry.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
