@@ -41,7 +41,7 @@ function NavLink({
     <>
       <span className="font-display text-sm font-bold">{item.label}</span>
       {item.description ? (
-        <span className="mt-0.5 text-bento-label text-muted">{item.description}</span>
+        <span className="mt-0.5 text-bento-label text-muted-foreground">{item.description}</span>
       ) : null}
     </>
   );

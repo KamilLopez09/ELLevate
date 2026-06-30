@@ -175,7 +175,7 @@ export default function MenuPage() {
               tilt={0}
               className="!py-4 text-center"
             >
-              <p className="text-bento-label text-muted">
+              <p className="text-bento-label text-muted-foreground">
                 Completely free · Built for campers ages 5–14
               </p>
             </BentoCard>

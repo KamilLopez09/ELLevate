@@ -85,7 +85,7 @@ function TargetBlank({
       className={`mx-2 inline-flex min-h-[64px] min-w-[7rem] items-center justify-center rounded-2xl border-2 border-dashed align-middle transition-colors duration-200 transition-decel ${
         filled
           ? "border-primary bg-primary/10 font-extrabold text-primary"
-          : "border-border bg-surface-muted text-muted"
+          : "border-border bg-surface-muted text-muted-foreground"
       }`}
       aria-label={filled ? `Selected answer: ${displayValue}` : "Blank to fill in"}
     >

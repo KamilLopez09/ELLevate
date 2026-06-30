@@ -38,7 +38,7 @@ export default function HomePage() {
 
           <IntakeGatekeeper />
 
-          <footer className="text-center text-sm text-muted">
+          <footer className="text-center text-sm text-muted-foreground">
             Completely free · Built for campers ages 5–14
           </footer>
         </div>

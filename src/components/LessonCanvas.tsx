@@ -366,7 +366,7 @@ export function LessonCanvas({
   return (
     <section className="flex flex-col">
       {!externalProgress && (
-        <p className="mb-6 text-sm font-semibold text-muted">
+        <p className="mb-6 text-sm font-semibold text-muted-foreground">
           {prompt.category === "review"
             ? "Review · Flashcard Drill"
             : "Practice · Sentence Builder"}

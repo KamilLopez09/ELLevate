@@ -9,18 +9,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        card: "var(--card)",
-        body: "var(--text)",
-        muted: "var(--muted)",
         border: "var(--border)",
-        "surface-muted": "var(--surface-muted)",
-        primary: "var(--primary)",
-        "primary-dark": "var(--primary-dark)",
-        secondary: "var(--secondary)",
-        "secondary-dark": "var(--secondary-dark)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        destructive: "var(--destructive)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+          dark: "var(--primary-dark)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+          dark: "var(--secondary-dark)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        body: "var(--text)",
         highlight: "var(--highlight)",
         success: "var(--success)",
+        "surface-muted": "var(--surface-muted)",
         "camp-blue": "var(--background)",
         "camp-card": "var(--card)",
         "camp-purple": "var(--primary)",
@@ -28,14 +52,13 @@ const config: Config = {
         "camp-teal": "var(--secondary)",
         "camp-teal-dark": "var(--secondary-dark)",
         "camp-gray": "var(--surface-muted)",
-        "camp-gray-dark": "var(--muted)",
+        "camp-gray-dark": "var(--muted-foreground)",
         "camp-slate": "var(--text)",
         paper: "var(--card)",
         ink: "var(--text)",
         "purple-accent": "var(--primary)",
         "gold-accent": "var(--highlight)",
         "teal-accent": "var(--secondary)",
-        accent: "var(--highlight)",
         "success-accent": "var(--success)",
       },
       fontSize: {
@@ -49,6 +72,9 @@ const config: Config = {
       },
       borderRadius: {
         card: "0.625rem",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       transitionTimingFunction: {
         decel: "var(--ease-decel)",

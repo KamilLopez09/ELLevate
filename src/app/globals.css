@@ -5,20 +5,47 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap");
 
 :root {
-  /* ELLevate design system */
+  /* ELLevate design system + shadcn semantic tokens (camp palette) */
   --background: #f4f6fb;
+  --foreground: #1a2744;
   --card: #ffffff;
+  --card-foreground: #1a2744;
   --text: #1a2744;
-  --muted: #6b7a99;
+  --muted: #e8edf5;
+  --muted-foreground: #6b7a99;
   --border: rgba(0, 0, 0, 0.1);
   --surface-muted: #e8edf5;
 
   --primary: #1a5fa8;
   --primary-dark: #144a85;
+  --primary-foreground: #ffffff;
   --secondary: #1a8f7a;
   --secondary-dark: #147a68;
+  --secondary-foreground: #ffffff;
   --highlight: #f0a500;
   --success: #1a8f7a;
+
+  --popover: #ffffff;
+  --popover-foreground: #1a2744;
+  --accent: #e8edf5;
+  --accent-foreground: #1a2744;
+  --destructive: #dc2626;
+  --input: rgba(0, 0, 0, 0.1);
+  --ring: #1a5fa8;
+  --radius: 0.625rem;
+  --chart-1: #1a5fa8;
+  --chart-2: #1a8f7a;
+  --chart-3: #f0a500;
+  --chart-4: #144a85;
+  --chart-5: #147a68;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a2744;
+  --sidebar-primary: #1a5fa8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8edf5;
+  --sidebar-accent-foreground: #1a2744;
+  --sidebar-border: rgba(0, 0, 0, 0.1);
+  --sidebar-ring: #1a5fa8;
 
   /* Fluid typography */
   --text-body: clamp(1rem, 0.94rem + 0.28vw, 1.125rem);

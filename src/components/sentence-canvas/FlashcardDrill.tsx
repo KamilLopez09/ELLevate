@@ -71,7 +71,7 @@ function FlashcardFace({
       >
         {label}
       </p>
-      <p className="font-semibold text-muted" style={{ fontSize: "var(--text-body)" }}>
+      <p className="font-semibold text-muted-foreground" style={{ fontSize: "var(--text-body)" }}>
         {hint}
       </p>
     </motion.div>

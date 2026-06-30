@@ -86,7 +86,7 @@ export default function ApplicationPage() {
     return (
       <CampScreenLayout screen="application" activeItemId="paint">
         <main className="flex min-h-screen items-center justify-center bg-camp-blue px-4">
-          <p className="text-center text-body text-muted">
+          <p className="text-center text-body text-muted-foreground">
             No Week {weekNumber} prompts found for age group {ageGroup}.
           </p>
         </main>
@@ -145,7 +145,7 @@ export default function ApplicationPage() {
                   <p className="mt-1 font-display font-extrabold text-bento-title text-ink">
                     {weekTheme}
                   </p>
-                  <p className="mt-2 text-bento-label text-muted">
+                  <p className="mt-2 text-bento-label text-muted-foreground">
                     {completedCount} / {sessionPrompts.length} painted
                   </p>
                 </BentoCard>
@@ -160,7 +160,7 @@ export default function ApplicationPage() {
                   <p className="font-display font-bold text-bento-title text-ink">
                     Paint Mode
                   </p>
-                  <p className="mt-1 text-bento-label text-muted">
+                  <p className="mt-1 text-bento-label text-muted-foreground">
                     Tap answers to build sentences
                   </p>
                 </BentoCard>

@@ -19,6 +19,10 @@ Telemetry (score + error count) is sent **once** when all 5 sentences are comple
 
 See [docs/DESIGN.md](docs/DESIGN.md) for architecture alternatives we considered (static export vs. edge Next.js, click-to-fill vs. drag-and-drop, end-of-session telemetry vs. per-click writes, etc.).
 
+## Cursor AI Stack
+
+MCP servers (shadcn, Chrome DevTools, Magic, Supabase) and Vercel agent skills are configured for AI-assisted development. See [docs/CURSOR_SETUP.md](docs/CURSOR_SETUP.md).
+
 ## Getting Started
 
 ```bash
