@@ -12,7 +12,7 @@ Related: [CONSTRAINTS.md](CONSTRAINTS.md) · [ANALYTICS.md](ANALYTICS.md) · [AR
 
 - If a camper **refreshes the page** or **closes the tab by mistake**, they keep their name, unlocked weeks, and progress — for up to **12 hours**.
 - On a **shared tablet**, a counselor taps **“New camper (reset this device)”** on the menu before the next child starts.
-- Progress still does **not** move to a different device automatically (that is Phase 3 optional work).
+- Progress still does **not** move to a different device automatically (that is Phase 4 deferred work).
 
 ### What we changed
 
@@ -26,36 +26,51 @@ Related: [CONSTRAINTS.md](CONSTRAINTS.md) · [ANALYTICS.md](ANALYTICS.md) · [AR
 
 ---
 
-## Phase 2 — Telemetry hardening (optional)
+## Phase 2 — Telemetry hardening ⏭️ (skipped for now)
 
 ### What this means for camp
 
-You already get **one row per passed week** in Supabase (see [ANALYTICS.md](ANALYTICS.md)). Phase 2 only matters if:
+Nothing changes for campers. You still get one row per passed week. Phase 2 adds a **middleman server** between the app and Supabase to block spam — only worth building if you see junk rows piling up.
 
-- You see **suspicious volume** of rows (spam), or
-- You want to **hide** the Supabase URL from casual inspection.
+### Status
 
-### What we would build
+**Skipped** — no evidence of abuse yet. RLS (migration `006`) remains the primary control. Revisit if Table Editor shows suspicious volume.
 
-- A thin **Cloudflare Worker** or **Supabase Edge Function** that accepts POSTs from the app, validates payload, rate-limits by IP, then inserts with a **service role** key (never shipped to browsers).
+### What we would build (when needed)
 
-**Do not start Phase 2** until you have evidence of abuse or a compliance requirement. RLS in migration `006` is the primary control today.
+- Supabase Edge Function or Cloudflare Worker: validate payload, rate-limit by IP, insert with service role key.
 
 ---
 
-## Phase 3 — Organizer analytics UI (optional)
+## Phase 3 — Organizer analytics UI ✅ (implemented)
 
 ### What this means for camp
 
-Today you analyze campers in the **Supabase dashboard** and SQL Editor — no extra app to deploy. Phase 3 would add a **password-protected admin page** (e.g. `/admin`) with charts: pass rates by week, group, language, etc.
+Counselors open **`/admin`** on a laptop (not linked from the kid-facing app), enter an **organizer password**, and see:
 
-### What we would build
+- How many weeks were passed
+- Which camp groups are active
+- A table of each logged session
+- **Export CSV** for Excel
 
-- Next.js route **without** static export (or a separate small admin app).
-- Supabase **service role** or authenticated role with SELECT on `camper_telemetry`.
-- Simple tables/charts; export to CSV for Excel.
+Campers never need this page. Data still comes from the same `camper_telemetry` table — this is a friendlier window than raw Supabase SQL.
 
-**Priority:** Low unless counselors refuse to use Supabase directly. [ANALYTICS.md](ANALYTICS.md) covers the v1 workflow.
+### What we changed
+
+| Piece | Location |
+|-------|----------|
+| Password-protected read API | `supabase/functions/organizer-telemetry/` |
+| Admin page | `src/app/admin/page.tsx` |
+| Client fetch + CSV export | `src/lib/organizer-api.ts` |
+
+### One-time setup (you do this in Supabase)
+
+1. Install [Supabase CLI](https://supabase.com/docs/guides/cli) (or use Dashboard → Edge Functions).
+2. Set secret **`ORGANIZER_PASSWORD`** (pick a strong camp-only password).
+3. Deploy: `supabase functions deploy organizer-telemetry --no-verify-jwt`
+4. Open `https://your-site.pages.dev/admin` and sign in with that password.
+
+Details: [ANALYTICS.md](ANALYTICS.md#option-b-admin-page-recommended-for-counselors) and [PUBLISH.md](PUBLISH.md#organizer-edge-function-phase-3).
 
 ---
 

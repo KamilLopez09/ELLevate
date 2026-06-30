@@ -16,6 +16,7 @@ Free, interactive ESL web application for **Certified Angels** — an arts-based
 | **Practice modes** | Flashcard Drill (review) and Sentence Builder (production); Match Blitz and Rapid Fire scaffolded for post-launch |
 | **Gamification** | Per-prompt scoring (base + first-try + speed bonus); pass threshold 8/10 first-try correct to unlock next week |
 | **Telemetry** | Single Supabase INSERT per completed session; RLS restricts anon to INSERT only |
+| **Organizer analytics** | Password-protected `/admin` page + Supabase Edge Function (see [docs/ANALYTICS.md](docs/ANALYTICS.md)) |
 | **Accessibility** | Skip link, reduced-motion (`MotionProvider`), 56px+ touch targets, modal drawer with focus trap, WAI-ARIA tabs |
 
 ---
@@ -112,7 +113,7 @@ Details: [docs/PUBLISH.md](docs/PUBLISH.md)
 
 ```
 src/
-├── app/                          # Routes: /, /menu, /lesson, /application
+├── app/                          # Routes: /, /menu, /lesson, /application, /admin
 ├── components/
 │   ├── sentence-canvas/          # Game mode UIs
 │   ├── ui/                       # Camp shell, bento, scoreboard, shadcn button
@@ -122,6 +123,7 @@ src/
 ├── styles/animations.css
 └── types/
 supabase/migrations/              # Postgres schema + RLS
+supabase/functions/               # Edge Functions (organizer-telemetry)
 docs/                             # Architecture, design ADRs, progress log
 .cursor/mcp.json                # Cursor MCP server config
 .agents/skills/                   # Vercel agent skills (optional dev tooling)
@@ -135,7 +137,7 @@ components.json                   # shadcn/ui config
 | Doc | Audience | Contents |
 |-----|----------|----------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | SWE review | Routes, session state, scoring, build/deploy |
-| [docs/ANALYTICS.md](docs/ANALYTICS.md) | **Camp organizers** | View camper results in Supabase (Table Editor + SQL) |
+| [docs/ANALYTICS.md](docs/ANALYTICS.md) | **Camp organizers** | `/admin` page + Supabase dashboard + SQL |
 | [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) | Team | Known limits (static app, telemetry timing, RLS) |
 | [docs/RESOLVE.md](docs/RESOLVE.md) | Team | Phased roadmap (session, telemetry, admin UI) |
 | [docs/DESIGN.md](docs/DESIGN.md) | SWE / PM | Architecture decision records |

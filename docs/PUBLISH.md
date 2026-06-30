@@ -96,12 +96,42 @@ Do not skip numbers on existing databases.
 
 ---
 
+## Organizer Edge Function (Phase 3)
+
+The `/admin` page reads telemetry through a Supabase Edge Function so the **service role key never ships to browsers**.
+
+### Deploy once per Supabase project
+
+```bash
+# From repo root, with Supabase CLI logged in and project linked
+supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password"
+supabase functions deploy organizer-telemetry --no-verify-jwt
+```
+
+| Secret / setting | Purpose |
+|------------------|---------|
+| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime |
+| `verify_jwt = false` | Function uses custom password instead of Supabase Auth |
+
+### Verify
+
+1. Deploy the site (includes static `/admin` page).
+2. Open `https://<your-pages-url>/admin`.
+3. Sign in with `ORGANIZER_PASSWORD`.
+4. After a test camper pass, click **Refresh data** — row should appear.
+
+If sign-in fails with “Organizer access is not configured”, the Edge Function secret is missing.
+
+---
+
 ## Post-deploy smoke test
 
 1. Open production URL (e.g. `https://ellevate.pages.dev`).
 2. Complete intake form → menu → lesson → application.
 3. Finish a practice session (pass or retry).
 4. In Supabase Table Editor, confirm a new `camper_telemetry` row on **pass** (if env vars are set).
+5. Open `/admin`, sign in with organizer password, confirm the row appears (requires Edge Function deploy).
 
 ---
 

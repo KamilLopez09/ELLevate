@@ -2,11 +2,41 @@
 
 **Audience:** Camp organizers, teachers, and you (the project owner) — not software engineers required.
 
-**Short answer:** When a camper **passes** a week’s practice (8 of 10 correct on first try) and taps back to the menu, ELLevate writes **one row** to Supabase. You read those rows in the Supabase website. There is no separate “analytics app” in v1.
+**Short answer:** When a camper **passes** a week’s practice (8 of 10 correct on first try) and taps back to the menu, ELLevate writes **one row** to Supabase. You can view those rows in two ways:
+
+1. **Option B (recommended for counselors):** `/admin` on your deployed site — password-protected table + CSV export.
+2. **Option A:** Supabase dashboard — Table Editor or SQL (full control).
 
 ---
 
-## What gets recorded (and what does not)
+## Option B — Admin page (recommended for counselors)
+
+### What this is
+
+A page on your own site — **`https://your-camp-site.pages.dev/admin`** — that only organizers open. Campers never see it in the menu.
+
+You enter a password (set once in Supabase). The page shows pass counts, groups, and a table you can export to Excel.
+
+### One-time setup
+
+1. In Supabase Dashboard → **Edge Functions** → create/deploy `organizer-telemetry` from this repo (`supabase/functions/organizer-telemetry/`).
+2. Add secret **`ORGANIZER_PASSWORD`** (your camp-only password — not the Supabase anon key).
+3. Deploy with JWT verification **off** for this function (see [PUBLISH.md](PUBLISH.md#organizer-edge-function-phase-3)).
+
+### Daily use
+
+1. Open `/admin` on a counselor laptop.
+2. Enter organizer password → **View camper sessions**.
+3. Click **Refresh data** during camp day as needed.
+4. Click **Export CSV** for records or reports.
+
+Password stays in that browser tab until you click **Sign out**.
+
+---
+
+## Option A — Supabase dashboard
+
+### What gets recorded (and what does not)
 
 | Camper action | Saved to Supabase? |
 |---------------|-------------------|
@@ -20,7 +50,7 @@ So each row ≈ **“this camper passed this week’s practice session”** with
 
 ---
 
-## Step-by-step: view rows in Supabase
+## Step-by-step: view rows in Supabase (Option A)
 
 1. Log in to [supabase.com](https://supabase.com) and open your ELLevate project.
 2. In the left sidebar, open **Table Editor**.
@@ -128,9 +158,9 @@ After deploy, confirm env vars and run one test pass locally or on staging.
 
 ---
 
-## Future: admin dashboard (optional)
+## Future: more charts (optional)
 
-If SQL feels too technical for counselors, see **Phase 3** in [RESOLVE.md](RESOLVE.md) — a small password-protected `/admin` page. Until then, Supabase Table Editor + the queries above are the supported workflow.
+Phase 4+ could add graphs (pass rate over time, per-language breakdown). The `/admin` page and SQL queries cover v1 camp needs.
 
 ---
 

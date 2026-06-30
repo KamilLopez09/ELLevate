@@ -32,8 +32,9 @@ There is **no application server**. All logic runs client-side; Supabase is the 
 | `/menu` | Week grid (`BentoGrid`) | Requires session | Select week; **New camper** resets device storage |
 | `/lesson` | YouTube embed + tabs | Requires session | Watch week video; sets `lesson_complete` |
 | `/application` | `LessonCanvas` | Session + `lesson_complete` | 10-prompt practice session; telemetry on pass |
+| `/admin` | Organizer dashboard | Organizer password + Edge Function | Read-only camper telemetry; not linked from camper nav |
 
-Navigation shell: `CampScreenLayout` (sidebar on desktop, modal drawer on mobile).
+Navigation shell: `CampScreenLayout` (sidebar on desktop, modal drawer on mobile). `/admin` uses a standalone layout.
 
 ---
 
@@ -106,6 +107,7 @@ Legacy age brackets (`5-7`, `8-10`, `11-14`) are migrated on read in `camper-ses
 - Anon key is public (expected for static apps).
 - RLS: INSERT-only for `anon`; restrictive policies deny SELECT/UPDATE/DELETE.
 - No service role in the client.
+- **Organizer reads:** `/admin` → Edge Function `organizer-telemetry` (service role server-side, `ORGANIZER_PASSWORD` secret).
 
 ---
 

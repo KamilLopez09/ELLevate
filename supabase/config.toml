@@ -1,0 +1,8 @@
+# Supabase local CLI config. Edge Functions deploy via:
+#   supabase functions deploy organizer-telemetry --no-verify-jwt
+
+[project]
+id = ""
+
+[functions.organizer-telemetry]
+verify_jwt = false
