@@ -32,6 +32,14 @@ function handleLastNameInput(raw: string): string {
   return toLastInitial(raw.replace(/[^a-zA-ZÀ-ÿ]/g, " ").trim().split(/\s+/)[0] ?? "");
 }
 
+function isAgeBracket(value: AgeBracket | ""): value is AgeBracket {
+  return value === "5-9" || value === "10-14";
+}
+
+function isNativeLanguage(value: NativeLanguage | ""): value is NativeLanguage {
+  return value === "English" || value === "Spanish";
+}
+
 export function IntakeGatekeeper() {
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
@@ -61,8 +69,8 @@ export function IntakeGatekeeper() {
     if (
       !cleanFirst ||
       !cleanInitial ||
-      !ageBracket ||
-      !nativeLanguage ||
+      !isAgeBracket(ageBracket) ||
+      !isNativeLanguage(nativeLanguage) ||
       !cleanGroup
     ) {
       setError("Please fill in every box so we can set up your canvas!");
@@ -81,15 +89,12 @@ export function IntakeGatekeeper() {
       return;
     }
 
-    const bracket: AgeBracket = ageBracket;
-    const language: NativeLanguage = nativeLanguage;
-
     const data: CamperSessionData = {
       camper_id: camperId,
       first_name: cleanFirst,
       last_initial: cleanInitial,
-      age_bracket: bracket,
-      native_language: language,
+      age_bracket: ageBracket,
+      native_language: nativeLanguage,
       group_letter: cleanGroup,
       cumulativeScore: 0,
       completedModes: [],
