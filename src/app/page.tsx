@@ -5,7 +5,11 @@ import { StepRail } from "@/components/ui/StepRail";
 export default function HomePage() {
   return (
     <CampScreenLayout screen="home" activeItemId="welcome">
-      <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-10 sm:px-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-10 sm:px-8 focus:outline-none"
+      >
         <div
           aria-hidden
           className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56"

@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Open+Sans:wght@400;600&display=swap");
-
 :root {
   /* ELLevate design system + shadcn semantic tokens (camp palette) */
   --background: #f4f6fb;
@@ -80,6 +78,13 @@
     font-family: var(--font-open-sans), "Open Sans", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Young campers tap a lot — kill the 300ms double-tap zoom delay */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(26, 95, 168, 0.15);
+  }
+
+  :where(h1, h2, h3) {
+    scroll-margin-top: 5rem;
   }
 
   h1,
@@ -163,6 +168,28 @@
     text-wrap: balance;
   }
 
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    transform: translateY(-150%);
+    border-radius: 0.75rem;
+    background: var(--primary);
+    padding: 0.75rem 1.25rem;
+    font-family: var(--font-nunito), "Nunito", system-ui, sans-serif;
+    font-weight: 700;
+    color: var(--primary-foreground);
+    box-shadow: 0 10px 30px -10px rgba(26, 39, 68, 0.45);
+    transition: transform 0.2s var(--ease-decel);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
   .transition-decel {
     transition-timing-function: var(--ease-decel);
   }
@@ -216,16 +243,21 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-shake,
-  .animate-spring {
-    animation: none;
-  }
-
-  .transition-decel {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 
-  .progress-pulse {
+  .skip-link {
+    transition: none;
+  }
+
+  .progress-pulse,
+  .canvas-blob {
     animation: none;
   }
 }

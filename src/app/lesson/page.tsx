@@ -51,7 +51,11 @@ export default function LessonPage() {
 
   return (
     <CampScreenLayout screen="lesson" activeItemId="watch">
-      <main className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="relative min-h-screen overflow-hidden bg-camp-blue px-4 py-8 sm:px-8 focus:outline-none"
+      >
       <div
         aria-hidden
         className="canvas-blob canvas-blob-teal -right-16 top-0 h-52 w-52"

@@ -85,3 +85,18 @@
 .animate-pulse-ring {
   animation: pulse-ring 1.4s ease-out infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spring,
+  .animate-shake,
+  .animate-checkmark-pop,
+  .animate-pulse-ring {
+    animation: none !important;
+  }
+
+  /* Keep the checkmark drawn, just skip the stroke animation */
+  .animate-checkmark-draw {
+    stroke-dashoffset: 0;
+    animation: none !important;
+  }
+}
