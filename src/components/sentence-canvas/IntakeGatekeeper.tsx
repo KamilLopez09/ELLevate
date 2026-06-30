@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -26,7 +26,9 @@ const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
 const selectClasses =
-  "min-h-[56px] min-w-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm outline-none transition focus:border-purple-accent focus-visible:outline-none";
+  "min-h-[56px] w-full rounded-2xl border-2 border-ink/10 bg-white px-4 text-lg font-semibold text-ink shadow-sm transition focus-visible:border-purple-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent aria-[invalid=true]:border-destructive";
+
+const labelTextClasses = "mb-2 block text-sm font-bold text-ink/80";
 
 function handleLastNameInput(raw: string): string {
   return toLastInitial(raw.replace(/[^a-zA-ZÀ-ÿ]/g, " ").trim().split(/\s+/)[0] ?? "");
@@ -42,6 +44,13 @@ export function IntakeGatekeeper() {
   const [nativeLanguage, setNativeLanguage] = useState<NativeLanguage | "">("");
   const [groupLetter, setGroupLetter] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
+
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastInitialRef = useRef<HTMLInputElement>(null);
+  const ageBracketRef = useRef<HTMLSelectElement>(null);
+  const nativeLanguageRef = useRef<HTMLSelectElement>(null);
+  const groupLetterRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (readCamperSession()) {
@@ -53,24 +62,33 @@ export function IntakeGatekeeper() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setAttempted(true);
 
     const cleanFirst = firstName.trim();
     const cleanInitial = toLastInitial(lastInitial);
     const cleanGroup = groupLetter.trim().toUpperCase();
 
-    if (
-      !cleanFirst ||
-      !cleanInitial ||
-      !ageBracket ||
-      !nativeLanguage ||
-      !cleanGroup
-    ) {
+    const firstInvalidRef = !cleanFirst
+      ? firstNameRef
+      : !cleanInitial
+        ? lastInitialRef
+        : !ageBracket
+          ? ageBracketRef
+          : !nativeLanguage
+            ? nativeLanguageRef
+            : !cleanGroup
+              ? groupLetterRef
+              : null;
+
+    if (firstInvalidRef) {
       setError("Please fill in every box so we can set up your canvas!");
+      firstInvalidRef.current?.focus();
       return;
     }
 
     if (!/^[A-Z]$/.test(cleanGroup)) {
       setError("Your camp group should be a single letter (like A).");
+      groupLetterRef.current?.focus();
       return;
     }
 
@@ -123,31 +141,37 @@ export function IntakeGatekeeper() {
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row">
           <label className="flex-1">
-            <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-              First name
-            </span>
+            <span className={labelTextClasses}>First name</span>
             <input
+              ref={firstNameRef}
               type="text"
+              name="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Maria"
-              autoComplete="off"
+              autoComplete="given-name"
+              autoCapitalize="words"
+              enterKeyHint="next"
+              aria-invalid={attempted && !firstName.trim() ? true : undefined}
               className={selectClasses}
             />
           </label>
 
           <label className="sm:w-32">
-            <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-              Last initial
-            </span>
+            <span className={labelTextClasses}>Last initial</span>
             <input
+              ref={lastInitialRef}
               type="text"
+              name="lastInitial"
               value={lastInitial}
               onChange={(e) => setLastInitial(handleLastNameInput(e.target.value))}
               placeholder="G"
               maxLength={26}
               autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
               aria-describedby="last-initial-hint"
+              aria-invalid={attempted && !lastInitial ? true : undefined}
               className={selectClasses}
             />
             <span id="last-initial-hint" className="sr-only">
@@ -157,12 +181,13 @@ export function IntakeGatekeeper() {
         </div>
 
         <label>
-          <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-            How old are you?
-          </span>
+          <span className={labelTextClasses}>How old are you?</span>
           <select
+            ref={ageBracketRef}
+            name="ageBracket"
             value={ageBracket}
             onChange={(e) => setAgeBracket(e.target.value as AgeBracket)}
+            aria-invalid={attempted && !ageBracket ? true : undefined}
             className={selectClasses}
           >
             <option value="" disabled>
@@ -177,14 +202,15 @@ export function IntakeGatekeeper() {
         </label>
 
         <label>
-          <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-            Home language
-          </span>
+          <span className={labelTextClasses}>Home language</span>
           <select
+            ref={nativeLanguageRef}
+            name="nativeLanguage"
             value={nativeLanguage}
             onChange={(e) =>
               setNativeLanguage(e.target.value as NativeLanguage)
             }
+            aria-invalid={attempted && !nativeLanguage ? true : undefined}
             className={selectClasses}
           >
             <option value="" disabled>
@@ -199,11 +225,11 @@ export function IntakeGatekeeper() {
         </label>
 
         <label className="sm:w-40">
-          <span className="mb-2 block min-h-[56px] min-w-[56px] text-sm font-bold text-ink/80">
-            Camp group
-          </span>
+          <span className={labelTextClasses}>Camp group</span>
           <input
+            ref={groupLetterRef}
             type="text"
+            name="groupLetter"
             value={groupLetter}
             onChange={(e) =>
               setGroupLetter(
@@ -213,19 +239,21 @@ export function IntakeGatekeeper() {
             placeholder="A"
             maxLength={1}
             autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
             aria-label="Camp group letter"
+            aria-invalid={attempted && !groupLetter.trim() ? true : undefined}
             className={`${selectClasses} text-center uppercase`}
           />
         </label>
 
-        {error && (
-          <p
-            role="alert"
-            className="rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
-          >
-            {error}
-          </p>
-        )}
+        <div aria-live="assertive" role="alert">
+          {error ? (
+            <p className="rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80">
+              {error}
+            </p>
+          ) : null}
+        </div>
 
         <motion.button
           type="submit"
