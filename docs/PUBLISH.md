@@ -1,60 +1,121 @@
-# Publish to GitHub
+# Deploy & publish
 
-Run these commands from the project root after installing [Node.js 20+](https://nodejs.org/) and authenticating with GitHub.
+Operations guide for GitHub and Cloudflare Pages. The repository is live at [github.com/KamilLopez09/ELLevate](https://github.com/KamilLopez09/ELLevate).
 
-## 1. Authenticate GitHub CLI
+---
 
-```powershell
-gh auth login
+## Prerequisites
+
+- Node.js 20+
+- GitHub access to the repository
+- Cloudflare account with Pages enabled
+- Supabase project with migrations applied (see [README.md](../README.md#supabase-setup))
+
+---
+
+## Local verification (before merge or deploy)
+
+```bash
+npm install
+cp .env.example .env.local
+# Fill in NEXT_PUBLIC_SUPABASE_* values
+npm run lint
+npm run build
 ```
 
-Choose: GitHub.com → HTTPS → Login with browser.
+Confirm:
 
-## 2. Create remote repository and push
+- `Compiled successfully`
+- `Exporting (2/2)` (static export to `out/`)
+- No TypeScript errors
 
-```powershell
-cd C:\Users\CHANGEME\elle-vate
+Serve locally (optional):
 
-gh repo create elle-vate --public --source=. --remote=origin `
-  --description "ELLevate — free interactive ESL app for Certified Angels summer camp"
-
-git push -u origin feat/sentence-canvas
+```bash
+npx serve out
 ```
 
-## 3. Open a pull request
+---
 
-If `main` does not exist on the remote yet, create it from the GitHub UI (empty README), then:
+## Git workflow
 
-```powershell
-gh pr create --base main --head feat/sentence-canvas `
-  --title "Add Sentence Canvas module" `
-  --body "## Summary
-- Bootstrap Next.js static-export app with Certified Angels creative canvas UI
-- Sentence Canvas: click-to-fill verb conjugation with Framer Motion
-- Supabase camper_telemetry schema (anon INSERT only)
-- Hardcoded 5 bilingual sample sentences
+| Branch | Purpose |
+|--------|---------|
+| `main` | Production — triggers Cloudflare Pages deploy |
+| `cursor/*` | Feature / agent branches |
 
-## Test plan
-- [ ] npm install && npm run dev — complete all 5 sentences
-- [ ] Verify spring animation on correct answer and shake on wrong
-- [ ] Run Supabase migration; confirm single INSERT after session complete
-- [ ] npm run build — confirm static export to out/"
+Typical flow:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b cursor/my-feature-6950
+# … changes …
+git push -u origin cursor/my-feature-6950
+# Open PR → review → merge to main
 ```
 
-Or merge directly on `main`:
+After merge, Cloudflare rebuilds automatically if the project tracks `main`.
 
-```powershell
-git branch -M main
-git push -u origin main
-```
+---
 
-## 4. Cloudflare Pages
-
-Connect the GitHub repo in Cloudflare Pages:
+## Cloudflare Pages configuration
 
 | Setting | Value |
 |---------|-------|
+| Framework preset | Next.js (Static HTML Export) or None |
 | Build command | `npm run build` |
-| Output directory | `out` |
+| Build output directory | `out` |
+| Root directory | `/` (repo root) |
+| Node.js version | 20 |
 
-Set environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+### Environment variables (Production + Preview)
+
+| Name | Value |
+|------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<project>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public key |
+
+Changes to `NEXT_PUBLIC_*` require a **new build** — they are inlined at compile time.
+
+---
+
+## Supabase migrations
+
+Apply in the SQL Editor in numeric order:
+
+1. `001_camper_telemetry.sql` — base table + RLS
+2. `002_camper_intake_fields.sql` — identity columns
+3. `003_add_gamification_stats.sql` — scoring columns
+4. `004_game_mode_scoring.sql` — game mode breakdown
+5. `005_age_brackets_5_9_10_14.sql` — bracket constraint update
+6. `006_enforce_rls_policies.sql` — restrictive RLS hardening
+7. `007_coppa_compliance_schema.sql` — COPPA intake table + PII minimization
+
+Do not skip numbers on existing databases.
+
+---
+
+## Post-deploy smoke test
+
+1. Open production URL (e.g. `https://ellevate.pages.dev`).
+2. Complete intake form → menu → lesson → application.
+3. Finish a practice session (pass or retry).
+4. In Supabase Table Editor, confirm a new `camper_telemetry` row on **pass** (if env vars are set).
+
+---
+
+## Troubleshooting
+
+| Symptom | Check |
+|---------|-------|
+| Build fails on Pages | Node 20; run `npm run build` locally with same env |
+| Telemetry not saving | `NEXT_PUBLIC_*` set in Pages dashboard; RLS policies applied |
+| Blank pages after deploy | Output directory must be `out`, not `.next` |
+| Stale Supabase URL in prod | Redeploy after env var change |
+
+---
+
+## Legacy: initial GitHub publish
+
+The project was originally published with `gh repo create` and a feature branch PR. That one-time bootstrap is complete — use the Git workflow above for ongoing changes.

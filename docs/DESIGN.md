@@ -59,3 +59,55 @@ RLS policy constrains `module_name = 'sentence_canvas'` and `score` range to red
 ## Score Semantics
 
 We track **total correct completions** (each sentence counts once when answered correctly) and **error_count** (every wrong swatch click). Alternative: first-try-only scoring — stricter but punishes exploration; rejected for a creative camp setting.
+
+---
+
+## Gamification & pass threshold (Milestone 10+)
+
+| Option | Pros | Cons | Decision |
+|--------|------|------|----------|
+| **8/10 first-try pass to unlock next week** | Clear camp progression; retry without DB writes on fail | Stricter than single 80% session metric | **Selected** — drives curriculum unlock |
+| Pass on any completion | Lower friction | Weak mastery signal | Rejected |
+| Per-mode telemetry rows | Rich analytics | 4× DB load; complexity | Rejected for v1 |
+
+Scoring constants live in `lib/gamification.ts` per game mode (base, first-try, speed caps).
+
+---
+
+## Session storage vs. server auth
+
+| Option | Pros | Cons | Decision |
+|--------|------|------|----------|
+| **`sessionStorage` progression flags** | Zero backend; works with static export; tab-scoped privacy | Lost on tab close; no cross-device | **Selected** |
+| Supabase auth per camper | Persistent identity | COPPA/auth burden; overkill for camp kiosk | Rejected for v1 |
+| JWT in cookie | Cross-tab | Needs server or edge auth | Rejected |
+
+---
+
+## Accessibility & motion (Milestone 11)
+
+| Option | Pros | Cons | Decision |
+|--------|------|------|----------|
+| **`MotionConfig reducedMotion="user"` app-wide** | One config honors OS setting for all Framer Motion | Does not cover raw CSS keyframes alone | **Selected** — paired with CSS `@media (prefers-reduced-motion)` |
+| Per-component motion guards | Fine-grained | Easy to miss new components | Supplemented, not primary |
+| Disable all animation | Simplest a11y | Removes core camp delight | Rejected |
+
+Mobile nav uses a focus-trapped modal drawer rather than a non-modal overlay — required for keyboard and screen-reader users on shared camp tablets.
+
+---
+
+## shadcn/ui adoption
+
+| Option | Pros | Cons | Decision |
+|--------|------|------|----------|
+| **shadcn + camp token mapping** | Accessible primitives; MCP-assisted installs; stays in-repo | Extra deps; must not override camp visual identity | **Selected** for incremental primitives (Button, future Dialog) |
+| Full shadcn default theme | Fast bootstrap | Conflicts with Certified Angels palette | Rejected — tokens mapped in `globals.css` |
+| Custom components only | Full brand control | Slower to add complex a11y patterns | Partial — camp components remain primary |
+
+---
+
+## Related docs
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — routes, session keys, telemetry flow
+- [PROGRESS.md](PROGRESS.md) — implementation timeline
+- [CURSOR_SETUP.md](CURSOR_SETUP.md) — optional AI dev tooling

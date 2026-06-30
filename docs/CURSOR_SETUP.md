@@ -1,99 +1,103 @@
-# Cursor AI Stack for ELLevate
+# Cursor AI development stack
 
-This project includes MCP servers and agent skills so Cursor can help build UI, audit accessibility, test in a live browser, and manage Supabase schema.
+Optional tooling for contributors using [Cursor](https://cursor.com). **Not required** to run or deploy ELLevate — production builds ignore MCP and agent skills.
 
-## What's installed
+For application architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+---
+
+## What's configured
 
 | Integration | Type | Purpose |
 |-------------|------|---------|
-| **shadcn MCP** | MCP | Browse and install shadcn/ui components into the project |
-| **web-design-guidelines** (+ 8 Vercel skills) | Agent skill | Audit UI for accessibility, performance, and UX best practices |
-| **Chrome DevTools MCP** | MCP | Live browser testing, screenshots, performance traces |
-| **Magic MCP (21st.dev)** | MCP | AI-generated UI components (requires API key) |
-| **Supabase MCP** | MCP | Schema, migrations, and RLS review (requires access token) |
+| **shadcn MCP** | MCP | Browse and install shadcn/ui components |
+| **web-design-guidelines** (+ 8 Vercel skills) | Agent skill | UI/accessibility audits |
+| **Chrome DevTools MCP** | MCP | Live browser testing, screenshots, performance |
+| **Magic MCP (21st.dev)** | MCP | AI-generated UI drafts (requires API key) |
+| **Supabase MCP** | MCP | Schema and migration review (requires access token) |
 
-Configuration lives in:
+| File / directory | Role |
+|------------------|------|
+| `.cursor/mcp.json` | MCP server definitions (committed) |
+| `.agents/skills/` | Vercel agent skills (committed) |
+| `components.json` | shadcn/ui project config |
+| `skills-lock.json` | Skills CLI lockfile |
 
-- `.cursor/mcp.json` — MCP server definitions (committed)
-- `.agents/skills/` — Vercel agent skills (committed)
-- `components.json` — shadcn/ui project config (committed)
+---
 
-## One-time setup (per developer)
-
-### 1. Clone and install
+## Setup (new contributor)
 
 ```bash
+git clone https://github.com/KamilLopez09/ELLevate.git
+cd ELLevate
 npm install
 cp .env.example .env.local
-# Add Supabase URL + anon key for the app
 ```
 
-### 2. Enable MCP servers in Cursor
+### MCP servers
 
-1. Open **Cursor Settings → Tools & MCP**
-2. Enable all servers listed in `.cursor/mcp.json`
-3. Restart Cursor if tools don't appear
+1. Open the project in Cursor.
+2. Go to **Customize** (sidebar) → **MCP**, or **Settings → Tools & MCP**.
+3. Enable servers from `.cursor/mcp.json`.
+4. Restart Cursor if tools do not appear.
 
-### 3. Optional API keys (Magic + Supabase MCP)
+MCP config loads from `.cursor/mcp.json` when the project opens — toggles may not be required on all Cursor versions.
 
-Export these in your shell profile or set them in Cursor's MCP env (never commit real keys):
+### Optional API keys
+
+Set in your shell profile (never commit):
 
 ```bash
-export MAGIC_API_KEY="your-21st-dev-key"        # https://21st.dev/magic/console
-export SUPABASE_ACCESS_TOKEN="sbp_..."          # https://supabase.com/dashboard/account/tokens
+export MAGIC_API_KEY="..."           # https://21st.dev/magic/console
+export SUPABASE_ACCESS_TOKEN="sbp_..." # https://supabase.com/dashboard/account/tokens
 ```
 
-The app itself only needs `NEXT_PUBLIC_SUPABASE_*` in `.env.local`.
+Restart Cursor after setting env vars. The app itself only needs `NEXT_PUBLIC_SUPABASE_*` in `.env.local`.
 
-## Using the stack
+### Agent skills
 
-### shadcn MCP
-
-With the dev server running, ask Cursor:
-
-- "Add dialog and button from shadcn for the intake gatekeeper"
-- "Show available form components in the shadcn registry"
-
-New components install to `src/components/ui/` and use the camp design tokens in `globals.css`.
-
-### web-design-guidelines skill
-
-- "Audit `src/components/sentence-canvas/` against web design guidelines"
-- "Check accessibility for campers ages 5–14 on the lesson page"
-- Type `/web-design-guidelines` in Agent chat to invoke explicitly
-
-### Chrome DevTools MCP
-
-Start the app first (`npm run dev`), then:
-
-- "Open localhost:3000/lesson and screenshot mobile viewport"
-- "Check console errors on the application page"
-- "Measure LCP on the home page"
-
-Requires Node 20+ and a local Chrome/Chromium install.
-
-### Magic MCP
-
-- "Generate a camp-themed scoreboard card"
-- Restyle Magic output to match ELLevate tokens (`camp-purple`, bento shadows, Nunito/Open Sans)
-
-### Supabase MCP
-
-- "Review RLS policies in supabase/migrations/"
-- "Explain the camper_telemetry schema"
-
-## Re-installing skills
-
-If skills are missing after clone:
+Skills in `.agents/skills/` should auto-discover. If missing:
 
 ```bash
 npx skills add vercel-labs/agent-skills -a cursor -y
 ```
 
-## Re-initializing shadcn MCP
+Invoke in Agent chat with `/web-design-guidelines` or natural language ("audit against web design guidelines").
+
+---
+
+## Example prompts
+
+With `npm run dev` running:
+
+```
+Audit src/components/sentence-canvas/ against web design guidelines
+```
+
+```
+Add a dialog component from shadcn for the retry modal
+```
+
+```
+Open localhost:3000/menu and screenshot at 375px mobile width
+```
+
+---
+
+## Maintenance
+
+**Re-init shadcn MCP** (may overwrite `.cursor/mcp.json` — verify other servers remain):
 
 ```bash
 npx shadcn@latest mcp init --client cursor
 ```
 
-This merges into `.cursor/mcp.json`; verify chrome-devtools, magic, and supabase entries remain after re-running.
+**Debug MCP issues:** View → Output → **MCP Logs** in Cursor.
+
+---
+
+## Security
+
+- MCP servers can execute local commands and access configured APIs.
+- Never commit API keys; use `${env:...}` placeholders in `.cursor/mcp.json`.
+- Review third-party MCP packages before enabling in production-adjacent environments.
