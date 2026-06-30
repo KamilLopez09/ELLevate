@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CAMP_NAV,
   CAMP_SCREEN_LABELS,
@@ -121,10 +121,49 @@ export function CampScreenLayout({
   const pathname = usePathname();
   const screen = screenOverride ?? resolveScreen(pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Modal drawer a11y: Escape to close, focus trap, restore focus on close.
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const opener = toggleRef.current;
+    drawerRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusables = drawerRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusables || focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      opener?.focus();
+    };
+  }, [mobileOpen]);
 
   return (
     <div className={`relative min-h-screen bg-camp-blue ${className}`}>
@@ -143,14 +182,20 @@ export function CampScreenLayout({
             <motion.button
               type="button"
               aria-label="Close navigation menu"
-              className="fixed inset-0 z-40 bg-ink/30 md:hidden"
+              className="fixed inset-0 z-40 overscroll-contain bg-ink/30 md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
-              className="fixed inset-y-0 left-0 z-50 w-[min(280px,85vw)] border-r border-border bg-card shadow-bento-purple md:hidden"
+              ref={drawerRef}
+              id="camp-mobile-nav"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Camp navigation"
+              tabIndex={-1}
+              className="fixed inset-y-0 left-0 z-50 w-[min(280px,85vw)] overflow-y-auto overscroll-contain border-r border-border bg-card shadow-bento-purple focus:outline-none md:hidden"
               initial={{ x: -SIDEBAR_WIDTH }}
               animate={{ x: 0 }}
               exit={{ x: -SIDEBAR_WIDTH }}
@@ -163,7 +208,6 @@ export function CampScreenLayout({
                   setMobileOpen(false);
                 }
               }}
-              aria-label="Camp navigation"
             >
               <SidebarPanel
                 screen={screen}
@@ -178,11 +222,12 @@ export function CampScreenLayout({
       <div className="md:pl-[260px]">
         <header className="sticky top-0 z-20 flex min-h-[64px] items-center border-b border-border bg-card/95 px-4 backdrop-blur-sm md:hidden">
           <button
+            ref={toggleRef}
             type="button"
             aria-expanded={mobileOpen}
             aria-controls="camp-mobile-nav"
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex min-h-[64px] min-w-[64px] items-center justify-center rounded-xl border border-border bg-card font-display text-sm font-bold text-body"
+            className="inline-flex min-h-[64px] min-w-[64px] items-center justify-center rounded-xl border border-border bg-card font-display text-sm font-bold text-body transition hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {mobileOpen ? "Close" : "Menu"}
           </button>
