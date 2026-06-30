@@ -81,12 +81,15 @@ export function IntakeGatekeeper() {
       return;
     }
 
+    const bracket: AgeBracket = ageBracket;
+    const language: NativeLanguage = nativeLanguage;
+
     const data: CamperSessionData = {
       camper_id: camperId,
       first_name: cleanFirst,
       last_initial: cleanInitial,
-      age_bracket: ageBracket,
-      native_language: nativeLanguage,
+      age_bracket: bracket,
+      native_language: language,
       group_letter: cleanGroup,
       cumulativeScore: 0,
       completedModes: [],
