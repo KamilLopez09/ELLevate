@@ -14,9 +14,17 @@ import {
   type OrganizerSummary,
 } from "@/lib/organizer-api";
 
+/** Certified Angels camp local time — Postgres still stores UTC in the database. */
+const CAMP_TIME_ZONE = "America/New_York";
+
 function formatWhen(iso: string): string {
   try {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString("en-US", {
+      timeZone: CAMP_TIME_ZONE,
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZoneName: "short",
+    });
   } catch {
     return iso;
   }
@@ -293,6 +301,10 @@ export default function AdminPage() {
             ) : null}
 
             {summary ? <SummaryCards summary={summary} /> : null}
+            <p className="text-sm text-ink/60">
+              Session times are shown in Eastern (camp local). Supabase Table
+              Editor displays the same moments in UTC (+00).
+            </p>
             <TelemetryTable rows={rows} />
           </>
         )}
