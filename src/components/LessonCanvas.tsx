@@ -22,7 +22,7 @@ import {
   type ScoreResult,
   type SessionScoreSummary,
 } from "@/lib/gamification";
-import { createBrowserClient } from "@/lib/supabase/client";
+import { postCamperTelemetry } from "@/lib/telemetry";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
 import type { LessonProgressState } from "@/types/lesson-progress";
@@ -299,15 +299,8 @@ export function LessonCanvas({
         group_letter: camper.group_letter,
       };
 
-      const supabase = createBrowserClient();
-      if (supabase) {
-        const { error } = await supabase
-          .from("camper_telemetry")
-          .insert(payload);
-        setTelemetryWarning(Boolean(error));
-      } else {
-        setTelemetryWarning(true);
-      }
+      const saved = await postCamperTelemetry(payload);
+      setTelemetryWarning(!saved);
     }
 
     setIsSaving(false);

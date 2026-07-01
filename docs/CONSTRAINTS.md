@@ -10,9 +10,9 @@ Plain-language list of what the app **can and cannot** do today. For how to fix 
 |----------------------|------------------------|
 | Progress follows the camper to another iPad | Progress stays on **one browser/device** unless you add a login or camper code (not built yet). |
 | You can see every tap in real time | The app saves **one summary row per passed week**, when the camper returns to the menu after passing. |
-| Bad actors cannot spam your database | Supabase **Row Level Security (RLS)** validates each insert; junk rows are rejected. A determined person could still send many valid-looking rows — see “Spam risk” below. |
+| Bad actors cannot spam your database | Writes go through a **Supabase Edge Function** that validates every field before inserting; the browser can no longer write to the table directly. A determined person could still send many valid-looking requests — see “Spam risk” below. |
 | Change lesson text without redeploying | Curriculum lives **inside the JavaScript bundle**. Edits require a new build and deploy. |
-| Match Blitz / Rapid Fire in the main flow | Those screens exist as **scaffolding**; only Flashcard Drill and Sentence Builder run in lessons today. |
+| Match Blitz / Rapid Fire in the main flow | Only Flashcard Drill and Sentence Builder run in lessons. The old scaffolding components were removed; the scoring modes remain reserved for a future build. |
 
 ---
 
@@ -26,14 +26,24 @@ The site is pre-built HTML/JS on Cloudflare Pages. There is no ELLevate backend 
 
 - Supabase URL and anon key are visible in the client (normal for this pattern).
 - You cannot hide table names or column shapes from someone inspecting network traffic.
-- Security relies on **RLS policies**, not on hiding the API.
+- Security relies on the **Edge Function validating writes** plus **RLS policies** that deny all direct table access to the public roles — not on hiding the API. The service role key stays server-side in the Edge Function.
 
-### Browser session (localStorage, 12-hour TTL)
+### Browser session (localStorage, 12-hour TTL) — **[RESOLVED]**
+
+> **Previously:** camper identity lived in `sessionStorage`, which was wiped on
+> tab close. On shared classroom iPads a child who accidentally closed the tab
+> lost their name and unlocked weeks. **This volatility constraint is now
+> resolved.**
 
 Camper identity and week progress are stored in **`localStorage`** via `src/lib/session-store.ts`:
 
-- Survives refresh and accidental tab close (unlike old `sessionStorage`).
-- Expires after **12 hours** from intake; then the camper is sent back to the start screen.
+- Survives refresh and accidental tab close (unlike the old `sessionStorage`).
+- **TTL logic:** `touchCampSessionClock` stamps `elle_session_started_at` at
+  intake. On every read, `session-store.ts` compares `now - started_at` against a
+  **12-hour** window; once exceeded, the session is treated as expired and the
+  camper is returned to the start screen. This keeps a single child's progress
+  resilient across an entire camp day without persisting stale identity
+  overnight on a shared device.
 - **“New camper (reset this device)”** on the menu wipes all keys — use on shared camp tablets between children.
 
 Legacy `sessionStorage` keys from older builds are cleared on reset.
@@ -45,40 +55,45 @@ Legacy `sessionStorage` keys from older builds are cleared on reset.
 | Intake submit | No (local only) |
 | Video watched | No |
 | Practice failed (below 8/10 first-try) | No |
-| Practice **passed** + return to menu | **Yes** — one `INSERT` into `camper_telemetry` |
+| Practice **passed** + return to menu | **Yes** — one write via the `camper-telemetry` Edge Function |
 
-If `NEXT_PUBLIC_SUPABASE_*` env vars are missing, the app still works locally; the camper sees a non-blocking warning.
+If `NEXT_PUBLIC_SUPABASE_*` env vars are missing (or the Edge Function is unreachable), the app still works locally; the camper sees a non-blocking warning.
 
-### RLS mitigations (migrations 006–007)
+### Write path & RLS (migrations 006–008)
 
-Anonymous campers may **INSERT only**. SELECT/UPDATE/DELETE are denied for `anon`.
+Telemetry writes go through the **`camper-telemetry` Edge Function**, which
+validates every field (mirroring the DB constraints) and inserts with the
+**service role key**. Migration `008` **revokes direct INSERT** from `anon` and
+`authenticated`, so the public roles now have **no** table privileges at all —
+SELECT, UPDATE, DELETE, **and** INSERT are denied.
 
-Insert policies enforce:
+The Edge Function enforces:
 
 - `module_name = 'sentence_canvas'`
 - Valid score ranges, week 1–8, COPPA-safe name fields (`first_name`, single-letter `last_initial`)
 - Allowed `game_mode`, `age_bracket`, `native_language`, `group_letter` values
+- Only whitelisted columns are forwarded (no mass-assignment)
 
-Organizers read data in the **Supabase dashboard** (service role / project owner), not through the camper app.
+Organizers read data through the `organizer-telemetry` Edge Function (`/admin`)
+or the **Supabase dashboard** — never through anon table access.
 
 ### Spam risk
 
-RLS stops malformed rows but not a script sending many **policy-compliant** rows. Mitigations if this becomes a problem:
+The Edge Function rejects malformed requests, but not a script sending many
+**valid-looking** requests. Further mitigations if this becomes a problem:
 
-1. **Phase 2 (optional):** Cloudflare Worker or Supabase Edge Function as a write proxy with rate limits.
+1. Add **rate limiting** (by IP) inside the `camper-telemetry` function.
 2. Monitor row volume in Supabase (see [ANALYTICS.md](ANALYTICS.md)).
 
-For a small camp deployment, RLS + one-row-per-pass is usually enough.
+For a small camp deployment, the validating write proxy + one-row-per-pass is usually enough.
 
 ### Curriculum and content
 
 - Source: `src/data/curriculum.ts`
 - Unlock: week *N* requires passing week *N − 1* (8 of 10 first-try correct).
-- Post-launch game modes (`MatchBlitz`, `RapidFire`) are not wired in `LessonCanvas.tsx`.
-
-### Legacy folder
-
-`certified-angels-site/` is an old static site copy. It is **not** part of the Next.js build.
+- Only Flashcard Drill and Sentence Builder are wired in `LessonCanvas.tsx`. The
+  unused `MatchBlitz`/`RapidFire` components were removed; their `match_blitz` /
+  `rapid_fire` scoring definitions remain in `lib/gamification.ts` for a future build.
 
 ---
 
@@ -88,6 +103,7 @@ For a small camp deployment, RLS + one-row-per-pass is usually enough.
 |----------|---------------|------------------|
 | **localStorage** | Small key/value store in the browser, shared across tabs on same site | Like a tiny persistent `Properties` file on the client |
 | **Static export** | Pre-compiled files served from a CDN; no server code per request | Shipping a JAR of static resources only |
-| **RLS** | Database rules: “this role may only INSERT rows that look like X” | Similar idea to Oracle VPD / fine-grained policies |
-| **Anon key** | Public API key with limited DB permissions | Like a JDBC user with INSERT-only grants |
+| **RLS** | Database rules that restrict what a role can read/write | Similar idea to Oracle VPD / fine-grained policies |
+| **Anon key** | Public API key used only to reach the Edge Functions; no direct table access | Like a service account that can only call one stored procedure |
+| **Edge Function** | Small server-side function (Deno) at the edge; holds the service role key and validates writes | Like a thin validating servlet in front of the DB |
 | **Telemetry** | Summary events sent to the database for organizers | Application logging / audit inserts |

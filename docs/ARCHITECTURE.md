@@ -12,15 +12,22 @@ Technical overview for software engineering review. For decision rationale, see 
 │  (browser)  │                        │   (out/ CDN)     │
 └──────┬──────┘                        └──────────────────┘
        │
-       │  HTTPS POST (anon key)
+       │  HTTPS POST (fetch, anon key)
        ▼
-┌──────────────────┐
-│     Supabase     │
-│  camper_telemetry│  INSERT-only RLS
-└──────────────────┘
+┌───────────────────────────┐   service role   ┌──────────────────┐
+│  Supabase Edge Function    │ ───────────────► │     Postgres     │
+│  camper-telemetry (Deno)   │   validated      │  camper_telemetry│
+│  organizer-telemetry (Deno)│   INSERT/SELECT  └──────────────────┘
+└───────────────────────────┘
 ```
 
-There is **no application server**. All logic runs client-side; Supabase is the only remote persistence.
+There is **no application server**. All UI logic runs client-side on a static
+export; the browser never opens a direct database connection. The only remote
+persistence is Supabase, reached through two Deno **Edge Functions**:
+
+- **`camper-telemetry`** — public write proxy. The client `POST`s a passed-session
+  summary; the function validates it and inserts with the service role key.
+- **`organizer-telemetry`** — password-protected reads for `/admin`.
 
 ---
 
@@ -87,27 +94,47 @@ Legacy age brackets (`5-7`, `8-10`, `11-14`) are migrated on read in `camper-ses
 |----|-----------|--------|
 | `flashcard_drill` | `FlashcardDrill.tsx` | Active (review prompts) |
 | `sentence_builder` | `SentenceBuilder.tsx` | Active (production prompts) |
-| `match_blitz` | `MatchBlitz.tsx` | Scaffolded (post-launch) |
-| `rapid_fire` | `RapidFire.tsx` | Scaffolded (post-launch) |
+
+> `match_blitz` and `rapid_fire` scoring definitions remain in `lib/gamification.ts`,
+> but their UI components were removed as unwired scaffolding. Re-add components
+> before re-enabling either mode in `GameModeSelector`.
 
 ---
 
 ## Telemetry & Supabase
 
-**When:** One INSERT after a **passed** session (not on retry, not per-click).
+**When:** One write after a **passed** session (not on retry, not per-click).
 
-**Client:** `createBrowserClient()` in `lib/supabase/client.ts` using `NEXT_PUBLIC_*` env vars. If env is missing, session completes locally and a non-blocking warning is shown.
+**Write pipeline (edge-compute):**
 
-**Payload (`CamperTelemetryRow`):** module metadata, game scoring breakdown, week number, accuracy stats, and COPPA-minimized identity (`first_name`, `last_initial` — not full display name in current types).
+```
+LessonCanvas → postCamperTelemetry() → fetch POST
+  → camper-telemetry Edge Function (Deno)
+     → validate payload (mirrors RLS constraints)
+     → INSERT via service role → Postgres camper_telemetry
+```
 
-**Migrations:** Apply `001`–`007` in order. Later migrations extend columns (gamification), tighten RLS (`006`), and add COPPA intake table (`007`). The checked-in `001` reflects the original schema; production databases should reflect the latest migration state.
+- **Client:** `postCamperTelemetry()` in `lib/telemetry.ts` `fetch`-POSTs the
+  payload to `/functions/v1/camper-telemetry`. The browser holds **only** the
+  public anon key and **never** connects to the database directly. If env is
+  missing or the function returns non-2xx, the session completes locally and a
+  non-blocking warning is shown.
+- **Edge Function:** `supabase/functions/camper-telemetry/index.ts` re-validates
+  every field against the same rules as the DB check constraints, forwards only
+  whitelisted columns (no mass-assignment), and inserts with the
+  `SUPABASE_SERVICE_ROLE_KEY` (server-side only).
+
+**Payload (`CamperTelemetryRow`):** module metadata, game scoring breakdown, week number, accuracy stats, and COPPA-minimized identity (`first_name`, `last_initial`).
+
+**Migrations:** Apply `001`–`008` in order. Later migrations extend columns (gamification), tighten RLS (`006`), add the COPPA intake table (`007`), and route telemetry writes through the Edge Function by revoking direct client INSERT (`008`). Production databases should reflect the latest migration state.
 
 **Security model:**
 
-- Anon key is public (expected for static apps).
-- RLS: INSERT-only for `anon`; restrictive policies deny SELECT/UPDATE/DELETE.
-- No service role in the client.
-- **Organizer reads:** `/admin` → Edge Function `organizer-telemetry` (service role server-side, `ORGANIZER_PASSWORD` secret).
+- Anon key is public (expected for static apps) and is used only to reach the Edge Functions through the Supabase gateway.
+- RLS: `anon`/`authenticated` have **no** table privileges — restrictive policies deny SELECT/UPDATE/DELETE **and** INSERT (`008`).
+- The **service role key never reaches the client**; it lives only in the Edge Function environment.
+- **Writes:** client → `camper-telemetry` Edge Function (validates, inserts via service role).
+- **Organizer reads:** `/admin` → `organizer-telemetry` Edge Function (service role server-side, `ORGANIZER_PASSWORD` secret).
 
 ---
 
@@ -161,7 +188,5 @@ See [CONSTRAINTS.md](CONSTRAINTS.md) and [RESOLVE.md](RESOLVE.md). Organizer ana
 |------|-------|
 | Static export | Cannot hide Supabase table shape from determined clients |
 | Content updates | Curriculum changes require redeploy |
-| Match Blitz / Rapid Fire | UI present; not wired into main lesson flow |
-| `certified-angels-site/` | Legacy static HTML/CSS; not part of Next app |
 | Telemetry without env | App works; INSERT skipped with user-visible notice |
 | Cross-device progress | Not in v1; localStorage + menu reset on shared tablets |

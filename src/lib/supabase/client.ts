@@ -1,7 +1,10 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-
-let client: SupabaseClient | null = null;
-
+/**
+ * Supabase connection config for the static client.
+ *
+ * The browser never opens a direct database connection: telemetry writes go
+ * through the `camper-telemetry` Edge Function and organizer reads through
+ * `organizer-telemetry`, both called with `fetch` using this public config.
+ */
 export function getSupabaseConfig(): { url: string; key: string } | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -11,17 +14,4 @@ export function getSupabaseConfig(): { url: string; key: string } | null {
   }
 
   return { url, key };
-}
-
-export function createBrowserClient(): SupabaseClient | null {
-  const config = getSupabaseConfig();
-  if (!config) {
-    return null;
-  }
-
-  if (!client) {
-    client = createClient(config.url, config.key);
-  }
-
-  return client;
 }

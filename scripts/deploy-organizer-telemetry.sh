@@ -25,7 +25,13 @@ fi
 
 npx supabase link --project-ref "$SUPABASE_PROJECT_REF" --yes
 npx supabase secrets set "ORGANIZER_PASSWORD=$ORGANIZER_PASSWORD"
+
+# camper-telemetry: public write proxy (validates payload, inserts via service role).
+npx supabase functions deploy camper-telemetry --no-verify-jwt
+# organizer-telemetry: password-protected reads for /admin.
 npx supabase functions deploy organizer-telemetry --no-verify-jwt
 
 echo ""
-echo "Done. Open https://YOUR-SITE/admin and sign in with ORGANIZER_PASSWORD."
+echo "Done."
+echo "- Telemetry now writes through the camper-telemetry Edge Function."
+echo "- Open https://YOUR-SITE/admin and sign in with ORGANIZER_PASSWORD."

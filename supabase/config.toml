@@ -1,8 +1,14 @@
 # Supabase local CLI config. Edge Functions deploy via:
+#   supabase functions deploy camper-telemetry --no-verify-jwt
 #   supabase functions deploy organizer-telemetry --no-verify-jwt
 
 [project]
 id = ""
 
+# Public camper telemetry write proxy (validates payload, inserts via service role).
+[functions.camper-telemetry]
+verify_jwt = false
+
+# Password-protected organizer reads for /admin.
 [functions.organizer-telemetry]
 verify_jwt = false

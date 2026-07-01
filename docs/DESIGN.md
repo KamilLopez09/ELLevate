@@ -26,11 +26,15 @@ The deployment journey (OpenNext failure → Workers static assets → native Pa
 
 | Option | Pros | Cons | Decision |
 |--------|------|------|----------|
-| **RLS with anon INSERT, no SELECT** | No backend to maintain; works with static export | Anon key is public (expected); rate limits rely on Supabase | **Selected** |
-| Cloudflare Worker proxy | Hides table shape; custom validation | Extra infra; not static-export pure | Rejected for v1 |
+| **Supabase Edge Function write proxy** (`camper-telemetry`) | Validates payload server-side; inserts with service role; client has **no** DB write access | One more function to deploy | **Selected (current)** |
+| RLS with anon INSERT, no SELECT | No backend to maintain; works with static export | Anon key can write directly; validation limited to RLS check constraints | **Superseded** — was v1.0; replaced to close the direct-write path |
 | Service role from client | — | Critical security flaw | Never |
 
-RLS policy constrains `module_name = 'sentence_canvas'` and `score` range to reduce abuse surface.
+> **Update (v1.1):** Telemetry writes moved from a direct anon `INSERT` to the
+> `camper-telemetry` Edge Function. Migration `008` revokes client INSERT, so the
+> anon/authenticated roles now have no table privileges. The Edge Function
+> re-validates every field (mirroring the DB constraints) and forwards only
+> whitelisted columns before inserting with the service role key.
 
 ## Interaction: Click-to-Fill vs. Drag-and-Drop
 
@@ -78,9 +82,15 @@ Scoring constants live in `lib/gamification.ts` per game mode (base, first-try, 
 
 | Option | Pros | Cons | Decision |
 |--------|------|------|----------|
-| **`sessionStorage` progression flags** | Zero backend; works with static export; tab-scoped privacy | Lost on tab close; no cross-device | **Selected** |
+| **`localStorage` + 12-hour TTL** | Survives refresh/tab close; resilient across a camp day on shared iPads; still no backend | Single device only; manual reset between children | **Selected (current)** |
+| `sessionStorage` progression flags | Zero backend; tab-scoped privacy | Lost on tab close — child loses progress if the tab closes | **Superseded** — see [RESOLVE.md](RESOLVE.md) Phase 1 |
 | Supabase auth per camper | Persistent identity | COPPA/auth burden; overkill for camp kiosk | Rejected for v1 |
 | JWT in cookie | Cross-tab | Needs server or edge auth | Rejected |
+
+> **Update:** Session state moved from `sessionStorage` to `localStorage` with a
+> 12-hour TTL (`src/lib/session-store.ts`) so an accidental tab close no longer
+> wipes a camper's identity and unlocked weeks. See
+> [CONSTRAINTS.md](CONSTRAINTS.md#browser-session-localstorage-12-hour-ttl--resolved).
 
 ---
 

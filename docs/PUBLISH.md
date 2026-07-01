@@ -91,28 +91,40 @@ Apply in the SQL Editor in numeric order:
 5. `005_age_brackets_5_9_10_14.sql` — bracket constraint update
 6. `006_enforce_rls_policies.sql` — restrictive RLS hardening
 7. `007_coppa_compliance_schema.sql` — COPPA intake table + PII minimization
+8. `008_telemetry_edge_write_proxy.sql` — revoke direct client INSERT (writes move to the Edge Function)
 
 Do not skip numbers on existing databases.
 
 ---
 
-## Organizer Edge Function (Phase 3)
+## Edge Functions
 
-The `/admin` page reads telemetry through a Supabase Edge Function so the **service role key never ships to browsers**.
+Both database paths run as Supabase Edge Functions so the **service role key
+never ships to browsers**.
+
+- **`camper-telemetry`** — public write proxy. Validates each passed-session
+  payload and inserts with the service role key. Required for telemetry to save
+  once migration `008` is applied.
+- **`organizer-telemetry`** — password-protected reads for `/admin` (Phase 3).
 
 ### Deploy once per Supabase project
 
 ```bash
-# From repo root, with Supabase CLI logged in and project linked
+# From repo root, with Supabase CLI logged in and project linked.
+# Convenience script deploys BOTH functions and sets the organizer secret:
+npm run supabase:deploy-organizer
+
+# ...or manually:
 supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password"
+supabase functions deploy camper-telemetry --no-verify-jwt
 supabase functions deploy organizer-telemetry --no-verify-jwt
 ```
 
 | Secret / setting | Purpose |
 |------------------|---------|
-| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime |
-| `verify_jwt = false` | Function uses custom password instead of Supabase Auth |
+| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry only) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime; used by both functions |
+| `verify_jwt = false` | Functions are called with the anon key; auth is custom (password) or open write-proxy |
 
 ### Verify
 
@@ -130,8 +142,8 @@ If sign-in fails with “Organizer access is not configured”, the Edge Functio
 1. Open production URL (e.g. `https://ellevate.pages.dev`).
 2. Complete intake form → menu → lesson → application.
 3. Finish a practice session (pass or retry).
-4. In Supabase Table Editor, confirm a new `camper_telemetry` row on **pass** (if env vars are set).
-5. Open `/admin`, sign in with organizer password, confirm the row appears (requires Edge Function deploy).
+4. In Supabase Table Editor, confirm a new `camper_telemetry` row on **pass** (requires env vars **and** the `camper-telemetry` function deployed).
+5. Open `/admin`, sign in with organizer password, confirm the row appears (requires the `organizer-telemetry` function deployed).
 
 ---
 
@@ -140,7 +152,7 @@ If sign-in fails with “Organizer access is not configured”, the Edge Functio
 | Symptom | Check |
 |---------|-------|
 | Build fails on Pages | Node 20; run `npm run build` locally with same env |
-| Telemetry not saving | `NEXT_PUBLIC_*` set in Pages dashboard; RLS policies applied |
+| Telemetry not saving | `NEXT_PUBLIC_*` set in Pages dashboard; migrations through `008` applied; `camper-telemetry` Edge Function deployed |
 | Blank pages after deploy | Output directory must be `out`, not `.next` |
 | Stale Supabase URL in prod | Redeploy after env var change |
 

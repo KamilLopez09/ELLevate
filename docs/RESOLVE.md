@@ -8,6 +8,10 @@ Related: [CONSTRAINTS.md](CONSTRAINTS.md) · [ANALYTICS.md](ANALYTICS.md) · [AR
 
 ## Phase 1 — Session resilience ✅ (implemented)
 
+> **[RESOLVED]** The prior `sessionStorage` volatility constraint (session lost
+> on tab close) is fixed. Camper state now lives in `localStorage` with a
+> **12-hour TTL** — see [CONSTRAINTS.md](CONSTRAINTS.md#browser-session-localstorage-12-hour-ttl--resolved).
+
 ### What this means for camp
 
 - If a camper **refreshes the page** or **closes the tab by mistake**, they keep their name, unlocked weeks, and progress — for up to **12 hours**.
@@ -26,19 +30,31 @@ Related: [CONSTRAINTS.md](CONSTRAINTS.md) · [ANALYTICS.md](ANALYTICS.md) · [AR
 
 ---
 
-## Phase 2 — Telemetry hardening ⏭️ (skipped for now)
+## Phase 2 — Telemetry hardening ✅ (implemented)
+
+> **[RESOLVED]** Telemetry writes now flow through a **Supabase Edge Function**
+> (`camper-telemetry`) instead of a direct client INSERT. The browser can no
+> longer write to the database at all.
 
 ### What this means for camp
 
-Nothing changes for campers. You still get one row per passed week. Phase 2 adds a **middleman server** between the app and Supabase to block spam — only worth building if you see junk rows piling up.
+Nothing changes for campers — you still get one row per passed week. Under the
+hood, a **middleman Edge Function** now sits between the app and the database:
+the app sends the summary to the function, the function checks it and writes it
+using a secret server-side key. This closes the direct-write path that a script
+could otherwise abuse.
 
-### Status
+### What we changed
 
-**Skipped** — no evidence of abuse yet. RLS (migration `006`) remains the primary control. Revisit if Table Editor shows suspicious volume.
+| Piece | Location |
+|-------|----------|
+| Write proxy (validate + service-role insert) | `supabase/functions/camper-telemetry/index.ts` |
+| Client `fetch` POST helper | `src/lib/telemetry.ts` |
+| Revoke direct anon/authenticated INSERT | `supabase/migrations/008_telemetry_edge_write_proxy.sql` |
 
-### What we would build (when needed)
+### Still optional (when needed)
 
-- Supabase Edge Function or Cloudflare Worker: validate payload, rate-limit by IP, insert with service role key.
+- Add **rate limiting** (by IP) inside `camper-telemetry` if you see abusive volume.
 
 ---
 
@@ -101,12 +117,12 @@ Teachers change lesson text **without** redeploying the whole site — content l
 
 ---
 
-## Phase 6 — Game modes & cleanup (deferred)
+## Phase 6 — Game modes & cleanup ✅ (pruned)
 
-| Item | Action when prioritized |
-|------|-------------------------|
-| `MatchBlitz` / `RapidFire` | Wire into `LessonCanvas` prompt routing **or** remove unused components |
-| `certified-angels-site/` | Delete from repo after confirming nothing links to it |
+| Item | Status |
+|------|--------|
+| `MatchBlitz` / `RapidFire` | **Removed** — unwired components deleted (with the orphaned `swapy` dependency). `match_blitz` / `rapid_fire` scoring stays in `lib/gamification.ts` if re-wired later. |
+| `certified-angels-site/` | **Removed** — legacy static HTML/CSS deleted; nothing referenced it. |
 | Teacher overrides | Out of scope until remote curriculum exists |
 
 ---
