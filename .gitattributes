@@ -1,0 +1,5 @@
+# Shell scripts must stay LF so they run under bash on Windows checkouts.
+*.sh text eol=lf
+
+# Deno Edge Functions are executed as-is; keep LF.
+supabase/functions/**/*.ts text eol=lf
