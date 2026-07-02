@@ -21,6 +21,7 @@ cp .env.example .env.local
 # Fill in NEXT_PUBLIC_SUPABASE_* values
 npm run lint
 npm run build
+npm audit --audit-level=high
 ```
 
 Confirm:
@@ -28,6 +29,7 @@ Confirm:
 - `Compiled successfully`
 - `Exporting (2/2)` (static export to `out/`)
 - No TypeScript errors
+- `npm audit` reports no **high** or **critical** vulnerabilities (CI runs the same check on every PR)
 
 Serve locally (optional):
 
@@ -56,6 +58,26 @@ git push -u origin cursor/my-feature-6950
 ```
 
 After merge, Cloudflare rebuilds automatically if the project tracks `main`.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `npm run lint`, `npm run build`, and `npm audit --audit-level=high` on pushes and PRs to `main`.
+
+---
+
+## Content Security Policy (CSP)
+
+The repo ships `public/_headers` for Cloudflare Pages. Next.js copies it to `out/_headers` on build so Cloudflare applies headers at the edge.
+
+| Directive | Allows |
+|-----------|--------|
+| `connect-src` | Same origin + your Supabase project (`https://*.supabase.co`) for telemetry |
+| `frame-src` | YouTube / YouTube-nocookie embeds on `/lesson` |
+| `script-src` / `style-src` | `'self'` + `'unsafe-inline'` (Next.js static chunks and Tailwind) |
+
+To tighten CSP further, prefer nonces or hashes instead of `'unsafe-inline'` — that requires a build plugin and is optional for camp v1.
+
+**Optional — hide `/admin` from search engines:** The `_headers` file sets `X-Robots-Tag: noindex` on `/admin`.
+
+**Optional — camp-network only:** [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) can require staff login before `/admin` loads, in addition to the organizer password. Configure in the Cloudflare dashboard; no app code change required.
 
 ---
 

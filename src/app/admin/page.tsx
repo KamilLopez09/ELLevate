@@ -1,13 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  OrganizerFiltersBar,
+  EMPTY_ORGANIZER_FILTERS,
+} from "@/components/admin/OrganizerFiltersBar";
+import { SummaryCharts } from "@/components/admin/SummaryCharts";
 import { Button } from "@/components/ui/button";
 import {
+  buildSummaryFromRows,
+  exportFilenameSuffix,
+  filterTelemetryRows,
+  uniqueGroupLetters,
+  type OrganizerFilters,
+} from "@/lib/organizer-filters";
+import {
   clearLegacyOrganizerPasswordStorage,
-  downloadCsv,
+  exportTelemetryCsv,
   fetchOrganizerTelemetry,
-  telemetryRowsToCsv,
   type CamperTelemetryRecord,
   type OrganizerSummary,
 } from "@/lib/organizer-api";
@@ -29,18 +40,11 @@ function formatWhen(iso: string): string {
 }
 
 function SummaryCards({ summary }: { summary: OrganizerSummary }) {
-  const weekEntries = Object.entries(summary.passesByWeek).sort(
-    ([a], [b]) => Number(a) - Number(b),
-  );
-  const groupEntries = Object.entries(summary.passesByGroup).sort(([a], [b]) =>
-    a.localeCompare(b),
-  );
-
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-2xl border border-border bg-paper p-5 shadow-bento">
         <p className="text-bento-label font-semibold uppercase tracking-widest text-muted-foreground">
-          Total passes logged
+          Total passes (filtered)
         </p>
         <p className="mt-2 font-display text-3xl font-extrabold text-ink">
           {summary.totalSessions}
@@ -48,43 +52,11 @@ function SummaryCards({ summary }: { summary: OrganizerSummary }) {
       </div>
       <div className="rounded-2xl border border-border bg-paper p-5 shadow-bento">
         <p className="text-bento-label font-semibold uppercase tracking-widest text-muted-foreground">
-          Unique campers
+          Unique campers (filtered)
         </p>
         <p className="mt-2 font-display text-3xl font-extrabold text-ink">
           {summary.uniqueCampers}
         </p>
-      </div>
-      <div className="rounded-2xl border border-border bg-paper p-5 shadow-bento md:col-span-2 xl:col-span-1">
-        <p className="text-bento-label font-semibold uppercase tracking-widest text-muted-foreground">
-          By week
-        </p>
-        <ul className="mt-3 space-y-1 text-sm text-ink/80">
-          {weekEntries.length === 0 ? (
-            <li>No passes yet.</li>
-          ) : (
-            weekEntries.map(([week, count]) => (
-              <li key={week}>
-                Week {week}: {count}
-              </li>
-            ))
-          )}
-        </ul>
-      </div>
-      <div className="rounded-2xl border border-border bg-paper p-5 shadow-bento md:col-span-2 xl:col-span-1">
-        <p className="text-bento-label font-semibold uppercase tracking-widest text-muted-foreground">
-          By group
-        </p>
-        <ul className="mt-3 space-y-1 text-sm text-ink/80">
-          {groupEntries.length === 0 ? (
-            <li>No passes yet.</li>
-          ) : (
-            groupEntries.map(([group, count]) => (
-              <li key={group}>
-                Group {group}: {count}
-              </li>
-            ))
-          )}
-        </ul>
       </div>
     </div>
   );
@@ -94,8 +66,8 @@ function TelemetryTable({ rows }: { rows: CamperTelemetryRecord[] }) {
   if (rows.length === 0) {
     return (
       <p className="rounded-2xl bg-paper p-6 text-center text-ink/70 shadow-bento">
-        No camper sessions yet. Rows appear when a camper passes a week and
-        returns to the menu.
+        No sessions match these filters. Try clearing filters or refresh after
+        campers pass a week.
       </p>
     );
   }
@@ -117,7 +89,7 @@ function TelemetryTable({ rows }: { rows: CamperTelemetryRecord[] }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.id} className="border-b border-border/60 last:border-0">
-              <td className="px-4 py-3 whitespace-nowrap text-ink/80">
+              <td className="whitespace-nowrap px-4 py-3 text-ink/80">
                 {formatWhen(row.completed_at)}
               </td>
               <td className="px-4 py-3">
@@ -126,9 +98,7 @@ function TelemetryTable({ rows }: { rows: CamperTelemetryRecord[] }) {
               </td>
               <td className="px-4 py-3">{row.group_letter}</td>
               <td className="px-4 py-3">{row.week_number}</td>
-              <td className="px-4 py-3">
-                {row.correct_first_try}/10
-              </td>
+              <td className="px-4 py-3">{row.correct_first_try}/10</td>
               <td className="px-4 py-3">{row.accuracy_rate}%</td>
               <td className="px-4 py-3">{row.total_points}</td>
             </tr>
@@ -141,8 +111,8 @@ function TelemetryTable({ rows }: { rows: CamperTelemetryRecord[] }) {
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
-  const [rows, setRows] = useState<CamperTelemetryRecord[]>([]);
-  const [summary, setSummary] = useState<OrganizerSummary | null>(null);
+  const [allRows, setAllRows] = useState<CamperTelemetryRecord[]>([]);
+  const [filters, setFilters] = useState<OrganizerFilters>(EMPTY_ORGANIZER_FILTERS);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
@@ -151,13 +121,24 @@ export default function AdminPage() {
     clearLegacyOrganizerPasswordStorage();
   }, []);
 
+  const filteredRows = useMemo(
+    () => filterTelemetryRows(allRows, filters),
+    [allRows, filters],
+  );
+
+  const filteredSummary = useMemo(
+    () => buildSummaryFromRows(filteredRows),
+    [filteredRows],
+  );
+
+  const groupOptions = useMemo(() => uniqueGroupLetters(allRows), [allRows]);
+
   const loadData = async (organizerPassword: string) => {
     setLoading(true);
     setError("");
     try {
       const result = await fetchOrganizerTelemetry(organizerPassword);
-      setRows(result.rows);
-      setSummary(result.summary);
+      setAllRows(result.rows);
       setPassword(organizerPassword);
       setAuthenticated(true);
     } catch (loadError) {
@@ -180,17 +161,13 @@ export default function AdminPage() {
   const handleSignOut = () => {
     setAuthenticated(false);
     setPassword("");
-    setRows([]);
-    setSummary(null);
+    setAllRows([]);
+    setFilters(EMPTY_ORGANIZER_FILTERS);
     setError("");
   };
 
   const handleExport = () => {
-    if (rows.length === 0) {
-      return;
-    }
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadCsv(`ellevate-telemetry-${stamp}.csv`, telemetryRowsToCsv(rows));
+    exportTelemetryCsv(filteredRows, exportFilenameSuffix(filters));
   };
 
   return (
@@ -271,9 +248,9 @@ export default function AdminPage() {
                 variant="outline"
                 size="xl"
                 onClick={handleExport}
-                disabled={rows.length === 0}
+                disabled={filteredRows.length === 0}
               >
-                Export CSV
+                Export filtered CSV
               </Button>
               <Button
                 type="button"
@@ -291,12 +268,25 @@ export default function AdminPage() {
               </p>
             ) : null}
 
-            {summary ? <SummaryCards summary={summary} /> : null}
+            <OrganizerFiltersBar
+              filters={filters}
+              groupOptions={groupOptions}
+              filteredCount={filteredRows.length}
+              totalCount={allRows.length}
+              onChange={setFilters}
+              onReset={() => setFilters(EMPTY_ORGANIZER_FILTERS)}
+            />
+
+            <SummaryCards summary={filteredSummary} />
+            <SummaryCharts
+              passesByWeek={filteredSummary.passesByWeek}
+              passesByGroup={filteredSummary.passesByGroup}
+            />
             <p className="text-sm text-ink/60">
               Session times are shown in Eastern (camp local). Supabase Table
               Editor displays the same moments in UTC (+00).
             </p>
-            <TelemetryTable rows={rows} />
+            <TelemetryTable rows={filteredRows} />
           </>
         )}
       </div>

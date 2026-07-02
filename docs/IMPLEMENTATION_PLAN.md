@@ -220,11 +220,11 @@ Copy into a GitHub Issue or track here:
 - [x] E5 RESOLVE doc update
 
 ### Batch F — Admin & infra
-- [ ] F1 Admin filters
-- [ ] F2 Summary charts
-- [ ] F3 Filtered CSV
-- [ ] F4 CSP documentation
-- [ ] F5 npm audit in release checklist
+- [x] F1 Admin filters
+- [x] F2 Summary charts
+- [x] F3 Filtered CSV
+- [x] F4 CSP documentation
+- [x] F5 npm audit in release checklist
 
 ### Batch G — Deferred platform
 - [ ] G1 Camper codes

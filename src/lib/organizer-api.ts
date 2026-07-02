@@ -126,3 +126,18 @@ export function downloadCsv(filename: string, csv: string): void {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+/** Downloads CSV for the given rows (typically already filtered). */
+export function exportTelemetryCsv(
+  rows: CamperTelemetryRecord[],
+  filenameSuffix = "",
+): void {
+  if (rows.length === 0) {
+    return;
+  }
+  const stamp = new Date().toISOString().slice(0, 10);
+  downloadCsv(
+    `ellevate-telemetry-${stamp}${filenameSuffix}.csv`,
+    telemetryRowsToCsv(rows),
+  );
+}

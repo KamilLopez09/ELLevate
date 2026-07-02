@@ -4,6 +4,16 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 18 — Batch F admin & infra
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **Admin filters:** Week, camp group, and date range (client-side on fetched rows).
+- **`SummaryCharts`:** CSS bar charts for passes by week/group on filtered data.
+- **CSV export:** Respects active filters; filename includes filter suffix.
+- **`public/_headers`:** CSP for Supabase + YouTube; documented in `PUBLISH.md`.
+- **CI:** GitHub Actions runs lint, build, and `npm audit --audit-level=high`.
+
 ## Milestone 17 — Batch E game modes & locked-week preview
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
