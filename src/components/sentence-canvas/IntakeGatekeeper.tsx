@@ -9,6 +9,7 @@ import {
   toLastInitial,
   writeCamperSession,
 } from "@/lib/camper-session";
+import { restoreFromResumeCode } from "@/lib/camper-resume";
 import { SESSION_TTL_MS } from "@/lib/session-store";
 import { useCopyForLanguage } from "@/lib/i18n/useCopy";
 import type {
@@ -51,6 +52,9 @@ export function IntakeGatekeeper() {
   const [nativeLanguage, setNativeLanguage] = useState<NativeLanguage | "">("");
   const [groupLetter, setGroupLetter] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resumeMode, setResumeMode] = useState(false);
+  const [resumeCode, setResumeCode] = useState("");
+  const [restoring, setRestoring] = useState(false);
 
   const copy = useCopyForLanguage(nativeLanguage);
 
@@ -127,6 +131,22 @@ export function IntakeGatekeeper() {
     router.push("/menu");
   };
 
+  const handleRestore = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setRestoring(true);
+    setError(null);
+
+    const result = await restoreFromResumeCode(resumeCode);
+    setRestoring(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    router.push("/menu");
+  };
+
   if (!hydrated) {
     return null;
   }
@@ -148,6 +168,67 @@ export function IntakeGatekeeper() {
       </h2>
       <p className="mt-2 text-ink/70">{copy.intake.subtitle}</p>
 
+      {resumeMode ? (
+        <form onSubmit={handleRestore} className="mt-8 flex flex-col gap-6" noValidate>
+          <p className="text-lg font-semibold text-ink">{copy.resume.restoreTitle}</p>
+          <p className="text-ink/70">{copy.resume.restoreBody}</p>
+
+          <label>
+            <span className={labelClasses}>{copy.resume.codeLabel}</span>
+            <input
+              type="text"
+              name="resume_code"
+              value={resumeCode}
+              onChange={(event) =>
+                setResumeCode(
+                  event.target.value
+                    .toUpperCase()
+                    .replace(/[^2-9A-HJ-NP-Z]/g, "")
+                    .slice(0, 6),
+                )
+              }
+              placeholder={copy.resume.codePlaceholder}
+              autoComplete="off"
+              autoCapitalize="characters"
+              className={`${fieldClasses} text-center font-mono text-2xl tracking-[0.35em]`}
+            />
+          </label>
+
+          <div
+            role="alert"
+            aria-live="polite"
+            className={
+              error
+                ? "rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
+                : "sr-only"
+            }
+          >
+            {error ?? ""}
+          </div>
+
+          <motion.button
+            type="submit"
+            disabled={restoring}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent disabled:opacity-70"
+          >
+            {restoring ? copy.resume.restoring : copy.resume.restoreButton}
+          </motion.button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setResumeMode(false);
+              setResumeCode("");
+              setError(null);
+            }}
+            className="text-sm font-semibold text-teal-accent underline-offset-2 hover:underline"
+          >
+            {copy.resume.backToIntake}
+          </button>
+        </form>
+      ) : (
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6" noValidate>
         <div className="flex flex-col gap-4 sm:flex-row">
           <label className="flex-1">
@@ -285,7 +366,19 @@ export function IntakeGatekeeper() {
         >
           {copy.intake.continue}
         </motion.button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setResumeMode(true);
+            setError(null);
+          }}
+          className="text-center text-sm font-semibold text-teal-accent underline-offset-2 hover:underline"
+        >
+          {copy.intake.resumeLink}
+        </button>
       </form>
+      )}
     </motion.section>
   );
 }

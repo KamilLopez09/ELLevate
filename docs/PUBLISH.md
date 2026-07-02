@@ -115,40 +115,51 @@ Apply in the SQL Editor in numeric order:
 7. `007_coppa_compliance_schema.sql` — COPPA intake table + PII minimization
 8. `008_telemetry_edge_write_proxy.sql` — revoke direct client INSERT (writes move to the Edge Function)
 9. `009_lock_camper_intake.sql` — revoke direct INSERT on unused `camper_intake` table
+10. `010_camper_resume_snapshots.sql` — resume codes for cross-device progress (Batch G1)
 
 Do not skip numbers on existing databases.
 
 After applying `009`, redeploy **`camper-telemetry`** if you already deployed an older version — the function now rejects rows below the pass threshold (`correct_first_try` < 8).
 
+After applying `010`, deploy **`camper-resume`** (see Edge Functions below).
+
 ---
 
 ## Edge Functions
 
-Both database paths run as Supabase Edge Functions so the **service role key
+Database and platform features run as Supabase Edge Functions so the **service role key
 never ships to browsers**.
 
 - **`camper-telemetry`** — public write proxy. Validates each passed-session
   payload and inserts with the service role key. Rate limit: **10 POSTs/hour/IP**.
 - **`organizer-telemetry`** — password-protected reads for `/admin`. Locks out
   an IP for 15 minutes after **5 failed password attempts** (constant-time compare).
+- **`camper-resume`** — create/restore 6-character progress codes (7-day TTL). Rate limited per IP.
+- **`counselor-reset`** — verifies `COUNSELOR_RESET_PIN` for hidden quick-reset on shared tablets.
 
 ### Deploy once per Supabase project
 
 ```bash
 # From repo root, with Supabase CLI logged in and project linked.
-# Convenience script deploys BOTH functions and sets the organizer secret:
+# Deploys all four functions and sets organizer + counselor secrets:
+npm run supabase:deploy-edge
+
+# Legacy (camper + organizer only):
 npm run supabase:deploy-organizer
 
 # ...or manually:
-supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password"
+supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password" COUNSELOR_RESET_PIN="your-camp-pin"
 supabase functions deploy camper-telemetry --no-verify-jwt
 supabase functions deploy organizer-telemetry --no-verify-jwt
+supabase functions deploy camper-resume --no-verify-jwt
+supabase functions deploy counselor-reset --no-verify-jwt
 ```
 
 | Secret / setting | Purpose |
 |------------------|---------|
 | `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry only) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime; used by both functions |
+| `COUNSELOR_RESET_PIN` | PIN for counselor quick-reset (counselor-reset; not in client bundle) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime; used by Edge Functions |
 | `verify_jwt = false` | Functions are called with the anon key; auth is custom (password) or open write-proxy |
 
 ### Verify

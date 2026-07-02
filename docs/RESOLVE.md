@@ -109,17 +109,19 @@ Details: [ANALYTICS.md](ANALYTICS.md#option-b-admin-page-recommended-for-counsel
 
 ---
 
-## Phase 4 — Cross-device resume (deferred)
+## Phase 4 — Cross-device resume ✅ (Batch G1)
 
 ### What this means for camp
 
-Camper enters a **short code** (or scans QR) at intake; progress loads from Supabase on any camp iPad.
+Camper enters a **6-character resume code** at intake (or gets one from the menu) to load progress on another camp tablet. Codes expire after 7 days. Same COPPA-minimized fields as localStorage — no full last name.
 
-### Why deferred
+### Implementation
 
-- Needs secure identity design (COPPA, no full names in URLs).
-- More backend than Phase 1 localStorage.
-- Shared tablets are handled by **reset + intake** for v1.
+- Table `camper_resume_snapshots` (migration `010`); no direct client DB access.
+- Edge Function `camper-resume` (`create` / `restore`) with IP rate limits.
+- Intake: “I have a resume code”; menu: “Get resume code”.
+
+**Deploy:** Apply migration `010`; deploy `camper-resume` via `npm run supabase:deploy-edge`.
 
 ---
 

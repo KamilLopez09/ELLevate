@@ -4,6 +4,16 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 19 — Batch G platform (G1–G3)
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **G1 Resume codes:** `010_camper_resume_snapshots.sql`; `camper-resume` Edge Function; intake restore flow + menu “Get resume code”.
+- **G2 Offline PWA:** `manifest.webmanifest`, `sw.js`, `PwaProvider`; telemetry queue in localStorage with flush on reconnect.
+- **G3 Counselor PIN:** `counselor-reset` Edge Function; 2.5s long-press on menu footer opens PIN modal for fast device reset.
+
+**Deploy:** Apply migration `010`; set `COUNSELOR_RESET_PIN` secret; `npm run supabase:deploy-edge`; redeploy Cloudflare Pages (includes `_headers` worker-src).
+
 ## Milestone 18 — Batch F admin & infra
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):

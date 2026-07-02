@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "supabase:deploy-organizer": "node scripts/deploy-organizer-telemetry.mjs"
+    "supabase:deploy-organizer": "node scripts/deploy-organizer-telemetry.mjs",
+    "supabase:deploy-edge": "node scripts/deploy-edge-functions.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

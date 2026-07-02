@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
 import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
+import { CounselorPinModal } from "@/components/ui/CounselorPinModal";
 import { ResetCamperModal } from "@/components/ui/ResetCamperModal";
+import { ResumeCodeModal } from "@/components/ui/ResumeCodeModal";
 import { curriculum } from "@/data/curriculum";
 import {
   countWeeksPassed,
@@ -48,6 +50,8 @@ const POLAROID_SPANS = [
   "sm:col-span-3",
 ];
 
+const COUNSELOR_HOLD_MS = 2500;
+
 export default function MenuPage() {
   const router = useRouter();
   const copy = useCopy();
@@ -56,6 +60,9 @@ export default function MenuPage() {
   const [weeksPassed, setWeeksPassed] = useState(0);
   const [cumulativeScore, setCumulativeScore] = useState(0);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [counselorPinOpen, setCounselorPinOpen] = useState(false);
+  const counselorHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const camper = readCamperSession();
@@ -80,6 +87,28 @@ export default function MenuPage() {
     clearCampSession();
     router.replace("/");
   };
+
+  const clearCounselorHold = () => {
+    if (counselorHoldTimer.current) {
+      clearTimeout(counselorHoldTimer.current);
+      counselorHoldTimer.current = null;
+    }
+  };
+
+  const startCounselorHold = () => {
+    clearCounselorHold();
+    counselorHoldTimer.current = setTimeout(() => {
+      setCounselorPinOpen(true);
+    }, COUNSELOR_HOLD_MS);
+  };
+
+  const handleCounselorVerified = () => {
+    setCounselorPinOpen(false);
+    clearCampSession();
+    router.replace("/");
+  };
+
+  useEffect(() => () => clearCounselorHold(), []);
 
   if (!ready) {
     return (
@@ -156,6 +185,15 @@ export default function MenuPage() {
                   type="button"
                   variant="outline"
                   size="xl"
+                  onClick={() => setResumeModalOpen(true)}
+                  className="min-h-[56px] border-ink/20 bg-paper/80 text-ink hover:bg-paper"
+                >
+                  {copy.menu.resumeCode}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xl"
                   onClick={() => setResetModalOpen(true)}
                   className="min-h-[56px] border-ink/20 bg-paper/80 text-ink hover:bg-paper"
                 >
@@ -223,9 +261,17 @@ export default function MenuPage() {
               tilt={0}
               className="!py-4 text-center"
             >
-              <p className="text-bento-label text-muted-foreground">
+              <p
+                className="text-bento-label text-muted-foreground select-none"
+                onPointerDown={startCounselorHold}
+                onPointerUp={clearCounselorHold}
+                onPointerLeave={clearCounselorHold}
+                onPointerCancel={clearCounselorHold}
+                aria-hidden
+              >
                 {copy.menu.footer}
               </p>
+              <p className="sr-only">{copy.menu.counselorHint}</p>
             </BentoCard>
           </BentoGrid>
         </motion.div>
@@ -233,6 +279,15 @@ export default function MenuPage() {
           open={resetModalOpen}
           onConfirm={confirmNewCamper}
           onCancel={() => setResetModalOpen(false)}
+        />
+        <ResumeCodeModal
+          open={resumeModalOpen}
+          onClose={() => setResumeModalOpen(false)}
+        />
+        <CounselorPinModal
+          open={counselorPinOpen}
+          onVerified={handleCounselorVerified}
+          onCancel={() => setCounselorPinOpen(false)}
         />
       </main>
     </CampScreenLayout>

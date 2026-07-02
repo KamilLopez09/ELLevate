@@ -227,9 +227,9 @@ Copy into a GitHub Issue or track here:
 - [x] F5 npm audit in release checklist
 
 ### Batch G — Deferred platform
-- [ ] G1 Camper codes
-- [ ] G2 Offline PWA
-- [ ] G3 Quick-reset PIN
+- [x] G1 Camper codes
+- [x] G2 Offline PWA
+- [x] G3 Quick-reset PIN
 - [ ] G4 Remote curriculum
 - [ ] G5 Real-time wall
 - [ ] G6 Gamification layer

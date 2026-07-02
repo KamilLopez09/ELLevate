@@ -1,38 +1,23 @@
-import { getSupabaseConfig } from "@/lib/supabase/client";
+import { enqueueTelemetry } from "@/lib/telemetry-queue";
+import { postCamperTelemetryDirect } from "@/lib/telemetry-send";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
+
+export { flushTelemetryQueue, getQueuedTelemetryCount } from "@/lib/telemetry-queue";
 
 /**
  * Send a completed-session summary to the `camper-telemetry` Edge Function.
  *
- * The static client no longer INSERTs into Supabase directly; the Edge Function
- * validates the payload and performs the write with the service role key. The
- * anon key is still sent so the function can be called through the Supabase
- * gateway. Returns `true` on success, `false` if telemetry could not be saved
- * (missing env or a non-2xx response) so the caller can show a soft warning.
+ * When offline or the server rejects the payload, the row is queued locally and
+ * retried on the next successful flush (see PwaProvider).
  */
 export async function postCamperTelemetry(
   payload: CamperTelemetryRow,
 ): Promise<boolean> {
-  const config = getSupabaseConfig();
-  if (!config) {
-    return false;
+  const saved = await postCamperTelemetryDirect(payload);
+  if (saved) {
+    return true;
   }
 
-  try {
-    const response = await fetch(
-      `${config.url}/functions/v1/camper-telemetry`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${config.key}`,
-          apikey: config.key,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      },
-    );
-    return response.ok;
-  } catch {
-    return false;
-  }
+  enqueueTelemetry(payload);
+  return false;
 }

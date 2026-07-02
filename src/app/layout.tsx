@@ -3,6 +3,7 @@ import { Nunito, Open_Sans } from "next/font/google";
 import "./globals.css";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { MotionProvider } from "@/components/providers/MotionProvider";
+import { PwaProvider } from "@/components/providers/PwaProvider";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
   title: "ELLevate | Certified Angels",
   description:
     "A free, interactive ESL web app for Certified Angels summer camp — learn English through creative play.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export const viewport: Viewport = {
@@ -38,7 +43,9 @@ export default function RootLayout({
           Skip to main content
         </a>
         <MotionProvider>
-          <LocaleProvider>{children}</LocaleProvider>
+          <LocaleProvider>
+            <PwaProvider>{children}</PwaProvider>
+          </LocaleProvider>
         </MotionProvider>
       </body>
     </html>

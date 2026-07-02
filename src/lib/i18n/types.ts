@@ -26,6 +26,7 @@ export interface CampCopy {
     privacyBody: (ttlHours: number) => string;
     privacyCounselor: string;
     continue: string;
+    resumeLink: string;
     errors: {
       incomplete: string;
       invalidGroup: string;
@@ -40,7 +41,9 @@ export interface CampCopy {
     weeksPassed: (passed: number, total: number) => string;
     totalPoints: (points: string) => string;
     resetDevice: string;
+    resumeCode: string;
     footer: string;
+    counselorHint: string;
     weekOf: (week: number, total: number) => string;
     passedReplay: string;
     start: string;
@@ -112,6 +115,39 @@ export interface CampCopy {
     body: string;
     confirm: string;
     cancel: string;
+  };
+  resume: {
+    haveCode: string;
+    backToIntake: string;
+    restoreTitle: string;
+    restoreBody: string;
+    codePlaceholder: string;
+    restoreButton: string;
+    restoring: string;
+    createTitle: string;
+    createBody: string;
+    creating: string;
+    codeLabel: string;
+    expires: (dateLabel: string) => string;
+    copyCode: string;
+    close: string;
+    getCode: string;
+    errors: {
+      invalidCode: string;
+      notFound: string;
+      network: string;
+    };
+  };
+  counselor: {
+    label: string;
+    title: string;
+    body: string;
+    pinLabel: string;
+    confirm: string;
+    cancel: string;
+    verifying: string;
+    wrongPin: string;
+    invalidPin: string;
   };
   gameModes: {
     chooseStyle: string;
