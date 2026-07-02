@@ -200,10 +200,10 @@ Copy into a GitHub Issue or track here:
 - [x] B4 Update CONSTRAINTS
 
 ### Batch C — Camper UX polish
-- [ ] C1 Pass celebration
-- [ ] C2 Custom reset modal
-- [ ] C3 Menu progress summary
-- [ ] C4 COPPA intake copy
+- [x] C1 Pass celebration
+- [x] C2 Custom reset modal
+- [x] C3 Menu progress summary
+- [x] C4 COPPA intake copy
 
 ### Batch D — Spanish UI & video gate
 - [ ] D1 i18n string map

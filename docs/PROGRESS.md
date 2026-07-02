@@ -4,6 +4,15 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 15 — Batch C camper UX polish
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **`PassCelebration`:** Week-complete moment after passing, before scoreboard (Framer Motion + reduced-motion via `MotionProvider`).
+- **`ResetCamperModal`:** Replaces `window.confirm` for new-camper reset; focus trap + Escape.
+- **Menu:** Shows weeks passed (`N/8`) and cumulative score badges.
+- **Intake:** COPPA-friendly privacy notice (12h TTL, no full last name, counselor reset tip).
+
 ## Milestone 14 — Batch B telemetry & organizer hardening
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):

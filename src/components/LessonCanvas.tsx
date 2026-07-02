@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import "@/styles/animations.css";
 import { FlashcardDrill } from "@/components/sentence-canvas/FlashcardDrill";
 import { SentenceBuilder } from "@/components/sentence-canvas/SentenceBuilder";
+import { PassCelebration } from "@/components/ui/PassCelebration";
 import { Scoreboard } from "@/components/ui/Scoreboard";
 import {
   curriculum,
@@ -15,7 +16,7 @@ import {
   addSessionScore,
   readCamperSession,
 } from "@/lib/camper-session";
-import { markWeekCompleted } from "@/lib/curriculum-engine";
+import { markWeekCompleted, getLessonWeek } from "@/lib/curriculum-engine";
 import {
   summarizeSession,
   type GameModeId,
@@ -119,6 +120,7 @@ export function LessonCanvas({
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [telemetryWarning, setTelemetryWarning] = useState(false);
@@ -192,6 +194,7 @@ export function LessonCanvas({
     (firstTryScore: number) => {
       if (firstTryScore >= PASS_THRESHOLD) {
         setSessionComplete(true);
+        setShowCelebration(true);
         if (!weekCompletedRef.current) {
           weekCompletedRef.current = true;
           markWeekCompleted(weekNumber);
@@ -252,6 +255,7 @@ export function LessonCanvas({
     setPromptIndex(0);
     setCorrectFirstTry(0);
     setSessionComplete(false);
+    setShowCelebration(false);
     setRetryCount((count) => count + 1);
     weekCompletedRef.current = false;
     resetSession();
@@ -320,6 +324,20 @@ export function LessonCanvas({
     )
       ? "sentence_builder"
       : "flashcard_drill";
+
+    const weekTheme = getLessonWeek(weekNumber)?.theme ?? `Week ${weekNumber}`;
+
+    if (showCelebration) {
+      return (
+        <PassCelebration
+          weekNumber={weekNumber}
+          weekTheme={weekTheme}
+          correctFirstTry={correctFirstTry}
+          totalPrompts={totalPrompts}
+          onContinue={() => setShowCelebration(false)}
+        />
+      );
+    }
 
     return (
       <>

@@ -72,6 +72,11 @@ export function isWeekUnlocked(weekNumber: number): boolean {
   return isWeekPassed(weekNumber - 1);
 }
 
+/** Count weeks marked passed on this device. */
+export function countWeeksPassed(): number {
+  return WEEK_NUMBERS.filter((weekNumber) => isWeekPassed(weekNumber)).length;
+}
+
 export function getLessonWeek(weekNumber: number): LessonWeek | null {
   return curriculum[weekNumber] ?? null;
 }

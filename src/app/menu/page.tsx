@@ -7,8 +7,10 @@ import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
 import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
+import { ResetCamperModal } from "@/components/ui/ResetCamperModal";
 import { curriculum } from "@/data/curriculum";
 import {
+  countWeeksPassed,
   isWeekPassed,
   isWeekUnlocked,
   setCurrentWeek,
@@ -48,6 +50,9 @@ export default function MenuPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [firstName, setFirstName] = useState("");
+  const [weeksPassed, setWeeksPassed] = useState(0);
+  const [cumulativeScore, setCumulativeScore] = useState(0);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   useEffect(() => {
     const camper = readCamperSession();
@@ -56,6 +61,8 @@ export default function MenuPage() {
       return;
     }
     setFirstName(camper.first_name);
+    setWeeksPassed(countWeeksPassed());
+    setCumulativeScore(camper.cumulativeScore);
     setReady(true);
   }, [router]);
 
@@ -66,13 +73,7 @@ export default function MenuPage() {
     router.push("/lesson");
   };
 
-  const startNewCamper = () => {
-    const confirmed = window.confirm(
-      "Start over for a new camper? This clears all progress on this device.",
-    );
-    if (!confirmed) {
-      return;
-    }
+  const confirmNewCamper = () => {
     clearCampSession();
     router.replace("/");
   };
@@ -136,12 +137,23 @@ export default function MenuPage() {
               >
                 Pick a week to watch, paint, and unlock the next adventure.
               </p>
+              <div
+                className="mt-5 flex flex-wrap gap-3"
+                aria-label="Your camp progress"
+              >
+                <span className="inline-flex min-h-[44px] items-center rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
+                  {weeksPassed}/{TOTAL_WEEKS} weeks passed
+                </span>
+                <span className="inline-flex min-h-[44px] items-center rounded-full bg-teal-accent/15 px-4 py-2 text-bento-label font-bold tabular-nums text-teal-accent">
+                  {cumulativeScore.toLocaleString()} total points
+                </span>
+              </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="xl"
-                  onClick={startNewCamper}
+                  onClick={() => setResetModalOpen(true)}
                   className="min-h-[56px] border-ink/20 bg-paper/80 text-ink hover:bg-paper"
                 >
                   New camper (reset this device)
@@ -212,6 +224,11 @@ export default function MenuPage() {
             </BentoCard>
           </BentoGrid>
         </motion.div>
+        <ResetCamperModal
+          open={resetModalOpen}
+          onConfirm={confirmNewCamper}
+          onCancel={() => setResetModalOpen(false)}
+        />
       </main>
     </CampScreenLayout>
   );

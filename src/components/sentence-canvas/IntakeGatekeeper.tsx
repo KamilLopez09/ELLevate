@@ -9,6 +9,7 @@ import {
   toLastInitial,
   writeCamperSession,
 } from "@/lib/camper-session";
+import { SESSION_TTL_MS } from "@/lib/session-store";
 import type {
   AgeBracket,
   CamperSessionData,
@@ -22,6 +23,8 @@ const AGE_BRACKET_LABELS: Record<AgeBracket, string> = {
 
 const AGE_BRACKETS: AgeBracket[] = ["5-9", "10-14"];
 const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
+
+const SESSION_TTL_HOURS = SESSION_TTL_MS / (60 * 60 * 1000);
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 
@@ -253,6 +256,23 @@ export function IntakeGatekeeper() {
             className={`${fieldClasses} text-center uppercase`}
           />
         </label>
+
+        <aside
+          className="rounded-2xl border border-teal-accent/25 bg-teal-accent/5 px-4 py-4 text-sm text-ink/80"
+          aria-label="Privacy notice for campers and counselors"
+        >
+          <p className="font-bold text-ink">Privacy on this device</p>
+          <p className="mt-2 leading-relaxed">
+            We save your first name, last initial, age group, language, and camp
+            group on this tablet for up to {SESSION_TTL_HOURS} hours so you can
+            keep your progress. We do not ask for your full last name or email.
+            When you pass a week, a summary score may be sent to camp organizers.
+          </p>
+          <p className="mt-2 leading-relaxed">
+            Counselors: tap <strong>New camper (reset this device)</strong> on
+            the menu before the next child uses this tablet.
+          </p>
+        </aside>
 
         <div
           role="alert"
