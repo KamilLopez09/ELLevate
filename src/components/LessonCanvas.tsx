@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/styles/animations.css";
 import { FlashcardDrill } from "@/components/sentence-canvas/FlashcardDrill";
+import { MatchBlitz } from "@/components/sentence-canvas/MatchBlitz";
+import { RapidFire } from "@/components/sentence-canvas/RapidFire";
 import { SentenceBuilder } from "@/components/sentence-canvas/SentenceBuilder";
 import { PassCelebration } from "@/components/ui/PassCelebration";
 import { Scoreboard } from "@/components/ui/Scoreboard";
@@ -14,8 +16,13 @@ import {
 } from "@/data/curriculum";
 import {
   addSessionScore,
+  getSelectedGameMode,
   readCamperSession,
 } from "@/lib/camper-session";
+import {
+  pickTelemetryGameMode,
+  resolveGameMode,
+} from "@/lib/game-mode-routing";
 import { markWeekCompleted, getLessonWeek } from "@/lib/curriculum-engine";
 import {
   summarizeSession,
@@ -46,8 +53,25 @@ export interface LessonCanvasProps {
   }) => void;
 }
 
-function gameModeForPrompt(prompt: Prompt): GameModeId {
-  return prompt.category === "review" ? "flashcard_drill" : "sentence_builder";
+function renderPromptMode(
+  prompt: Prompt,
+  selectedMode: string | null,
+  onComplete: (payload: GameModeCompletePayload) => void,
+) {
+  const modeId = resolveGameMode(prompt, selectedMode);
+  const props = { prompts: [prompt], gameModeId: modeId, onComplete };
+
+  switch (modeId) {
+    case "flashcard_drill":
+      return <FlashcardDrill key={prompt.id} {...props} />;
+    case "match_blitz":
+      return <MatchBlitz key={prompt.id} {...props} />;
+    case "rapid_fire":
+      return <RapidFire key={prompt.id} {...props} />;
+    case "sentence_builder":
+    default:
+      return <SentenceBuilder key={prompt.id} {...props} />;
+  }
 }
 
 function RetryModal({
@@ -88,32 +112,10 @@ function RetryModal({
   );
 }
 
-function renderPromptByCategory(
-  prompt: Prompt,
-  reviewPrompts: Prompt[] | undefined,
-  builderPrompts: Prompt[] | undefined,
-  onComplete: (payload: GameModeCompletePayload) => void,
-) {
-  const inReview = reviewPrompts?.some((entry) => entry.id === prompt.id);
-  const inBuilder = builderPrompts?.some((entry) => entry.id === prompt.id);
-  const isReview =
-    inReview ?? (!inBuilder && prompt.category === "review");
-  const modeId: GameModeId = isReview ? "flashcard_drill" : "sentence_builder";
-  const props = { prompts: [prompt], gameModeId: modeId, onComplete };
-
-  if (isReview) {
-    return <FlashcardDrill key={prompt.id} {...props} />;
-  }
-
-  return <SentenceBuilder key={prompt.id} {...props} />;
-}
-
 export function LessonCanvas({
   weekNumber,
   ageGroup,
   sessionPrompts,
-  reviewPrompts,
-  builderPrompts,
   externalProgress = false,
   onProgressChange,
   onSessionStateChange,
@@ -214,7 +216,7 @@ export function LessonCanvas({
         return;
       }
 
-      const modeId = gameModeForPrompt(prompt);
+      const modeId = resolveGameMode(prompt, getSelectedGameMode());
       modesUsedRef.current.add(modeId);
       scoreResultsRef.current.push(payload.scoreResult);
       addSessionScore(payload.scoreResult.total, modeId);
@@ -273,11 +275,10 @@ export function LessonCanvas({
         ? Number(((correctFirstTry / totalPrompts) * 100).toFixed(2))
         : 0;
 
-    const sessionGameMode: GameModeId = modesUsedRef.current.has(
-      "sentence_builder",
-    )
-      ? "sentence_builder"
-      : "flashcard_drill";
+    const sessionGameMode = pickTelemetryGameMode(
+      modesUsedRef.current,
+      getSelectedGameMode(),
+    );
 
     if (camper) {
       const payload: CamperTelemetryRow = {
@@ -322,11 +323,10 @@ export function LessonCanvas({
   }
 
   if (sessionComplete) {
-    const sessionGameMode: GameModeId = modesUsedRef.current.has(
-      "sentence_builder",
-    )
-      ? "sentence_builder"
-      : "flashcard_drill";
+    const sessionGameMode = pickTelemetryGameMode(
+      modesUsedRef.current,
+      getSelectedGameMode(),
+    );
 
     const weekTheme = getLessonWeek(weekNumber)?.theme ?? `Week ${weekNumber}`;
 
@@ -375,22 +375,18 @@ export function LessonCanvas({
     return null;
   }
 
+  const selectedMode = getSelectedGameMode();
+  const activeMode = resolveGameMode(prompt, selectedMode);
+
   return (
     <section className="flex flex-col">
       {!externalProgress && (
         <p className="mb-6 text-sm font-semibold text-muted-foreground">
-          {prompt.category === "review"
-            ? copy.practice.reviewFlashcard
-            : copy.practice.practiceBuilder}
+          {copy.scoreboard.gameModes[activeMode]}
         </p>
       )}
 
-      {renderPromptByCategory(
-        prompt,
-        reviewPrompts,
-        builderPrompts,
-        handleModeComplete,
-      )}
+      {renderPromptMode(prompt, selectedMode, handleModeComplete)}
     </section>
   );
 }

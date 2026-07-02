@@ -45,6 +45,7 @@ export interface CampCopy {
     passedReplay: string;
     start: string;
     unlockHint: (prevWeek: number) => string;
+    lockedSoon: string;
   };
   lesson: {
     loading: string;
@@ -111,6 +112,23 @@ export interface CampCopy {
     body: string;
     confirm: string;
     cancel: string;
+  };
+  gameModes: {
+    chooseStyle: string;
+    pickMode: string;
+    autoDescription: string;
+    autoTitle: string;
+    pointsPerPrompt: (max: number) => string;
+    currentStyle: (label: string) => string;
+    changeStyle: string;
+    useAuto: string;
+    lockedPreview: string;
+    speedTimerLabel: string;
+    speedTimerHot: string;
+    speedTimerWarm: string;
+    speedTimerAria: (elapsedMs: number) => string;
+    noDragMatchPrompt: string;
+    noClickPaintPrompt: string;
   };
   skipLink: string;
 }

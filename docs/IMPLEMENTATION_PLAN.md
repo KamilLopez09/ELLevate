@@ -213,11 +213,11 @@ Copy into a GitHub Issue or track here:
 - [x] D5 Spanish validation messages
 
 ### Batch E — Game modes & previews
-- [ ] E1 Mode selection flow
-- [ ] E2 Match Blitz UI
-- [ ] E3 Rapid Fire UI
-- [ ] E4 Locked week preview
-- [ ] E5 RESOLVE doc update
+- [x] E1 Mode selection flow
+- [x] E2 Match Blitz UI
+- [x] E3 Rapid Fire UI
+- [x] E4 Locked week preview
+- [x] E5 RESOLVE doc update
 
 ### Batch F — Admin & infra
 - [ ] F1 Admin filters

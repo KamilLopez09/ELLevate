@@ -42,6 +42,7 @@ const EN: CampCopy = {
     passedReplay: "Passed · Replay",
     start: "Start →",
     unlockHint: (prevWeek) => `Finish Week ${prevWeek} to unlock`,
+    lockedSoon: "Locked",
   },
   lesson: {
     loading: "Loading this week's lesson…",
@@ -114,6 +115,25 @@ const EN: CampCopy = {
     confirm: "Yes, reset device",
     cancel: "Cancel",
   },
+  gameModes: {
+    chooseStyle: "Choose Your Style",
+    pickMode: "Pick a game mode",
+    autoTitle: "Recommended (Auto)",
+    autoDescription:
+      "Review prompts use flashcards. Core and challenge prompts use sentence builder.",
+    pointsPerPrompt: (max) => `Up to ${max} pts / prompt`,
+    currentStyle: (label) => `Game style: ${label}`,
+    changeStyle: "Change game style",
+    useAuto: "Use recommended style",
+    lockedPreview: "Coming soon — finish the previous week to unlock",
+    speedTimerLabel: "Speed bonus",
+    speedTimerHot: "Fast start — max speed bonus!",
+    speedTimerWarm: "Keep going — quick answers still earn points.",
+    speedTimerAria: (elapsedMs) =>
+      `Elapsed ${(elapsedMs / 1000).toFixed(1)} seconds`,
+    noDragMatchPrompt: "This prompt needs a picture-match week for Match Blitz.",
+    noClickPaintPrompt: "This prompt needs fill-in-the-blank for Rapid Fire.",
+  },
   skipLink: "Skip to main content",
 };
 
@@ -162,6 +182,7 @@ const ES: CampCopy = {
     passedReplay: "Aprobada · Repetir",
     start: "Empezar →",
     unlockHint: (prevWeek) => `Termina la semana ${prevWeek} para desbloquear`,
+    lockedSoon: "Bloqueada",
   },
   lesson: {
     loading: "Cargando la lección de esta semana…",
@@ -233,6 +254,27 @@ const ES: CampCopy = {
     body: "Esto borra nombre, progreso y puntajes en este dispositivo. Úsalo en tablets compartidas antes del siguiente niño.",
     confirm: "Sí, reiniciar",
     cancel: "Cancelar",
+  },
+  gameModes: {
+    chooseStyle: "Elige tu estilo",
+    pickMode: "Elige un modo de juego",
+    autoTitle: "Recomendado (Auto)",
+    autoDescription:
+      "Las repasos usan tarjetas. Las actividades principales usan armar oraciones.",
+    pointsPerPrompt: (max) => `Hasta ${max} pts / actividad`,
+    currentStyle: (label) => `Estilo: ${label}`,
+    changeStyle: "Cambiar estilo de juego",
+    useAuto: "Usar estilo recomendado",
+    lockedPreview: "Próximamente — termina la semana anterior para desbloquear",
+    speedTimerLabel: "Bono de velocidad",
+    speedTimerHot: "¡Buen inicio — bono máximo de velocidad!",
+    speedTimerWarm: "Sigue — respuestas rápidas aún suman puntos.",
+    speedTimerAria: (elapsedMs) =>
+      `Transcurrieron ${(elapsedMs / 1000).toFixed(1)} segundos`,
+    noDragMatchPrompt:
+      "Esta actividad necesita una semana de emparejar imágenes para Match Blitz.",
+    noClickPaintPrompt:
+      "Esta actividad necesita completar espacios para Rapid Fire.",
   },
   skipLink: "Saltar al contenido principal",
 };

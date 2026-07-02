@@ -136,11 +136,13 @@ Teachers change lesson text **without** redeploying the whole site — content l
 
 ---
 
-## Phase 6 — Game modes & cleanup ✅ (pruned)
+## Phase 6 — Game modes & cleanup ✅ (re-wired Batch E)
 
 | Item | Status |
 |------|--------|
-| `MatchBlitz` / `RapidFire` | **Removed** — unwired components deleted (with the orphaned `swapy` dependency). `match_blitz` / `rapid_fire` scoring stays in `lib/gamification.ts` if re-wired later. |
+| `MatchBlitz` / `RapidFire` | **Re-wired** — optional modes on `/application` via `GameModeSelector`; default path unchanged (flashcard review + sentence builder). Scoring uses `match_blitz` / `rapid_fire` in `lib/gamification.ts`. |
+| `GameModeSelector` | All four modes + “Recommended (Auto)”; selection stored in session until week reset. |
+| Locked week menu | Theme title visible on locked cards (blurred/desaturated preview). |
 | `certified-angels-site/` | **Removed** — legacy static HTML/CSS deleted; nothing referenced it. |
 | Teacher overrides | Out of scope until remote curriculum exists |
 

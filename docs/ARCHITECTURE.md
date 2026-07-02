@@ -92,12 +92,12 @@ Legacy age brackets (`5-7`, `8-10`, `11-14`) are migrated on read in `camper-ses
 
 | ID | Component | Status |
 |----|-----------|--------|
-| `flashcard_drill` | `FlashcardDrill.tsx` | Active (review prompts) |
-| `sentence_builder` | `SentenceBuilder.tsx` | Active (production prompts) |
+| `flashcard_drill` | `FlashcardDrill.tsx` | Active (review prompts; default auto path) |
+| `sentence_builder` | `SentenceBuilder.tsx` | Active (default auto path for core/generative) |
+| `match_blitz` | `MatchBlitz.tsx` | Optional via `GameModeSelector` (drag-match prompts) |
+| `rapid_fire` | `RapidFire.tsx` | Optional via `GameModeSelector` (click-paint prompts) |
 
-> `match_blitz` and `rapid_fire` scoring definitions remain in `lib/gamification.ts`,
-> but their UI components were removed as unwired scaffolding. Re-add components
-> before re-enabling either mode in `GameModeSelector`.
+Mode selection is optional on `/application`. With no selection, behavior matches the original v1 auto routing in `lib/game-mode-routing.ts`.
 
 ---
 

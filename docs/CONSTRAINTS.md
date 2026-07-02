@@ -102,8 +102,8 @@ after refresh. Password compare on the server uses a constant-time digest check.
 - Source: `src/data/curriculum.ts`
 - Unlock: week *N* requires passing week *N − 1* (8 of 10 first-try correct).
 - Only Flashcard Drill and Sentence Builder are wired in `LessonCanvas.tsx`. The
-  unused `MatchBlitz`/`RapidFire` components were removed; their `match_blitz` /
-  `rapid_fire` scoring definitions remain in `lib/gamification.ts` for a future build.
+  unused `MatchBlitz`/`RapidFire` components were removed temporarily; Batch E restored
+  optional modes wired through `GameModeSelector` on `/application`.
 
 ---
 

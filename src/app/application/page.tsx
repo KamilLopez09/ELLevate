@@ -4,13 +4,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { LessonCanvas } from "@/components/LessonCanvas";
+import {
+  GameModeSelector,
+  labelForSelectedMode,
+} from "@/components/sentence-canvas/GameModeSelector";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
+import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
 import { curriculum } from "@/data/curriculum";
-import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
+import {
+  clearSelectedGameMode,
+  getSelectedGameMode,
+  isLessonComplete,
+  readCamperSession,
+  setSelectedGameMode,
+} from "@/lib/camper-session";
 import { useCopy } from "@/lib/i18n/useCopy";
+import type { GameModeId } from "@/lib/gamification";
 import { getCurrentWeek, resolveAgeGroup } from "@/lib/curriculum-engine";
 import {
   createInitialProgress,
@@ -28,6 +40,8 @@ export default function ApplicationPage() {
     createInitialProgress(),
   );
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [showModeSelector, setShowModeSelector] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
 
   const camper = useMemo(() => (ready ? readCamperSession() : null), [ready]);
 
@@ -66,6 +80,7 @@ export default function ApplicationPage() {
     }
 
     setWeekNumber(getCurrentWeek());
+    setSelectedMode(getSelectedGameMode());
     setReady(true);
   }, [router]);
 
@@ -76,6 +91,19 @@ export default function ApplicationPage() {
 
   const completedCount = progress.outcomes.filter((o) => o !== "pending").length;
   const weekTheme = curriculum[weekNumber]?.theme ?? "Camp Week";
+  const modeLabel = labelForSelectedMode(selectedMode, copy);
+
+  const handleSelectMode = (modeId: GameModeId) => {
+    setSelectedGameMode(modeId);
+    setSelectedMode(modeId);
+    setShowModeSelector(false);
+  };
+
+  const handleUseAuto = () => {
+    clearSelectedGameMode();
+    setSelectedMode(null);
+    setShowModeSelector(false);
+  };
 
   if (!ready || !camper) {
     return (
@@ -170,21 +198,47 @@ export default function ApplicationPage() {
                   span="sm:col-span-2"
                   accent="teal"
                   tilt={-1.2}
-                  className="hidden min-h-[64px] flex-col justify-center !p-5 sm:flex"
+                  className="flex min-h-[64px] flex-col justify-center gap-3 !p-5"
                 >
-                  <p className="font-display font-bold text-bento-title text-ink">
-                    {copy.practice.paintModeTitle}
-                  </p>
-                  <p className="mt-1 text-bento-label text-muted-foreground">
-                    {copy.practice.paintModeHint}
-                  </p>
+                  <div>
+                    <p className="font-display font-bold text-bento-title text-ink">
+                      {copy.practice.paintModeTitle}
+                    </p>
+                    <p className="mt-1 text-bento-label text-muted-foreground">
+                      {copy.gameModes.currentStyle(modeLabel)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowModeSelector((open) => !open)}
+                    className="min-h-[44px] self-start border-ink/20 bg-paper/80"
+                  >
+                    {copy.gameModes.changeStyle}
+                  </Button>
                 </BentoCard>
+
+                {showModeSelector ? (
+                  <BentoCard
+                    index={3}
+                    span="sm:col-span-6"
+                    accent="purple"
+                    tilt={0}
+                    className="!p-0"
+                  >
+                    <GameModeSelector
+                      onSelect={handleSelectMode}
+                      onUseAuto={handleUseAuto}
+                    />
+                  </BentoCard>
+                ) : null}
               </>
             ) : null}
 
             <BentoCard
               key="lesson-canvas"
-              index={sessionEnded ? 0 : 3}
+              index={sessionEnded ? 0 : showModeSelector ? 4 : 3}
               span={sessionEnded ? "sm:col-span-6" : "sm:col-span-6 lg:col-span-4"}
               accent="warm"
               tilt={sessionEnded ? 0 : 0.5}

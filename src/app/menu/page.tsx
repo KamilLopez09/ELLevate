@@ -181,7 +181,7 @@ export default function MenuPage() {
                     tilt={tilt}
                     accent={accent}
                     aria-disabled
-                    className="cursor-not-allowed opacity-60"
+                    className="cursor-not-allowed select-none"
                   >
                     <WeekCardContent
                       weekNumber={weekNumber}
@@ -265,7 +265,7 @@ function WeekCardContent({
       <span
         className={[
           "font-display font-extrabold text-bento-title",
-          unlocked ? "text-ink" : "text-ink/60",
+          unlocked ? "text-ink" : "text-ink/70 blur-[1.5px] saturate-50",
         ].join(" ")}
       >
         {theme}
@@ -284,9 +284,17 @@ function WeekCardContent({
           </span>
         )
       ) : (
-        <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-ink/10 px-4 py-2 text-bento-label font-bold text-ink/50">
-          {copy.menu.unlockHint(weekNumber - 1)}
-        </span>
+        <>
+          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-ink/10 px-4 py-2 text-bento-label font-bold text-ink/50">
+            {copy.menu.lockedSoon}
+          </span>
+          <span className="text-bento-label text-ink/50">
+            {copy.menu.unlockHint(weekNumber - 1)}
+          </span>
+          <span className="text-bento-label italic text-ink/45">
+            {copy.gameModes.lockedPreview}
+          </span>
+        </>
       )}
     </div>
   );

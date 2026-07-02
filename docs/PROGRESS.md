@@ -4,6 +4,15 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 17 — Batch E game modes & locked-week preview
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **`MatchBlitz` / `RapidFire`:** Speed-timer wrappers around `SentenceBuilder` with `match_blitz` / `rapid_fire` scoring.
+- **`GameModeSelector`:** Optional on `/application`; default auto path (flashcard + sentence builder) unchanged when no selection.
+- **`game-mode-routing.ts`:** Resolves UI/scoring mode from session override + prompt type.
+- **Menu:** Locked weeks show theme preview (blur/desaturate) without enabling click.
+
 ## Milestone 16 — Batch D Spanish UI & video gate
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
