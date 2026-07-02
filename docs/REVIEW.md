@@ -201,6 +201,7 @@ For full system context, see [ARCHITECTURE.md](ARCHITECTURE.md). For known limit
 
 | Document | Purpose |
 |----------|---------|
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | **Task batches, checklists, and Fable 5 review workflow** |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Routes, session keys, curriculum engine, telemetry flow |
 | [CONSTRAINTS.md](CONSTRAINTS.md) | Static export limits, spam risk, localStorage TTL |
 | [ANALYTICS.md](ANALYTICS.md) | Organizer dashboard and Supabase queries |
