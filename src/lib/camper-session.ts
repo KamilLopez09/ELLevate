@@ -99,6 +99,13 @@ function normalizeSession(
   };
 }
 
+/** Validates and normalizes camper session data from external sources (e.g. resume restore). */
+export function parseCamperSessionData(
+  parsed: Partial<CamperSessionData>,
+): CamperSessionData | null {
+  return normalizeSession(parsed);
+}
+
 export function readCamperSession(): CamperSessionData | null {
   try {
     const raw = getCampSessionItem(CAMPER_SESSION_KEY);

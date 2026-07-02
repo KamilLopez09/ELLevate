@@ -138,7 +138,7 @@ const EN: CampCopy = {
     getCode: "Get resume code",
     errors: {
       invalidCode: "Enter the full 6-character code.",
-      notFound: "That code was not found or expired.",
+      notFound: "Invalid or expired code.",
       network: "Could not reach camp servers. Try again when online.",
     },
   },
@@ -316,7 +316,7 @@ const ES: CampCopy = {
     getCode: "Obtener código",
     errors: {
       invalidCode: "Escribe el código completo de 6 caracteres.",
-      notFound: "Ese código no existe o expiró.",
+      notFound: "Código inválido o expirado.",
       network: "No pudimos conectar con el campamento. Intenta cuando tengas internet.",
     },
   },

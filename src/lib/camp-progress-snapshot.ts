@@ -1,5 +1,9 @@
 import type { CamperSessionData } from "@/types/sentence-canvas";
-import { readCamperSession, writeCamperSession } from "@/lib/camper-session";
+import {
+  parseCamperSessionData,
+  readCamperSession,
+  writeCamperSession,
+} from "@/lib/camper-session";
 import {
   CURRENT_WEEK_KEY,
   LESSON_COMPLETE_KEY,
@@ -13,6 +17,7 @@ import {
 } from "@/lib/session-store";
 
 const SESSION_STARTED_AT_KEY = "elle_session_started_at";
+const MAX_CUMULATIVE_SCORE = 1300;
 
 export interface CampProgressSnapshot {
   camper: CamperSessionData;
@@ -66,8 +71,17 @@ export function captureCampProgressSnapshot(): CampProgressSnapshot | null {
 }
 
 /** Restores progress from a resume snapshot into localStorage. */
-export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): void {
-  writeCamperSession(snapshot.camper);
+export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): boolean {
+  const camper = parseCamperSessionData(snapshot.camper);
+  if (!camper) {
+    return false;
+  }
+
+  if (camper.cumulativeScore > MAX_CUMULATIVE_SCORE) {
+    return false;
+  }
+
+  writeCamperSession(camper);
 
   for (let week = 1; week <= 8; week += 1) {
     const passed = snapshot.weekPassed[String(week)] === true;
@@ -105,4 +119,6 @@ export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): void 
   } else {
     touchCampSessionClock();
   }
+
+  return true;
 }

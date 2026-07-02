@@ -12,7 +12,19 @@ From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
 - **G2 Offline PWA:** `manifest.webmanifest`, `sw.js`, `PwaProvider`; telemetry queue in localStorage with flush on reconnect.
 - **G3 Counselor PIN:** `counselor-reset` Edge Function; 2.5s long-press on menu footer opens PIN modal for fast device reset.
 
-**Deploy:** Apply migration `010`; set `COUNSELOR_RESET_PIN` secret; `npm run supabase:deploy-edge`; redeploy Cloudflare Pages (includes `_headers` worker-src).
+**Deploy:** Apply migration `010`; set `COUNSELOR_RESET_PIN` + `RESUME_ATTESTATION_SECRET` secrets; `npm run supabase:deploy-edge`; redeploy Cloudflare Pages (includes `_headers` worker-src).
+
+## Milestone 20 — Batch G.1 security hardening
+
+From security review of Batch G:
+
+- **Attestation:** `issue-create-token` + HMAC `create_token` required for `create` (`RESUME_ATTESTATION_SECRET`).
+- **Single-use codes:** Row deleted on successful restore; generic restore error message.
+- **Bounds:** Slug/camper_id match, cumulative score cap, allowlisted game modes; re-validate JSONB on restore.
+- **Cleanup:** Opportunistic purge of expired snapshots on each request; SW cache bumped to `v2`.
+- **Telemetry queue:** Dedupe by `camper_id:week_number`.
+
+**Deploy:** Redeploy `camper-resume` after setting `RESUME_ATTESTATION_SECRET`.
 
 ## Milestone 18 — Batch F admin & infra
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "elle-vate-shell-v1";
+const CACHE_NAME = "elle-vate-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

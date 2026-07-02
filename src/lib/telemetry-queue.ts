@@ -41,13 +41,17 @@ function writeQueue(items: CamperTelemetryRow[]): void {
 /** Stores a failed telemetry payload for later retry when back online. */
 export function enqueueTelemetry(payload: CamperTelemetryRow): void {
   const queue = readQueue();
-  queue.push(payload);
+  const dedupeKey = `${payload.camper_id}:${payload.week_number}`;
+  const filtered = queue.filter(
+    (item) => `${item.camper_id}:${item.week_number}` !== dedupeKey,
+  );
+  filtered.push(payload);
 
-  while (queue.length > MAX_QUEUE_SIZE) {
-    queue.shift();
+  while (filtered.length > MAX_QUEUE_SIZE) {
+    filtered.shift();
   }
 
-  writeQueue(queue);
+  writeQueue(filtered);
 }
 
 export function getQueuedTelemetryCount(): number {

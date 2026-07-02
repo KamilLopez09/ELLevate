@@ -3,6 +3,7 @@ import {
   captureCampProgressSnapshot,
   type CampProgressSnapshot,
 } from "@/lib/camp-progress-snapshot";
+import { touchCampSessionClock } from "@/lib/session-store";
 import { getSupabaseConfig } from "@/lib/supabase/client";
 
 export interface CreateResumeCodeResult {
@@ -46,12 +47,45 @@ async function postResumeFunction(
 export async function createResumeCode(): Promise<
   CreateResumeCodeResult | CreateResumeCodeError
 > {
-  const snapshot = captureCampProgressSnapshot();
+  let snapshot = captureCampProgressSnapshot();
   if (!snapshot) {
     return { ok: false, error: "No camper session on this device." };
   }
 
-  const response = await postResumeFunction({ action: "create", snapshot });
+  if (!snapshot.sessionStartedAt) {
+    touchCampSessionClock();
+    snapshot = captureCampProgressSnapshot();
+    if (!snapshot?.sessionStartedAt) {
+      return { ok: false, error: "Could not verify this device session." };
+    }
+  }
+
+  const tokenResponse = await postResumeFunction({
+    action: "issue-create-token",
+    camper_id: snapshot.camper.camper_id,
+    session_started_at: snapshot.sessionStartedAt,
+  });
+  if (!tokenResponse) {
+    return { ok: false, error: "Could not reach camp servers." };
+  }
+
+  const tokenPayload = (await tokenResponse.json().catch(() => null)) as {
+    create_token?: string;
+    error?: string;
+  } | null;
+
+  if (!tokenResponse.ok || !tokenPayload?.create_token) {
+    return {
+      ok: false,
+      error: tokenPayload?.error ?? "Could not authorize resume code.",
+    };
+  }
+
+  const response = await postResumeFunction({
+    action: "create",
+    create_token: tokenPayload.create_token,
+    snapshot,
+  });
   if (!response) {
     return { ok: false, error: "Could not reach camp servers." };
   }
@@ -100,11 +134,15 @@ export async function restoreFromResumeCode(
   if (!response.ok || !payload?.snapshot?.camper) {
     return {
       ok: false,
-      error: payload?.error ?? "Could not restore from that code.",
+      error: payload?.error ?? "Invalid or expired code.",
     };
   }
 
-  applyCampProgressSnapshot(payload.snapshot);
+  const applied = applyCampProgressSnapshot(payload.snapshot);
+  if (!applied) {
+    return { ok: false, error: "Could not apply progress from that code." };
+  }
+
   return { ok: true, snapshot: payload.snapshot };
 }
 

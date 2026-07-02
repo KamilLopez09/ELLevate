@@ -1,9 +1,17 @@
 // Create or restore camp progress snapshots via short resume codes (Batch G1).
-// COPPA: stores the same fields already kept in localStorage (first name + last initial).
+// G1.1: attestation tokens, single-use codes, bounds, generic restore errors.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getClientIp } from "../_shared/client-ip.ts";
 import { consumeRateLimit } from "../_shared/rate-limit.ts";
+import {
+  issueCreateToken,
+  verifyCreateToken,
+} from "../_shared/resume-attestation.ts";
+import {
+  MAX_ACTIVE_SNAPSHOTS_PER_CAMPER,
+  validateSnapshot,
+} from "../_shared/resume-snapshot.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -15,31 +23,16 @@ const corsHeaders: Record<string, string> = {
 const CODE_CHARS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const CODE_LENGTH = 6;
 const SNAPSHOT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CREATE_TOKEN_TTL_MS = 15 * 60 * 1000;
 
+const TOKEN_ISSUE_LIMIT = 10;
+const TOKEN_ISSUE_WINDOW_MS = 60 * 60 * 1000;
 const CREATE_LIMIT = 5;
 const CREATE_WINDOW_MS = 60 * 60 * 1000;
 const RESTORE_LIMIT = 30;
 const RESTORE_WINDOW_MS = 60 * 60 * 1000;
 
-interface SnapshotCamper {
-  camper_id: string;
-  first_name: string;
-  last_initial: string;
-  age_bracket: string;
-  native_language: string;
-  group_letter: string;
-  cumulativeScore: number;
-  completedModes: string[];
-}
-
-interface CampProgressSnapshot {
-  camper: SnapshotCamper;
-  currentWeek?: number;
-  weekPassed: Record<string, boolean>;
-  lessonComplete?: boolean;
-  selectedGameMode?: string | null;
-  sessionStartedAt?: number;
-}
+const RESTORE_ERROR = "Invalid or expired code.";
 
 function jsonResponse(
   body: unknown,
@@ -65,117 +58,6 @@ function randomCode(): string {
   return code;
 }
 
-function isString(value: unknown, min: number, max: number): value is string {
-  return typeof value === "string" && value.length >= min && value.length <= max;
-}
-
-function validateSnapshot(
-  body: unknown,
-): { ok: true; snapshot: CampProgressSnapshot; camperId: string } | {
-  ok: false;
-  error: string;
-} {
-  if (!body || typeof body !== "object") {
-    return { ok: false, error: "Invalid snapshot" };
-  }
-
-  const record = body as Record<string, unknown>;
-  const camper = record.camper;
-  if (!camper || typeof camper !== "object") {
-    return { ok: false, error: "Missing camper" };
-  }
-
-  const c = camper as Record<string, unknown>;
-  if (
-    !isString(c.camper_id, 1, 64) ||
-    !isString(c.first_name, 1, 40) ||
-    !isString(c.last_initial, 1, 1) ||
-    !isString(c.age_bracket, 3, 5) ||
-    !isString(c.native_language, 5, 10) ||
-    !isString(c.group_letter, 1, 1) ||
-    typeof c.cumulativeScore !== "number" ||
-    !Number.isFinite(c.cumulativeScore) ||
-    !Array.isArray(c.completedModes)
-  ) {
-    return { ok: false, error: "Invalid camper fields" };
-  }
-
-  if (c.age_bracket !== "5-9" && c.age_bracket !== "10-14") {
-    return { ok: false, error: "Invalid age bracket" };
-  }
-  if (c.native_language !== "English" && c.native_language !== "Spanish") {
-    return { ok: false, error: "Invalid language" };
-  }
-  if (!/^[A-Z]$/.test(c.group_letter)) {
-    return { ok: false, error: "Invalid group letter" };
-  }
-
-  const weekPassed = record.weekPassed;
-  if (!weekPassed || typeof weekPassed !== "object") {
-    return { ok: false, error: "Missing week progress" };
-  }
-
-  const normalizedWeekPassed: Record<string, boolean> = {};
-  for (const [key, value] of Object.entries(
-    weekPassed as Record<string, unknown>,
-  )) {
-    const weekNum = Number.parseInt(key, 10);
-    if (!Number.isFinite(weekNum) || weekNum < 1 || weekNum > 8) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      normalizedWeekPassed[String(weekNum)] = value;
-    }
-  }
-
-  const currentWeek = record.currentWeek;
-  if (
-    currentWeek !== undefined &&
-    (typeof currentWeek !== "number" ||
-      !Number.isInteger(currentWeek) ||
-      currentWeek < 1 ||
-      currentWeek > 8)
-  ) {
-    return { ok: false, error: "Invalid current week" };
-  }
-
-  const snapshot: CampProgressSnapshot = {
-    camper: {
-      camper_id: c.camper_id,
-      first_name: c.first_name.trim(),
-      last_initial: c.last_initial.toUpperCase(),
-      age_bracket: c.age_bracket,
-      native_language: c.native_language,
-      group_letter: c.group_letter,
-      cumulativeScore: Math.max(0, Math.floor(c.cumulativeScore)),
-      completedModes: c.completedModes.filter(
-        (mode): mode is string => typeof mode === "string",
-      ),
-    },
-    weekPassed: normalizedWeekPassed,
-  };
-
-  if (currentWeek !== undefined) {
-    snapshot.currentWeek = currentWeek;
-  }
-  if (typeof record.lessonComplete === "boolean") {
-    snapshot.lessonComplete = record.lessonComplete;
-  }
-  if (record.selectedGameMode === null) {
-    snapshot.selectedGameMode = null;
-  } else if (isString(record.selectedGameMode, 1, 32)) {
-    snapshot.selectedGameMode = record.selectedGameMode;
-  }
-  if (
-    typeof record.sessionStartedAt === "number" &&
-    Number.isFinite(record.sessionStartedAt)
-  ) {
-    snapshot.sessionStartedAt = record.sessionStartedAt;
-  }
-
-  return { ok: true, snapshot, camperId: c.camper_id };
-}
-
 function normalizeCode(raw: unknown): string | null {
   if (typeof raw !== "string") {
     return null;
@@ -185,6 +67,19 @@ function normalizeCode(raw: unknown): string | null {
     return null;
   }
   return code;
+}
+
+function isCamperId(value: unknown): value is string {
+  return typeof value === "string" && value.length >= 1 && value.length <= 64;
+}
+
+async function purgeExpiredSnapshots(
+  admin: ReturnType<typeof createClient>,
+): Promise<void> {
+  await admin
+    .from("camper_resume_snapshots")
+    .delete()
+    .lt("expires_at", new Date().toISOString());
 }
 
 Deno.serve(async (req) => {
@@ -198,7 +93,8 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) {
+  const attestationSecret = Deno.env.get("RESUME_ATTESTATION_SECRET");
+  if (!supabaseUrl || !serviceRoleKey || !attestationSecret) {
     return jsonResponse({ error: "Server misconfigured" }, 500);
   }
 
@@ -212,6 +108,48 @@ Deno.serve(async (req) => {
   const action = body.action;
   const clientIp = getClientIp(req);
   const admin = createClient(supabaseUrl, serviceRoleKey);
+
+  void purgeExpiredSnapshots(admin);
+
+  if (action === "issue-create-token") {
+    const limited = consumeRateLimit(
+      `resume-token:${clientIp}`,
+      TOKEN_ISSUE_LIMIT,
+      TOKEN_ISSUE_WINDOW_MS,
+    );
+    if (!limited.allowed) {
+      return jsonResponse(
+        { error: "Too many requests. Try again later." },
+        429,
+        limited.retryAfterSeconds
+          ? { "Retry-After": String(limited.retryAfterSeconds) }
+          : undefined,
+      );
+    }
+
+    const camperId = body.camper_id;
+    const sessionStartedAt = body.session_started_at;
+    if (
+      !isCamperId(camperId) ||
+      typeof sessionStartedAt !== "number" ||
+      !Number.isFinite(sessionStartedAt) ||
+      sessionStartedAt <= 0
+    ) {
+      return jsonResponse({ error: "Invalid session" }, 400);
+    }
+
+    const createToken = await issueCreateToken(
+      attestationSecret,
+      camperId,
+      sessionStartedAt,
+      CREATE_TOKEN_TTL_MS,
+    );
+
+    return jsonResponse({
+      create_token: createToken,
+      expires_at: new Date(Date.now() + CREATE_TOKEN_TTL_MS).toISOString(),
+    });
+  }
 
   if (action === "create") {
     const limited = consumeRateLimit(
@@ -229,9 +167,40 @@ Deno.serve(async (req) => {
       );
     }
 
+    const createToken = body.create_token;
+    if (typeof createToken !== "string" || createToken.length < 10) {
+      return jsonResponse({ error: "Missing create attestation" }, 401);
+    }
+
     const validated = validateSnapshot(body.snapshot);
     if (!validated.ok) {
       return jsonResponse({ error: validated.error }, 400);
+    }
+
+    const tokenValid = await verifyCreateToken(
+      attestationSecret,
+      createToken,
+      validated.snapshot.camper.camper_id,
+      validated.snapshot.sessionStartedAt,
+    );
+    if (!tokenValid) {
+      return jsonResponse({ error: "Invalid or expired attestation" }, 401);
+    }
+
+    const { count, error: countError } = await admin
+      .from("camper_resume_snapshots")
+      .select("id", { count: "exact", head: true })
+      .eq("camper_id", validated.snapshot.camper.camper_id)
+      .gt("expires_at", new Date().toISOString());
+
+    if (countError) {
+      return jsonResponse({ error: "Could not create resume code" }, 500);
+    }
+    if ((count ?? 0) >= MAX_ACTIVE_SNAPSHOTS_PER_CAMPER) {
+      return jsonResponse(
+        { error: "Too many active codes for this camper. Try again later." },
+        429,
+      );
     }
 
     const expiresAt = new Date(Date.now() + SNAPSHOT_TTL_MS).toISOString();
@@ -241,7 +210,7 @@ Deno.serve(async (req) => {
       const resumeCode = randomCode();
       const { error } = await admin.from("camper_resume_snapshots").insert({
         resume_code: resumeCode,
-        camper_id: validated.camperId,
+        camper_id: validated.snapshot.camper.camper_id,
         snapshot: validated.snapshot,
         expires_at: expiresAt,
       });
@@ -284,37 +253,35 @@ Deno.serve(async (req) => {
 
     const code = normalizeCode(body.code);
     if (!code) {
-      return jsonResponse({ error: "Invalid resume code" }, 400);
+      return jsonResponse({ error: RESTORE_ERROR }, 400);
     }
 
     const { data, error } = await admin
       .from("camper_resume_snapshots")
-      .select("snapshot, expires_at, lookup_count")
+      .select("snapshot, expires_at")
       .eq("resume_code", code)
       .maybeSingle();
 
     if (error) {
-      return jsonResponse({ error: "Lookup failed" }, 500);
+      return jsonResponse({ error: RESTORE_ERROR }, 400);
     }
 
-    if (!data) {
-      return jsonResponse({ error: "Code not found" }, 404);
+    if (!data || new Date(data.expires_at).getTime() < Date.now()) {
+      if (data) {
+        await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
+      }
+      return jsonResponse({ error: RESTORE_ERROR }, 400);
     }
 
-    if (new Date(data.expires_at).getTime() < Date.now()) {
-      await admin
-        .from("camper_resume_snapshots")
-        .delete()
-        .eq("resume_code", code);
-      return jsonResponse({ error: "Code expired" }, 410);
+    const validated = validateSnapshot(data.snapshot);
+    if (!validated.ok) {
+      await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
+      return jsonResponse({ error: RESTORE_ERROR }, 400);
     }
 
-    await admin
-      .from("camper_resume_snapshots")
-      .update({ lookup_count: (data.lookup_count ?? 0) + 1 })
-      .eq("resume_code", code);
+    await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
 
-    return jsonResponse({ snapshot: data.snapshot });
+    return jsonResponse({ snapshot: validated.snapshot });
   }
 
   return jsonResponse({ error: "Unknown action" }, 400);

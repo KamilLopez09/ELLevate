@@ -134,7 +134,7 @@ never ships to browsers**.
   payload and inserts with the service role key. Rate limit: **10 POSTs/hour/IP**.
 - **`organizer-telemetry`** — password-protected reads for `/admin`. Locks out
   an IP for 15 minutes after **5 failed password attempts** (constant-time compare).
-- **`camper-resume`** — create/restore 6-character progress codes (7-day TTL). Rate limited per IP.
+- **`camper-resume`** — issue attestation token, create/restore 6-character progress codes (7-day TTL, single-use on restore). Rate limited per IP.
 - **`counselor-reset`** — verifies `COUNSELOR_RESET_PIN` for hidden quick-reset on shared tablets.
 
 ### Deploy once per Supabase project
@@ -148,7 +148,7 @@ npm run supabase:deploy-edge
 npm run supabase:deploy-organizer
 
 # ...or manually:
-supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password" COUNSELOR_RESET_PIN="your-camp-pin"
+supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password" COUNSELOR_RESET_PIN="your-camp-pin" RESUME_ATTESTATION_SECRET="your-random-secret"
 supabase functions deploy camper-telemetry --no-verify-jwt
 supabase functions deploy organizer-telemetry --no-verify-jwt
 supabase functions deploy camper-resume --no-verify-jwt
@@ -159,6 +159,7 @@ supabase functions deploy counselor-reset --no-verify-jwt
 |------------------|---------|
 | `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry only) |
 | `COUNSELOR_RESET_PIN` | PIN for counselor quick-reset (counselor-reset; not in client bundle) |
+| `RESUME_ATTESTATION_SECRET` | HMAC secret for resume-code create attestation (camper-resume; not in client bundle) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime; used by Edge Functions |
 | `verify_jwt = false` | Functions are called with the anon key; auth is custom (password) or open write-proxy |
 
