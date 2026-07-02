@@ -106,9 +106,9 @@ Both database paths run as Supabase Edge Functions so the **service role key
 never ships to browsers**.
 
 - **`camper-telemetry`** — public write proxy. Validates each passed-session
-  payload and inserts with the service role key. Required for telemetry to save
-  once migration `008` is applied.
-- **`organizer-telemetry`** — password-protected reads for `/admin` (Phase 3).
+  payload and inserts with the service role key. Rate limit: **10 POSTs/hour/IP**.
+- **`organizer-telemetry`** — password-protected reads for `/admin`. Locks out
+  an IP for 15 minutes after **5 failed password attempts** (constant-time compare).
 
 ### Deploy once per Supabase project
 

@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
-  clearStoredOrganizerPassword,
+  clearLegacyOrganizerPasswordStorage,
   downloadCsv,
   fetchOrganizerTelemetry,
-  readStoredOrganizerPassword,
-  storeOrganizerPassword,
   telemetryRowsToCsv,
   type CamperTelemetryRecord,
   type OrganizerSummary,
@@ -150,13 +148,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    const stored = readStoredOrganizerPassword();
-    if (!stored) {
-      return;
-    }
-    setPassword(stored);
-    void loadData(stored);
-    // Load once on mount when a prior organizer session exists in this tab.
+    clearLegacyOrganizerPasswordStorage();
   }, []);
 
   const loadData = async (organizerPassword: string) => {
@@ -166,11 +158,10 @@ export default function AdminPage() {
       const result = await fetchOrganizerTelemetry(organizerPassword);
       setRows(result.rows);
       setSummary(result.summary);
-      storeOrganizerPassword(organizerPassword);
+      setPassword(organizerPassword);
       setAuthenticated(true);
     } catch (loadError) {
       setAuthenticated(false);
-      clearStoredOrganizerPassword();
       setError(
         loadError instanceof Error
           ? loadError.message
@@ -187,7 +178,6 @@ export default function AdminPage() {
   };
 
   const handleSignOut = () => {
-    clearStoredOrganizerPassword();
     setAuthenticated(false);
     setPassword("");
     setRows([]);
@@ -221,7 +211,8 @@ export default function AdminPage() {
               Camper activity
             </h1>
             <p className="mt-3 max-w-2xl text-ink/80">
-              Password-protected view of passed practice sessions. Campers never
+              Password-protected view of passed practice sessions. Your password
+              stays in this tab only — sign in again after refresh. Campers never
               see this page — bookmark{" "}
               <code className="rounded bg-paper/80 px-1.5 py-0.5 text-sm">
                 /admin

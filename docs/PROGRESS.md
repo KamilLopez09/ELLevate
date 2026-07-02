@@ -4,6 +4,17 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 14 — Batch B telemetry & organizer hardening
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **`supabase/functions/_shared/`:** `client-ip.ts`, `rate-limit.ts`, `secure-compare.ts`.
+- **`camper-telemetry`:** 10 POSTs/hour/IP (`429` + `Retry-After`).
+- **`organizer-telemetry`:** 5 failed logins/15 min/IP lockout; SHA-256 timing-safe password compare.
+- **Admin:** Organizer password kept in React state only; legacy `sessionStorage` cleared on mount.
+
+**Deploy:** Redeploy both Edge Functions; static `/admin` update ships with Pages.
+
 ## Milestone 13 — Batch A security quick wins
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) / [REVIEW.md](REVIEW.md):

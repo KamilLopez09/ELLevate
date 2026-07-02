@@ -7,6 +7,8 @@
 // table is revoked in migration 008.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getClientIp } from "../_shared/client-ip.ts";
+import { consumeRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -26,6 +28,10 @@ const ALLOWED_LANGUAGES = new Set(["English", "Spanish"]);
 
 /** Keep in sync with PASS_THRESHOLD in src/lib/constants.ts */
 const PASS_THRESHOLD = 8;
+
+/** Max successful telemetry POSTs per IP per hour (best-effort per Edge isolate). */
+const TELEMETRY_RATE_LIMIT = 10;
+const TELEMETRY_RATE_WINDOW_MS = 60 * 60 * 1000;
 
 interface TelemetryInsert {
   module_name: "sentence_canvas";
@@ -49,10 +55,10 @@ interface TelemetryInsert {
   group_letter: string;
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
   });
 }
 
@@ -179,6 +185,22 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const clientIp = getClientIp(req);
+  const rateLimit = consumeRateLimit(
+    `camper-telemetry:${clientIp}`,
+    TELEMETRY_RATE_LIMIT,
+    TELEMETRY_RATE_WINDOW_MS,
+  );
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: "Too many requests. Try again later." },
+      429,
+      rateLimit.retryAfterSeconds
+        ? { "Retry-After": String(rateLimit.retryAfterSeconds) }
+        : undefined,
+    );
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");

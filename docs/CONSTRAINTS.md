@@ -78,15 +78,24 @@ The Edge Function enforces:
 Organizers read data through the `organizer-telemetry` Edge Function (`/admin`)
 or the **Supabase dashboard** — never through anon table access.
 
-### Spam risk
+### Spam and abuse limits (Batch B)
 
-The Edge Function rejects malformed requests, but not a script sending many
-**valid-looking** requests. Further mitigations if this becomes a problem:
+Edge Functions apply **best-effort, in-memory rate limits per IP** (per Deno
+isolate — sufficient for a small camp; not a global DDoS barrier). Limits key
+off platform headers (`cf-connecting-ip`, `x-real-ip`) when present; treat as
+soft enforcement if your deployment only exposes spoofable `x-forwarded-for`.
 
-1. Add **rate limiting** (by IP) inside the `camper-telemetry` function.
-2. Monitor row volume in Supabase (see [ANALYTICS.md](ANALYTICS.md)).
+| Function | Limit | Response |
+|----------|-------|----------|
+| `camper-telemetry` | 10 POSTs / hour / IP | `429` + `Retry-After` |
+| `organizer-telemetry` | 5 failed passwords / 15 min / IP | `429` then lockout |
 
-For a small camp deployment, the validating write proxy + one-row-per-pass is usually enough.
+The client still cannot INSERT into Postgres directly. A script can still send
+**valid-looking passed rows** within the rate cap — monitor row volume in
+[ANALYTICS.md](ANALYTICS.md).
+
+Organizer passwords are **not stored** in `sessionStorage`; counselors re-enter
+after refresh. Password compare on the server uses a constant-time digest check.
 
 ### Curriculum and content
 

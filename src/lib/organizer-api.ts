@@ -30,27 +30,12 @@ export interface OrganizerTelemetryResponse {
   summary: OrganizerSummary;
 }
 
-const ORGANIZER_PASSWORD_KEY = "elle_organizer_password";
-
-export function readStoredOrganizerPassword(): string {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  return window.sessionStorage.getItem(ORGANIZER_PASSWORD_KEY) ?? "";
-}
-
-export function storeOrganizerPassword(password: string): void {
+/** Removes legacy sessionStorage password from older admin builds. */
+export function clearLegacyOrganizerPasswordStorage(): void {
   if (typeof window === "undefined") {
     return;
   }
-  window.sessionStorage.setItem(ORGANIZER_PASSWORD_KEY, password);
-}
-
-export function clearStoredOrganizerPassword(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.sessionStorage.removeItem(ORGANIZER_PASSWORD_KEY);
+  window.sessionStorage.removeItem("elle_organizer_password");
 }
 
 export async function fetchOrganizerTelemetry(
@@ -81,6 +66,13 @@ export async function fetchOrganizerTelemetry(
   const payload = (await response.json()) as OrganizerTelemetryResponse & {
     error?: string;
   };
+
+  if (response.status === 429) {
+    throw new Error(
+      payload.error ??
+        "Too many sign-in attempts. Wait a few minutes and try again.",
+    );
+  }
 
   if (!response.ok) {
     throw new Error(payload.error ?? "Could not load camper data");

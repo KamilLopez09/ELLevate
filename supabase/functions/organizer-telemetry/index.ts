@@ -1,4 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getClientIp } from "../_shared/client-ip.ts";
+import {
+  clearRateLimit,
+  incrementRateLimit,
+  isRateLimited,
+} from "../_shared/rate-limit.ts";
+import { secureCompare } from "../_shared/secure-compare.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +14,10 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+/** Max failed password attempts per IP before lockout. */
+const ORGANIZER_FAIL_LIMIT = 5;
+const ORGANIZER_FAIL_WINDOW_MS = 15 * 60 * 1000;
+
 interface Summary {
   totalSessions: number;
   uniqueCampers: number;
@@ -14,12 +25,17 @@ interface Summary {
   passesByGroup: Record<string, number>;
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(
+  body: unknown,
+  status = 200,
+  extraHeaders?: Record<string, string>,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
+      ...extraHeaders,
     },
   });
 }
@@ -45,6 +61,10 @@ function buildSummary(
   };
 }
 
+function organizerFailKey(clientIp: string): string {
+  return `organizer-fail:${clientIp}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -54,15 +74,36 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
+  const clientIp = getClientIp(req);
+  const failKey = organizerFailKey(clientIp);
+  const lockout = isRateLimited(
+    failKey,
+    ORGANIZER_FAIL_LIMIT,
+    ORGANIZER_FAIL_WINDOW_MS,
+  );
+  if (!lockout.allowed) {
+    return jsonResponse(
+      { error: "Too many failed sign-in attempts. Try again later." },
+      429,
+      lockout.retryAfterSeconds
+        ? { "Retry-After": String(lockout.retryAfterSeconds) }
+        : undefined,
+    );
+  }
+
   const organizerPassword = Deno.env.get("ORGANIZER_PASSWORD");
   if (!organizerPassword) {
     return jsonResponse({ error: "Organizer access is not configured" }, 503);
   }
 
-  const providedPassword = req.headers.get("x-organizer-password");
-  if (!providedPassword || providedPassword !== organizerPassword) {
+  const providedPassword = req.headers.get("x-organizer-password") ?? "";
+  const passwordValid = await secureCompare(providedPassword, organizerPassword);
+  if (!passwordValid) {
+    incrementRateLimit(failKey, ORGANIZER_FAIL_WINDOW_MS);
     return jsonResponse({ error: "Invalid organizer password" }, 401);
   }
+
+  clearRateLimit(failKey);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

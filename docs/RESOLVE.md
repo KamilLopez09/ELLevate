@@ -54,9 +54,28 @@ could otherwise abuse.
 
 ### Still optional (when needed)
 
-- Add **rate limiting** (by IP) inside `camper-telemetry` if you see abusive volume.
+- ~~Add **rate limiting** (by IP) inside `camper-telemetry`~~ — **done** (Batch B: 10/hour/IP).
 
 ---
+
+## Phase 2b — Rate limiting & organizer hardening ✅ (Batch B)
+
+### What this means for camp
+
+- Spammy scripts cannot flood telemetry without hitting a **10 writes/hour/IP** cap.
+- Brute-forcing the organizer password locks out an IP for **15 minutes** after 5 failures.
+- Counselors **re-enter the organizer password** after refreshing `/admin` (not saved in the browser).
+
+### What we changed
+
+| Piece | Location |
+|-------|----------|
+| Shared IP + rate limit helpers | `supabase/functions/_shared/` |
+| Camper POST quota | `supabase/functions/camper-telemetry/index.ts` |
+| Organizer lockout + secure compare | `supabase/functions/organizer-telemetry/index.ts` |
+| Admin in-memory session only | `src/app/admin/page.tsx`, `src/lib/organizer-api.ts` |
+
+**Deploy:** Redeploy both Edge Functions after merge.
 
 ## Phase 3 — Organizer analytics UI ✅ (implemented)
 

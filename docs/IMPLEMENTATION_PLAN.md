@@ -194,10 +194,10 @@ Copy into a GitHub Issue or track here:
 - [x] A4 PUBLISH migration docs
 
 ### Batch B — Telemetry & organizer hardening
-- [ ] B1 Camper telemetry rate limit
-- [ ] B2 Organizer rate limit + timing-safe compare
-- [ ] B3 Remove password from sessionStorage
-- [ ] B4 Update CONSTRAINTS
+- [x] B1 Camper telemetry rate limit
+- [x] B2 Organizer rate limit + timing-safe compare
+- [x] B3 Remove password from sessionStorage
+- [x] B4 Update CONSTRAINTS
 
 ### Batch C — Camper UX polish
 - [ ] C1 Pass celebration
