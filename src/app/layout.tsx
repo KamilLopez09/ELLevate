@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Open_Sans } from "next/font/google";
 import "./globals.css";
+import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { MotionProvider } from "@/components/providers/MotionProvider";
 
 const nunito = Nunito({
@@ -36,7 +37,9 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          <LocaleProvider>{children}</LocaleProvider>
+        </MotionProvider>
       </body>
     </html>
   );

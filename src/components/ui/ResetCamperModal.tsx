@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { useCopy } from "@/lib/i18n/useCopy";
 
 export interface ResetCamperModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ export function ResetCamperModal({
   onConfirm,
   onCancel,
 }: ResetCamperModalProps) {
+  const copy = useCopy();
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
@@ -73,12 +75,9 @@ export function ResetCamperModal({
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="reset-camper-heading" className="text-2xl font-extrabold text-ink">
-          Start over for a new camper?
+          {copy.reset.title}
         </h2>
-        <p className="mt-4 text-lg text-ink/80">
-          This clears name, week progress, and scores on <strong>this device</strong>.
-          Use this on shared camp tablets before the next child begins.
-        </p>
+        <p className="mt-4 text-lg text-ink/80">{copy.reset.body}</p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse">
           <Button
             type="button"
@@ -86,7 +85,7 @@ export function ResetCamperModal({
             onClick={onConfirm}
             className="min-h-[56px] bg-purple-accent text-white hover:bg-purple-accent/90"
           >
-            Yes, reset device
+            {copy.reset.confirm}
           </Button>
           <button
             ref={cancelRef}
@@ -94,7 +93,7 @@ export function ResetCamperModal({
             onClick={onCancel}
             className="inline-flex min-h-[56px] items-center justify-center rounded-lg border border-border bg-background px-5 text-base font-medium text-ink transition hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            Cancel
+            {copy.reset.cancel}
           </button>
         </div>
       </div>

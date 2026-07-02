@@ -23,6 +23,8 @@ import {
   clearSelectedGameMode,
   readCamperSession,
 } from "@/lib/camper-session";
+import { useCopy } from "@/lib/i18n/useCopy";
+import type { CampCopy } from "@/lib/i18n/types";
 
 const POLAROID_TILTS = [-1.5, 1.2, -0.8, 1.5, -1.1, 0.9, -1.3, 1];
 const POLAROID_ACCENTS: Array<"purple" | "teal" | "gold" | "warm"> = [
@@ -48,6 +50,7 @@ const POLAROID_SPANS = [
 
 export default function MenuPage() {
   const router = useRouter();
+  const copy = useCopy();
   const [ready, setReady] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [weeksPassed, setWeeksPassed] = useState(0);
@@ -82,7 +85,7 @@ export default function MenuPage() {
     return (
       <CampScreenLayout screen="menu" activeItemId="weeks">
         <main className="flex min-h-screen items-center justify-center bg-camp-blue">
-          <CampLoading label="Loading your camp weeks…" />
+          <CampLoading label={copy.menu.loading} />
         </main>
       </CampScreenLayout>
     );
@@ -123,29 +126,29 @@ export default function MenuPage() {
               className="!p-8"
             >
               <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
-                8-Week Camp Journey
+                {copy.menu.journeyLabel}
               </p>
               <h1
                 className="mt-2 font-display font-extrabold text-ink"
                 style={{ fontSize: "var(--text-h1)" }}
               >
-                Hi, {firstName}!
+                {copy.menu.greeting(firstName)}
               </h1>
               <p
                 className="mt-4 text-ink/80"
                 style={{ fontSize: "var(--text-body)" }}
               >
-                Pick a week to watch, paint, and unlock the next adventure.
+                {copy.menu.subtitle}
               </p>
               <div
                 className="mt-5 flex flex-wrap gap-3"
                 aria-label="Your camp progress"
               >
                 <span className="inline-flex min-h-[44px] items-center rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
-                  {weeksPassed}/{TOTAL_WEEKS} weeks passed
+                  {copy.menu.weeksPassed(weeksPassed, TOTAL_WEEKS)}
                 </span>
                 <span className="inline-flex min-h-[44px] items-center rounded-full bg-teal-accent/15 px-4 py-2 text-bento-label font-bold tabular-nums text-teal-accent">
-                  {cumulativeScore.toLocaleString()} total points
+                  {copy.menu.totalPoints(cumulativeScore.toLocaleString())}
                 </span>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
@@ -156,7 +159,7 @@ export default function MenuPage() {
                   onClick={() => setResetModalOpen(true)}
                   className="min-h-[56px] border-ink/20 bg-paper/80 text-ink hover:bg-paper"
                 >
-                  New camper (reset this device)
+                  {copy.menu.resetDevice}
                 </Button>
               </div>
             </BentoCard>
@@ -185,6 +188,7 @@ export default function MenuPage() {
                       theme={week.theme}
                       unlocked={false}
                       passed={false}
+                      copy={copy}
                     />
                   </BentoCard>
                 );
@@ -206,6 +210,7 @@ export default function MenuPage() {
                     theme={week.theme}
                     unlocked
                     passed={passed}
+                    copy={copy}
                   />
                 </BentoCard>
               );
@@ -219,7 +224,7 @@ export default function MenuPage() {
               className="!py-4 text-center"
             >
               <p className="text-bento-label text-muted-foreground">
-                Completely free · Built for campers ages 5–14
+                {copy.menu.footer}
               </p>
             </BentoCard>
           </BentoGrid>
@@ -239,11 +244,13 @@ function WeekCardContent({
   theme,
   unlocked,
   passed,
+  copy,
 }: {
   weekNumber: number;
   theme: string;
   unlocked: boolean;
   passed: boolean;
+  copy: CampCopy;
 }) {
   return (
     <div className="flex min-h-[64px] flex-col items-start gap-3">
@@ -264,21 +271,21 @@ function WeekCardContent({
         {theme}
       </span>
       <span className="text-bento-label text-ink/70">
-        Week {weekNumber} of {TOTAL_WEEKS}
+        {copy.menu.weekOf(weekNumber, TOTAL_WEEKS)}
       </span>
       {unlocked ? (
         passed ? (
           <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success-accent/15 px-4 py-2 text-bento-label font-bold text-success-accent">
-            Passed · Replay
+            {copy.menu.passedReplay}
           </span>
         ) : (
           <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
-            Start →
+            {copy.menu.start}
           </span>
         )
       ) : (
         <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-ink/10 px-4 py-2 text-bento-label font-bold text-ink/50">
-          Finish Week {weekNumber - 1} to unlock
+          {copy.menu.unlockHint(weekNumber - 1)}
         </span>
       )}
     </div>

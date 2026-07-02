@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { PASS_THRESHOLD } from "@/lib/constants";
+import { useCopy } from "@/lib/i18n/useCopy";
 
 const SPRING = { type: "spring" as const, stiffness: 260, damping: 22 };
 
@@ -20,6 +21,8 @@ export function PassCelebration({
   totalPrompts,
   onContinue,
 }: PassCelebrationProps) {
+  const copy = useCopy();
+
   return (
     <section
       className="relative overflow-hidden rounded-3xl bg-paper p-8 text-center shadow-bento sm:p-10"
@@ -68,7 +71,7 @@ export function PassCelebration({
         transition={{ ...SPRING, delay: 0.08 }}
         className="text-sm font-semibold uppercase tracking-widest text-teal-accent"
       >
-        Week complete!
+        {copy.celebration.weekComplete}
       </motion.p>
       <motion.h2
         id="pass-celebration-heading"
@@ -77,7 +80,7 @@ export function PassCelebration({
         transition={{ ...SPRING, delay: 0.12 }}
         className="mt-2 font-display text-3xl font-extrabold text-ink sm:text-4xl"
       >
-        You passed Week {weekNumber}!
+        {copy.celebration.passedWeek(weekNumber)}
       </motion.h2>
       <motion.p
         initial={{ opacity: 0, y: 12 }}
@@ -85,8 +88,12 @@ export function PassCelebration({
         transition={{ ...SPRING, delay: 0.16 }}
         className="mt-3 text-lg text-ink/80"
       >
-        {weekTheme} — {correctFirstTry} of {totalPrompts} first-try wins (you
-        needed {PASS_THRESHOLD}).
+        {copy.celebration.summary(
+          weekTheme,
+          correctFirstTry,
+          totalPrompts,
+          PASS_THRESHOLD,
+        )}
       </motion.p>
 
       <motion.button
@@ -99,7 +106,7 @@ export function PassCelebration({
         onClick={onContinue}
         className="mt-8 min-h-[56px] min-w-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
       >
-        See your score →
+        {copy.celebration.seeScore}
       </motion.button>
     </section>
   );

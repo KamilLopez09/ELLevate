@@ -10,16 +10,12 @@ import {
   writeCamperSession,
 } from "@/lib/camper-session";
 import { SESSION_TTL_MS } from "@/lib/session-store";
+import { useCopyForLanguage } from "@/lib/i18n/useCopy";
 import type {
   AgeBracket,
   CamperSessionData,
   NativeLanguage,
 } from "@/types/sentence-canvas";
-
-const AGE_BRACKET_LABELS: Record<AgeBracket, string> = {
-  "5-9": "Ages 5–9",
-  "10-14": "Ages 10–14",
-};
 
 const AGE_BRACKETS: AgeBracket[] = ["5-9", "10-14"];
 const NATIVE_LANGUAGES: NativeLanguage[] = ["English", "Spanish"];
@@ -56,6 +52,8 @@ export function IntakeGatekeeper() {
   const [groupLetter, setGroupLetter] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const copy = useCopyForLanguage(nativeLanguage);
+
   const firstNameRef = useRef<HTMLInputElement>(null);
   const lastInitialRef = useRef<HTMLInputElement>(null);
   const ageBracketRef = useRef<HTMLSelectElement>(null);
@@ -84,7 +82,7 @@ export function IntakeGatekeeper() {
       !isNativeLanguage(nativeLanguage) ||
       !cleanGroup
     ) {
-      setError("Please fill in every box so we can set up your canvas!");
+      setError(copy.intake.errors.incomplete);
       if (!cleanFirst) {
         firstNameRef.current?.focus();
       } else if (!cleanInitial) {
@@ -100,7 +98,7 @@ export function IntakeGatekeeper() {
     }
 
     if (!/^[A-Z]$/.test(cleanGroup)) {
-      setError("Your camp group should be a single letter (like A).");
+      setError(copy.intake.errors.invalidGroup);
       groupLetterRef.current?.focus();
       return;
     }
@@ -108,7 +106,7 @@ export function IntakeGatekeeper() {
     const camperId = slugify(cleanFirst, cleanInitial);
 
     if (!camperId) {
-      setError("Please use letters or numbers in your name.");
+      setError(copy.intake.errors.invalidName);
       firstNameRef.current?.focus();
       return;
     }
@@ -143,19 +141,17 @@ export function IntakeGatekeeper() {
       className="rounded-3xl bg-paper p-6 shadow-bento sm:p-10"
     >
       <p className="text-sm font-semibold uppercase tracking-widest text-teal-accent">
-        Welcome, artist!
+        {copy.intake.welcomeLabel}
       </p>
       <h2 className="mt-2 text-3xl font-extrabold text-ink">
-        Let&apos;s set up your canvas
+        {copy.intake.title}
       </h2>
-      <p className="mt-2 text-ink/70">
-        Tell us a little about you, then we&apos;ll start painting with words.
-      </p>
+      <p className="mt-2 text-ink/70">{copy.intake.subtitle}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-6" noValidate>
         <div className="flex flex-col gap-4 sm:flex-row">
           <label className="flex-1">
-            <span className={labelClasses}>First name</span>
+            <span className={labelClasses}>{copy.intake.firstName}</span>
             <input
               ref={firstNameRef}
               type="text"
@@ -170,7 +166,7 @@ export function IntakeGatekeeper() {
           </label>
 
           <label className="sm:w-32">
-            <span className={labelClasses}>Last initial</span>
+            <span className={labelClasses}>{copy.intake.lastInitial}</span>
             <input
               ref={lastInitialRef}
               type="text"
@@ -185,13 +181,13 @@ export function IntakeGatekeeper() {
               className={fieldClasses}
             />
             <span id="last-initial-hint" className="sr-only">
-              Enter your last name; only the first letter is saved.
+              {copy.intake.lastInitialHint}
             </span>
           </label>
         </div>
 
         <label>
-          <span className={labelClasses}>How old are you?</span>
+          <span className={labelClasses}>{copy.intake.ageBracket}</span>
           <select
             ref={ageBracketRef}
             name="age_bracket"
@@ -203,18 +199,18 @@ export function IntakeGatekeeper() {
             className={fieldClasses}
           >
             <option value="" disabled>
-              Pick your age group
+              {copy.intake.ageBracketPlaceholder}
             </option>
             {AGE_BRACKETS.map((bracket) => (
               <option key={bracket} value={bracket}>
-                {AGE_BRACKET_LABELS[bracket]}
+                {copy.intake.ageBracketLabels[bracket]}
               </option>
             ))}
           </select>
         </label>
 
         <label>
-          <span className={labelClasses}>Home language</span>
+          <span className={labelClasses}>{copy.intake.homeLanguage}</span>
           <select
             ref={nativeLanguageRef}
             name="native_language"
@@ -226,7 +222,7 @@ export function IntakeGatekeeper() {
             className={fieldClasses}
           >
             <option value="" disabled>
-              Pick your language
+              {copy.intake.homeLanguagePlaceholder}
             </option>
             {NATIVE_LANGUAGES.map((language) => (
               <option key={language} value={language}>
@@ -237,7 +233,7 @@ export function IntakeGatekeeper() {
         </label>
 
         <label className="sm:w-40">
-          <span className={labelClasses}>Camp group</span>
+          <span className={labelClasses}>{copy.intake.campGroup}</span>
           <input
             ref={groupLetterRef}
             type="text"
@@ -261,17 +257,11 @@ export function IntakeGatekeeper() {
           className="rounded-2xl border border-teal-accent/25 bg-teal-accent/5 px-4 py-4 text-sm text-ink/80"
           aria-label="Privacy notice for campers and counselors"
         >
-          <p className="font-bold text-ink">Privacy on this device</p>
+          <p className="font-bold text-ink">{copy.intake.privacyTitle}</p>
           <p className="mt-2 leading-relaxed">
-            We save your first name, last initial, age group, language, and camp
-            group on this tablet for up to {SESSION_TTL_HOURS} hours so you can
-            keep your progress. We do not ask for your full last name or email.
-            When you pass a week, a summary score may be sent to camp organizers.
+            {copy.intake.privacyBody(SESSION_TTL_HOURS)}
           </p>
-          <p className="mt-2 leading-relaxed">
-            Counselors: tap <strong>New camper (reset this device)</strong> on
-            the menu before the next child uses this tablet.
-          </p>
+          <p className="mt-2 leading-relaxed">{copy.intake.privacyCounselor}</p>
         </aside>
 
         <div
@@ -293,7 +283,7 @@ export function IntakeGatekeeper() {
           whileTap={{ scale: 0.97 }}
           className="min-h-[56px] min-w-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
-          Continue →
+          {copy.intake.continue}
         </motion.button>
       </form>
     </motion.section>

@@ -10,6 +10,7 @@ import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
 import { curriculum } from "@/data/curriculum";
 import { isLessonComplete, readCamperSession } from "@/lib/camper-session";
+import { useCopy } from "@/lib/i18n/useCopy";
 import { getCurrentWeek, resolveAgeGroup } from "@/lib/curriculum-engine";
 import {
   createInitialProgress,
@@ -20,6 +21,7 @@ const DEFAULT_AGE_BRACKET = "8-10";
 
 export default function ApplicationPage() {
   const router = useRouter();
+  const copy = useCopy();
   const [ready, setReady] = useState(false);
   const [weekNumber, setWeekNumber] = useState(1);
   const [progress, setProgress] = useState<LessonProgressState>(
@@ -79,7 +81,7 @@ export default function ApplicationPage() {
     return (
       <CampScreenLayout screen="application" activeItemId="paint">
         <main className="flex min-h-screen items-center justify-center bg-camp-blue">
-          <CampLoading label="Setting up your canvas…" />
+          <CampLoading label={copy.practice.loading} />
         </main>
       </CampScreenLayout>
     );
@@ -90,7 +92,7 @@ export default function ApplicationPage() {
       <CampScreenLayout screen="application" activeItemId="paint">
         <main className="flex min-h-screen items-center justify-center bg-camp-blue px-4">
           <p className="text-center text-body text-muted-foreground">
-            No Week {weekNumber} prompts found for age group {ageGroup}.
+            {copy.practice.noPrompts(weekNumber, ageGroup)}
           </p>
         </main>
       </CampScreenLayout>
@@ -156,7 +158,10 @@ export default function ApplicationPage() {
                     {weekTheme}
                   </p>
                   <p className="mt-2 text-bento-label text-muted-foreground">
-                    {completedCount} / {sessionPrompts.length} painted
+                    {copy.practice.paintedProgress(
+                      completedCount,
+                      sessionPrompts.length,
+                    )}
                   </p>
                 </BentoCard>
 
@@ -168,10 +173,10 @@ export default function ApplicationPage() {
                   className="hidden min-h-[64px] flex-col justify-center !p-5 sm:flex"
                 >
                   <p className="font-display font-bold text-bento-title text-ink">
-                    Paint Mode
+                    {copy.practice.paintModeTitle}
                   </p>
                   <p className="mt-1 text-bento-label text-muted-foreground">
-                    Tap answers to build sentences
+                    {copy.practice.paintModeHint}
                   </p>
                 </BentoCard>
               </>

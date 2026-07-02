@@ -206,11 +206,11 @@ Copy into a GitHub Issue or track here:
 - [x] C4 COPPA intake copy
 
 ### Batch D — Spanish UI & video gate
-- [ ] D1 i18n string map
-- [ ] D2 Wire language from session
-- [ ] D3 Dynamic html lang
-- [ ] D4 Video watch gate
-- [ ] D5 Spanish validation messages
+- [x] D1 i18n string map
+- [x] D2 Wire language from session
+- [x] D3 Dynamic html lang
+- [x] D4 Video watch gate
+- [x] D5 Spanish validation messages
 
 ### Batch E — Game modes & previews
 - [ ] E1 Mode selection flow

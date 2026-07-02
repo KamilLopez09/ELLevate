@@ -4,6 +4,14 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 16 — Batch D Spanish UI & video gate
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **`src/lib/i18n/`:** EN/ES copy map, `useCopy` / `useCopyForLanguage`, `LocaleProvider` sets `document.documentElement.lang`.
+- **Wired UI:** Intake (live preview when language selected), menu, lesson, practice, retry modal, celebration, scoreboard, reset modal.
+- **Video gate:** 15s minimum watch on lesson page or explicit “I watched the video” checkbox before practice CTA.
+
 ## Milestone 15 — Batch C camper UX polish
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):

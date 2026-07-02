@@ -2,7 +2,7 @@
 
 import "@/styles/animations.css";
 import type { GameModeId, SessionScoreSummary } from "@/lib/gamification";
-import { GAME_MODE_LABELS } from "@/lib/gamification";
+import { useCopy } from "@/lib/i18n/useCopy";
 
 export interface ScoreboardProps {
   summary: SessionScoreSummary;
@@ -21,6 +21,7 @@ export function Scoreboard({
   onReturnToMenu,
   isSaving = false,
 }: ScoreboardProps) {
+  const copy = useCopy();
   const accuracy =
     summary.totalPrompts > 0
       ? Math.round((summary.correctFirstTry / summary.totalPrompts) * 100)
@@ -51,40 +52,38 @@ export function Scoreboard({
         </svg>
       </div>
 
-      <h2 className="text-3xl font-extrabold text-ink">Great work!</h2>
+      <h2 className="text-3xl font-extrabold text-ink">{copy.scoreboard.greatWork}</h2>
       <p className="mt-1 text-sm font-semibold uppercase tracking-widest text-teal-accent">
-        {GAME_MODE_LABELS[gameMode].title}
+        {copy.scoreboard.gameModes[gameMode]}
       </p>
       <p className="mt-2 text-lg text-ink/70">
-        You earned{" "}
-        <span className="font-extrabold tabular-nums text-purple-accent">
-          {sessionPoints}
-        </span>{" "}
-        points this round
-        {retryCount > 0 ? " — nice persistence!" : ""}
+        {copy.scoreboard.pointsEarned(sessionPoints)}
+        {retryCount > 0 ? copy.scoreboard.persistence : ""}
       </p>
 
       <dl className="mt-8 grid w-full max-w-md gap-3 text-left tabular-nums">
         <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
-          <dt className="font-semibold text-ink/70">Base points</dt>
+          <dt className="font-semibold text-ink/70">{copy.scoreboard.basePoints}</dt>
           <dd className="text-lg font-extrabold text-ink">
             {summary.results.reduce((sum, result) => sum + result.base, 0)}
           </dd>
         </div>
         <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
-          <dt className="font-semibold text-ink/70">First-try bonuses</dt>
+          <dt className="font-semibold text-ink/70">
+            {copy.scoreboard.firstTryBonuses}
+          </dt>
           <dd className="text-lg font-extrabold text-teal-accent">
             +{summary.totalFirstTryBonus}
           </dd>
         </div>
         <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
-          <dt className="font-semibold text-ink/70">Speed bonuses</dt>
+          <dt className="font-semibold text-ink/70">{copy.scoreboard.speedBonuses}</dt>
           <dd className="text-lg font-extrabold text-gold-accent">
             +{summary.totalSpeedBonus}
           </dd>
         </div>
         <div className="flex items-center justify-between rounded-2xl bg-camp-blue/40 px-4 py-3">
-          <dt className="font-semibold text-ink/70">Accuracy</dt>
+          <dt className="font-semibold text-ink/70">{copy.scoreboard.accuracy}</dt>
           <dd className="text-lg font-extrabold text-ink">
             {summary.correctFirstTry}/{summary.totalPrompts} ({accuracy}%)
           </dd>
@@ -95,10 +94,10 @@ export function Scoreboard({
         type="button"
         onClick={onReturnToMenu}
         disabled={isSaving}
-        aria-label="Return to main menu"
+        aria-label={copy.scoreboard.returnToMenuAria}
         className="mt-8 min-h-[56px] rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-white shadow-bento transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
       >
-        {isSaving ? "Saving…" : "Return to Main Menu"}
+        {isSaving ? copy.scoreboard.saving : copy.scoreboard.returnToMenu}
       </button>
     </section>
   );

@@ -24,6 +24,7 @@ import {
   type SessionScoreSummary,
 } from "@/lib/gamification";
 import { PASS_THRESHOLD } from "@/lib/constants";
+import { useCopy } from "@/lib/i18n/useCopy";
 import { postCamperTelemetry } from "@/lib/telemetry";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
@@ -58,6 +59,8 @@ function RetryModal({
   totalPrompts: number;
   onTryAgain: () => void;
 }) {
+  const copy = useCopy();
+
   return (
     <div
       role="dialog"
@@ -67,19 +70,18 @@ function RetryModal({
     >
       <div className="w-full max-w-md rounded-3xl bg-paper p-8 shadow-bento">
         <h2 id="retry-heading" className="text-2xl font-extrabold text-ink">
-          Let&apos;s Practice Again!
+          {copy.retry.title}
         </h2>
         <p className="mt-4 text-lg text-ink/80">
-          You got {correctFirstTry} out of {totalPrompts}. You need {PASS_THRESHOLD}{" "}
-          to move on. You can do it!
+          {copy.retry.body(correctFirstTry, totalPrompts, PASS_THRESHOLD)}
         </p>
         <button
           type="button"
           onClick={onTryAgain}
-          aria-label="Try the lesson again"
+          aria-label={copy.retry.tryAgainAria}
           className="mt-8 min-h-[64px] w-full rounded-3xl bg-purple-accent px-8 py-3 text-lg font-bold text-card shadow-bento transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-accent"
         >
-          Try Again
+          {copy.retry.tryAgain}
         </button>
       </div>
     </div>
@@ -117,6 +119,7 @@ export function LessonCanvas({
   onSessionStateChange,
 }: LessonCanvasProps) {
   const router = useRouter();
+  const copy = useCopy();
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
@@ -313,7 +316,7 @@ export function LessonCanvas({
   if (!bracket) {
     return (
       <p className="rounded-3xl bg-paper p-6 text-center text-ink/70 shadow-bento">
-        No curriculum found for week {weekNumber}, age {ageGroup}.
+        {copy.practice.noCurriculum(weekNumber, ageGroup)}
       </p>
     );
   }
@@ -351,8 +354,7 @@ export function LessonCanvas({
         />
         {telemetryWarning && (
           <p className="mt-4 rounded-2xl bg-gold-accent/20 px-4 py-3 text-center text-sm text-ink/80">
-            Your score is saved on this device. Connect Supabase env vars to
-            share camp telemetry.
+            {copy.practice.telemetryWarning}
           </p>
         )}
       </>
@@ -378,8 +380,8 @@ export function LessonCanvas({
       {!externalProgress && (
         <p className="mb-6 text-sm font-semibold text-muted-foreground">
           {prompt.category === "review"
-            ? "Review · Flashcard Drill"
-            : "Practice · Sentence Builder"}
+            ? copy.practice.reviewFlashcard
+            : copy.practice.practiceBuilder}
         </p>
       )}
 
