@@ -99,11 +99,12 @@ supabase/migrations/001_camper_telemetry.sql
 006_enforce_rls_policies.sql
 007_coppa_compliance_schema.sql
 008_telemetry_edge_write_proxy.sql
+009_lock_camper_intake.sql
 ```
 
-Fresh projects: run all eight. Existing projects: apply any missing files in sequence.
+Fresh projects: run all nine. Existing projects: apply any missing files in sequence.
 
-RLS **denies all direct table access** to the anon/authenticated roles (migration `008`). Telemetry is written by the **`camper-telemetry` Edge Function** using the service role key. Deploy the Edge Functions:
+RLS **denies all direct table access** to the anon/authenticated roles on `camper_telemetry` (migration `008`); `camper_intake` direct INSERT is also revoked (`009`). Telemetry is written by the **`camper-telemetry` Edge Function** using the service role key. Deploy the Edge Functions:
 
 ```bash
 npm run supabase:deploy-organizer   # deploys both camper-telemetry and organizer-telemetry

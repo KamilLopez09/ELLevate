@@ -188,10 +188,10 @@ Batch G  →  design spike first, then per-feature batches
 Copy into a GitHub Issue or track here:
 
 ### Batch A — Security quick wins
-- [ ] A1 Lock `camper_intake`
-- [ ] A2 Server-side pass threshold
-- [ ] A3 Shared PASS_THRESHOLD constant
-- [ ] A4 PUBLISH migration docs
+- [x] A1 Lock `camper_intake`
+- [x] A2 Server-side pass threshold
+- [x] A3 Shared PASS_THRESHOLD constant
+- [x] A4 PUBLISH migration docs
 
 ### Batch B — Telemetry & organizer hardening
 - [ ] B1 Camper telemetry rate limit

@@ -92,8 +92,11 @@ Apply in the SQL Editor in numeric order:
 6. `006_enforce_rls_policies.sql` — restrictive RLS hardening
 7. `007_coppa_compliance_schema.sql` — COPPA intake table + PII minimization
 8. `008_telemetry_edge_write_proxy.sql` — revoke direct client INSERT (writes move to the Edge Function)
+9. `009_lock_camper_intake.sql` — revoke direct INSERT on unused `camper_intake` table
 
 Do not skip numbers on existing databases.
+
+After applying `009`, redeploy **`camper-telemetry`** if you already deployed an older version — the function now rejects rows below the pass threshold (`correct_first_try` < 8).
 
 ---
 
@@ -152,7 +155,7 @@ If sign-in fails with “Organizer access is not configured”, the Edge Functio
 | Symptom | Check |
 |---------|-------|
 | Build fails on Pages | Node 20; run `npm run build` locally with same env |
-| Telemetry not saving | `NEXT_PUBLIC_*` set in Pages dashboard; migrations through `008` applied; `camper-telemetry` Edge Function deployed |
+| Telemetry not saving | `NEXT_PUBLIC_*` set in Pages dashboard; migrations through `009` applied; `camper-telemetry` Edge Function deployed (must enforce pass threshold) |
 | Blank pages after deploy | Output directory must be `out`, not `.next` |
 | Stale Supabase URL in prod | Redeploy after env var change |
 

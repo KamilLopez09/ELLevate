@@ -74,7 +74,7 @@ Legacy age brackets (`5-7`, `8-10`, `11-14`) are migrated on read in `camper-ses
 
 - **Source:** `src/data/curriculum.ts` — 8 weeks × 3 age groups (`5-7`, `8-10`, `11-14` mapped from intake brackets).
 - **Unlock rule:** Week 1 always open; week *N* requires `lesson_{N-1}_passed`.
-- **Pass rule:** ≥ 8 of 10 prompts answered correctly on **first try** (`PASS_THRESHOLD` in `LessonCanvas.tsx`).
+- **Pass rule:** ≥ 8 of 10 prompts answered correctly on **first try** (`PASS_THRESHOLD` in `src/lib/constants.ts`, enforced client-side and in `camper-telemetry`).
 - **Prompt routing:** `category === "review"` → Flashcard Drill; otherwise → Sentence Builder.
 
 ---

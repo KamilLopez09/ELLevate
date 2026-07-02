@@ -59,13 +59,13 @@ Legacy `sessionStorage` keys from older builds are cleared on reset.
 
 If `NEXT_PUBLIC_SUPABASE_*` env vars are missing (or the Edge Function is unreachable), the app still works locally; the camper sees a non-blocking warning.
 
-### Write path & RLS (migrations 006–008)
+### Write path & RLS (migrations 006–009)
 
 Telemetry writes go through the **`camper-telemetry` Edge Function**, which
 validates every field (mirroring the DB constraints) and inserts with the
 **service role key**. Migration `008` **revokes direct INSERT** from `anon` and
-`authenticated`, so the public roles now have **no** table privileges at all —
-SELECT, UPDATE, DELETE, **and** INSERT are denied.
+`authenticated` on `camper_telemetry`. Migration `009` **revokes direct INSERT**
+on the unused `camper_intake` table (intake stays in localStorage only).
 
 The Edge Function enforces:
 
@@ -73,6 +73,7 @@ The Edge Function enforces:
 - Valid score ranges, week 1–8, COPPA-safe name fields (`first_name`, single-letter `last_initial`)
 - Allowed `game_mode`, `age_bracket`, `native_language`, `group_letter` values
 - Only whitelisted columns are forwarded (no mass-assignment)
+- **Pass integrity:** `correct_first_try` and `score` must be ≥ 8 and must match (failed sessions are not logged)
 
 Organizers read data through the `organizer-telemetry` Edge Function (`/admin`)
 or the **Supabase dashboard** — never through anon table access.

@@ -4,6 +4,17 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 13 — Batch A security quick wins
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) / [REVIEW.md](REVIEW.md):
+
+- **`009_lock_camper_intake.sql`:** Revokes anon/authenticated INSERT on unused `camper_intake` table.
+- **`camper-telemetry`:** Rejects telemetry when `correct_first_try` or `score` is below pass threshold (8); requires `score === correct_first_try`.
+- **`src/lib/constants.ts`:** Shared `PASS_THRESHOLD` and `SESSION_PROMPT_COUNT`; `LessonCanvas` imports from here.
+- **Docs:** [PUBLISH.md](PUBLISH.md), [CONSTRAINTS.md](CONSTRAINTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) updated.
+
+**Deploy:** Apply migration `009` in Supabase SQL Editor; redeploy `camper-telemetry` Edge Function.
+
 ## Milestone 12 — Documentation & main merge
 
 - Consolidated SWE-facing docs: [ARCHITECTURE.md](ARCHITECTURE.md), updated [README.md](../README.md), [PUBLISH.md](PUBLISH.md), [DESIGN.md](DESIGN.md).

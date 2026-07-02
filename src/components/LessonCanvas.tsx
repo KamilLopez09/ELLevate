@@ -22,12 +22,11 @@ import {
   type ScoreResult,
   type SessionScoreSummary,
 } from "@/lib/gamification";
+import { PASS_THRESHOLD } from "@/lib/constants";
 import { postCamperTelemetry } from "@/lib/telemetry";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
 import type { LessonProgressState } from "@/types/lesson-progress";
-
-const PASS_THRESHOLD = 8;
 
 type NodeOutcome = "pending" | "correct" | "incorrect";
 

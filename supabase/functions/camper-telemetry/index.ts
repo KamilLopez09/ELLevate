@@ -24,6 +24,9 @@ const ALLOWED_GAME_MODES = new Set([
 const ALLOWED_AGE_BRACKETS = new Set(["5-9", "10-14"]);
 const ALLOWED_LANGUAGES = new Set(["English", "Spanish"]);
 
+/** Keep in sync with PASS_THRESHOLD in src/lib/constants.ts */
+const PASS_THRESHOLD = 8;
+
 interface TelemetryInsert {
   module_name: "sentence_canvas";
   score: number;
@@ -101,6 +104,15 @@ function validate(
   }
   if (!inRange(b.correct_first_try, 0, 10)) {
     return { ok: false, error: "Invalid correct_first_try" };
+  }
+  if ((b.correct_first_try as number) < PASS_THRESHOLD) {
+    return { ok: false, error: "Pass threshold not met" };
+  }
+  if ((b.score as number) < PASS_THRESHOLD) {
+    return { ok: false, error: "Invalid score for passed session" };
+  }
+  if (b.score !== b.correct_first_try) {
+    return { ok: false, error: "score must match correct_first_try" };
   }
   if (!isFiniteNumber(b.cumulative_score) || b.cumulative_score < 0) {
     return { ok: false, error: "Invalid cumulative_score" };
