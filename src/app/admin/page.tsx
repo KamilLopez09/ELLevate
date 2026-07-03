@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { GroupLeaderboardPanel } from "@/components/admin/GroupLeaderboardPanel";
 import { CampWallFeed } from "@/components/admin/CampWallFeed";
 import { CurriculumPublishPanel } from "@/components/admin/CurriculumPublishPanel";
 import {
@@ -139,7 +140,7 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
     try {
-      const result = await fetchOrganizerTelemetry(organizerPassword);
+      const result = await fetchOrganizerTelemetry(organizerPassword, 2000);
       setAllRows(result.rows);
       setPassword(organizerPassword);
       setAuthenticated(true);
@@ -287,6 +288,10 @@ export default function AdminPage() {
             <SummaryCharts
               passesByWeek={filteredSummary.passesByWeek}
               passesByGroup={filteredSummary.passesByGroup}
+            />
+            <GroupLeaderboardPanel
+              rows={filteredRows}
+              activeGroup={filters.group}
             />
             <p className="text-sm text-ink/60">
               Session times are shown in Eastern (camp local). Supabase Table

@@ -4,6 +4,17 @@ Chronological record of how the project was built and deployed. Newest entries a
 
 ---
 
+## Milestone 23 — Batch G6 gamification layer
+
+From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):
+
+- **`achievements.ts`:** Eight COPPA-safe badges (first pass, perfect week, speed, milestones); stored in `camperSessionData.unlockedAchievements`.
+- **Menu:** `AchievementsStrip` + `GroupStandingsCard` (public `group-leaderboard` Edge Function).
+- **`/admin`:** `GroupLeaderboardPanel` aggregates filtered telemetry by group.
+- **Resume snapshots:** `unlockedAchievements` validated in `_shared/resume-snapshot.ts`.
+
+**Deploy:** Apply migration `012`; redeploy `group-leaderboard` via `npm run supabase:deploy-edge`; redeploy Cloudflare Pages.
+
 ## Milestone 22 — Batch G5 real-time camp wall
 
 From [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md):

@@ -173,6 +173,32 @@ const EN: CampCopy = {
     noClickPaintPrompt: "This prompt needs fill-in-the-blank for Rapid Fire.",
   },
   skipLink: "Skip to main content",
+  achievements: {
+    title: "Your badges",
+    subtitle: "Earn badges by passing weeks, trying game modes, and racking up points.",
+    labels: {
+      first_pass: "First pass",
+      perfect_week: "Perfect week",
+      speed_star: "Speed star",
+      halfway_hero: "Halfway hero",
+      camp_graduate: "Camp graduate",
+      mode_explorer: "Mode explorer",
+      points_500: "500 points",
+      points_1000: "1000 points",
+    },
+    earnedAria: (label) => `Earned badge: ${label}`,
+    lockedAria: (label) => `Locked badge: ${label}`,
+  },
+  leaderboard: {
+    title: "Group standings",
+    loading: "Loading your group rank…",
+    empty: "No group scores yet — pass a week to appear on the board!",
+    yourRank: (rank, total, group) =>
+      `You're #${rank} of ${total} in Group ${group}`,
+    groupLabel: (group) => `Group ${group} standings`,
+    you: "You",
+    points: "pts",
+  },
 };
 
 const ES: CampCopy = {
@@ -353,6 +379,34 @@ const ES: CampCopy = {
       "Esta actividad necesita completar espacios para Rapid Fire.",
   },
   skipLink: "Saltar al contenido principal",
+  achievements: {
+    title: "Tus insignias",
+    subtitle:
+      "Gana insignias al pasar semanas, probar modos de juego y sumar puntos.",
+    labels: {
+      first_pass: "Primer pase",
+      perfect_week: "Semana perfecta",
+      speed_star: "Estrella veloz",
+      halfway_hero: "Héroe a mitad",
+      camp_graduate: "Graduado del camp",
+      mode_explorer: "Explorador",
+      points_500: "500 puntos",
+      points_1000: "1000 puntos",
+    },
+    earnedAria: (label) => `Insignia ganada: ${label}`,
+    lockedAria: (label) => `Insignia bloqueada: ${label}`,
+  },
+  leaderboard: {
+    title: "Clasificación del grupo",
+    loading: "Cargando tu lugar en el grupo…",
+    empty:
+      "Aún no hay puntajes — ¡pasa una semana para aparecer en la tabla!",
+    yourRank: (rank, total, group) =>
+      `Eres #${rank} de ${total} en el Grupo ${group}`,
+    groupLabel: (group) => `Clasificación del Grupo ${group}`,
+    you: "Tú",
+    points: "pts",
+  },
 };
 
 const COPY: Record<Locale, CampCopy> = { en: EN, es: ES };

@@ -232,7 +232,7 @@ Copy into a GitHub Issue or track here:
 - [x] G3 Quick-reset PIN
 - [x] G4 Remote curriculum
 - [x] G5 Real-time wall
-- [ ] G6 Gamification layer
+- [x] G6 Gamification layer
 
 ---
 

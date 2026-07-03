@@ -167,4 +167,30 @@ export interface CampCopy {
     noClickPaintPrompt: string;
   };
   skipLink: string;
+  achievements: {
+    title: string;
+    subtitle: string;
+    labels: Record<
+      | "first_pass"
+      | "perfect_week"
+      | "speed_star"
+      | "halfway_hero"
+      | "camp_graduate"
+      | "mode_explorer"
+      | "points_500"
+      | "points_1000",
+      string
+    >;
+    earnedAria: (label: string) => string;
+    lockedAria: (label: string) => string;
+  };
+  leaderboard: {
+    title: string;
+    loading: string;
+    empty: string;
+    yourRank: (rank: number, total: number, group: string) => string;
+    groupLabel: (group: string) => string;
+    you: string;
+    points: string;
+  };
 }

@@ -1,3 +1,5 @@
+import { recomputeUnlockedAchievements } from "./achievements.ts";
+
 const ALLOWED_GAME_MODES = new Set([
   "flashcard_drill",
   "match_blitz",
@@ -17,6 +19,7 @@ export interface SnapshotCamper {
   group_letter: string;
   cumulativeScore: number;
   completedModes: string[];
+  unlockedAchievements?: string[];
 }
 
 export interface CampProgressSnapshot {
@@ -132,6 +135,12 @@ export function validateSnapshot(
     return { ok: false, error: "Invalid snapshot" };
   }
 
+  const unlockedAchievements = recomputeUnlockedAchievements({
+    weekPassed: normalizedWeekPassed,
+    cumulativeScore,
+    completedModes,
+  });
+
   const snapshot: CampProgressSnapshot = {
     camper: {
       camper_id: camperId,
@@ -142,6 +151,7 @@ export function validateSnapshot(
       group_letter: c.group_letter,
       cumulativeScore,
       completedModes,
+      unlockedAchievements,
     },
     weekPassed: normalizedWeekPassed,
   };

@@ -1,3 +1,4 @@
+import { reconcileAchievementsWithProgress } from "@/lib/achievements";
 import {
   applyCampProgressSnapshot,
   captureCampProgressSnapshot,
@@ -142,6 +143,8 @@ export async function restoreFromResumeCode(
   if (!applied) {
     return { ok: false, error: "Could not apply progress from that code." };
   }
+
+  reconcileAchievementsWithProgress();
 
   return { ok: true, snapshot: payload.snapshot };
 }

@@ -96,6 +96,11 @@ function normalizeSession(
     group_letter: parsed.group_letter,
     cumulativeScore: parsed.cumulativeScore ?? 0,
     completedModes: parsed.completedModes ?? [],
+    unlockedAchievements: Array.isArray(parsed.unlockedAchievements)
+      ? parsed.unlockedAchievements.filter(
+          (id): id is string => typeof id === "string",
+        )
+      : [],
   };
 }
 

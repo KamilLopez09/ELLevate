@@ -30,6 +30,7 @@ export interface CamperSessionData {
   group_letter: string;
   cumulativeScore: number;
   completedModes: string[];
+  unlockedAchievements?: string[];
 }
 
 export interface CamperTelemetryRow {

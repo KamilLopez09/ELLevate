@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { AchievementsStrip } from "@/components/menu/AchievementsStrip";
+import { GroupStandingsCard } from "@/components/menu/GroupStandingsCard";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
 import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
@@ -19,6 +21,11 @@ import {
   isWeekUnlocked,
   setCurrentWeek,
 } from "@/lib/curriculum-engine";
+import {
+  reconcileAchievementsWithProgress,
+  isAchievementId,
+  type AchievementId,
+} from "@/lib/achievements";
 import {
   clearCampSession,
   clearLessonComplete,
@@ -62,6 +69,11 @@ export default function MenuPage() {
   const [firstName, setFirstName] = useState("");
   const [weeksPassed, setWeeksPassed] = useState(0);
   const [cumulativeScore, setCumulativeScore] = useState(0);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<
+    AchievementId[]
+  >([]);
+  const [groupLetter, setGroupLetter] = useState("");
+  const [camperId, setCamperId] = useState("");
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const [counselorPinOpen, setCounselorPinOpen] = useState(false);
@@ -79,6 +91,13 @@ export default function MenuPage() {
     setFirstName(camper.first_name);
     setWeeksPassed(countWeeksPassed());
     setCumulativeScore(camper.cumulativeScore);
+    setGroupLetter(camper.group_letter);
+    setCamperId(camper.camper_id);
+    reconcileAchievementsWithProgress();
+    const refreshed = readCamperSession();
+    setUnlockedAchievements(
+      (refreshed?.unlockedAchievements ?? []).filter(isAchievementId),
+    );
     setReady(true);
   }, [router, curriculumLoading]);
 
@@ -207,6 +226,23 @@ export default function MenuPage() {
                 </Button>
               </div>
             </BentoCard>
+
+            <BentoCard
+              index={1}
+              span="sm:col-span-6"
+              accent="purple"
+              tilt={0.3}
+              className="!p-6"
+            >
+              <AchievementsStrip unlocked={unlockedAchievements} />
+            </BentoCard>
+
+            {groupLetter && camperId ? (
+              <GroupStandingsCard
+                groupLetter={groupLetter}
+                camperId={camperId}
+              />
+            ) : null}
 
             {weekNumbers.map((weekNumber, index) => {
               const week = curriculum[weekNumber];

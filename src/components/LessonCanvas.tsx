@@ -30,6 +30,7 @@ import {
   type ScoreResult,
   type SessionScoreSummary,
 } from "@/lib/gamification";
+import { unlockAchievementsAfterPass } from "@/lib/achievements";
 import { PASS_THRESHOLD } from "@/lib/constants";
 import { useCopy } from "@/lib/i18n/useCopy";
 import { postCamperTelemetry } from "@/lib/telemetry";
@@ -205,6 +206,17 @@ export function LessonCanvas({
           weekCompletedRef.current = true;
           markWeekCompleted(weekNumber);
         }
+
+        const summary = summarizeSession(
+          scoreResultsRef.current,
+          firstTryScore,
+        );
+        unlockAchievementsAfterPass({
+          weekNumber,
+          correctFirstTry: firstTryScore,
+          totalPrompts,
+          totalSpeedBonus: summary.totalSpeedBonus,
+        });
       }
       setPromptIndex(totalPrompts);
     },

@@ -80,6 +80,7 @@ const functions = [
   "curriculum-fetch",
   "curriculum-publish",
   "organizer-wall-session",
+  "group-leaderboard",
 ];
 
 for (const name of functions) {
@@ -94,4 +95,6 @@ console.log("- Resume codes through camper-resume.");
 console.log("- Counselor quick-reset through counselor-reset (COUNSELOR_RESET_PIN).");
 console.log("- Remote curriculum through curriculum-fetch + curriculum-publish.");
 console.log("- Live camp wall through organizer-wall-session + camper-telemetry broadcast.");
+console.log("- Apply migration 012_group_leaderboard.sql if not yet applied.");
+console.log("- Group standings for campers through group-leaderboard (RPC).");
 console.log(`- CAMP_WALL_CHANNEL set to: ${campWallChannel}`);
