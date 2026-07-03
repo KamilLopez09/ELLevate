@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { CampLogo } from "@/components/ui/CampLogo";
+import { cn } from "@/lib/utils";
 import {
   CAMP_NAV,
   CAMP_SCREEN_LABELS,
@@ -77,8 +78,15 @@ function SidebarPanel({
   return (
     <div className="flex h-full flex-col gap-6 p-5">
       <div>
-        <CampLogo variant="sidebar" href={logoHref} />
-        <h2 className="mt-3 font-display text-lg font-extrabold text-ink">
+        {screen !== "home" ? (
+          <CampLogo variant="sidebar" href={logoHref} />
+        ) : null}
+        <h2
+          className={cn(
+            "font-display text-lg font-extrabold text-ink",
+            screen !== "home" && "mt-3",
+          )}
+        >
           {CAMP_SCREEN_LABELS[screen]}
         </h2>
       </div>
@@ -120,6 +128,7 @@ export function CampScreenLayout({
 }: CampScreenLayoutProps) {
   const pathname = usePathname();
   const screen = screenOverride ?? resolveScreen(pathname);
+  const logoHref = screen === "home" ? "/" : "/menu";
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
@@ -231,11 +240,20 @@ export function CampScreenLayout({
           >
             {mobileOpen ? "Close" : "Menu"}
           </button>
-          <CampLogo
-            variant="compact"
-            href={screen === "home" ? "/" : "/menu"}
-            className="min-w-0 flex-1"
-          />
+          {screen === "home" ? (
+            <CampLogo variant="wordmark" decorative priority />
+          ) : (
+            <>
+              <CampLogo
+                variant="wordmark"
+                href={logoHref}
+                className="shrink-0"
+              />
+              <p className="min-w-0 truncate font-display text-sm font-bold text-ink">
+                {CAMP_SCREEN_LABELS[screen]}
+              </p>
+            </>
+          )}
         </header>
 
         <div className="relative">{children}</div>

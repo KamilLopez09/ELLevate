@@ -180,20 +180,17 @@ export default function AdminPage() {
       className="min-h-screen bg-camp-blue px-4 py-10 sm:px-8"
     >
       <div className="mx-auto max-w-6xl space-y-8">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-4">
-            <CampLogo variant="sidebar" href="/" className="max-w-[280px]" />
+        <header className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-3">
+            <CampLogo variant="sidebar" href="/" className="max-w-[240px]" />
             <div>
-              <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
-                Camp organizer
-              </p>
               <h1
-                className="mt-2 font-display font-extrabold text-ink"
+                className="font-display font-extrabold text-ink"
                 style={{ fontSize: "var(--text-h1)" }}
               >
-                Camper activity
+                Camp organizer
               </h1>
-              <p className="mt-3 max-w-2xl text-ink/80">
+              <p className="mt-2 max-w-2xl text-ink/80">
                 Password-protected view of passed practice sessions. Your password
                 stays in this tab only — sign in again after refresh. Campers never
                 see this page — bookmark{" "}

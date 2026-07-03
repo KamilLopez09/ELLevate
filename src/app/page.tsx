@@ -25,10 +25,11 @@ export default function HomePage() {
         />
 
         <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
+          <h1 className="sr-only">ELLevate — Certified Angels Summer Camp</h1>
+          <CampLogo variant="hero" priority decorative className="mx-auto px-2" />
+
           <header className="ca-surface p-8 shadow-bento">
-            <h1 className="sr-only">ELLevate — Certified Angels Summer Camp</h1>
-            <CampLogo variant="hero" priority decorative className="mx-auto" />
-            <p className="mt-6 text-lg text-ink/80">
+            <p className="text-lg text-ink/80">
               Paint your way through English and Spanish — no tests, just creative
               play on your sentence canvas.
             </p>

@@ -108,17 +108,8 @@ export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): boole
     window.localStorage.removeItem(SELECTED_GAME_MODE_KEY);
   }
 
-  if (
-    snapshot.sessionStartedAt !== undefined &&
-    typeof window !== "undefined"
-  ) {
-    window.localStorage.setItem(
-      SESSION_STARTED_AT_KEY,
-      String(snapshot.sessionStartedAt),
-    );
-  } else {
-    touchCampSessionClock();
-  }
+  // Fresh 12h device session on this tablet — never copy the source clock (would expire instantly).
+  touchCampSessionClock();
 
   return true;
 }

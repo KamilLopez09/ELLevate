@@ -124,6 +124,7 @@ export function IntakeGatekeeper() {
       group_letter: cleanGroup,
       cumulativeScore: 0,
       completedModes: [],
+      unlockedAchievements: [],
     };
 
     writeCamperSession(data);
