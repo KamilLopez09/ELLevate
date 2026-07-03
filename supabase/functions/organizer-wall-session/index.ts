@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
       jwtSecret,
       wallChannel,
       WALL_JWT_TTL_SECONDS,
+      Deno.env.get("SUPABASE_URL")?.match(/https:\/\/([^.]+)\./)?.[1],
     );
     const expiresAt = new Date(
       Date.now() + WALL_JWT_TTL_SECONDS * 1000,

@@ -2,14 +2,14 @@ import type { SupabaseClient, REALTIME_SUBSCRIBE_STATES } from "@supabase/supaba
 import type { CampWallPassPayload } from "@/types/camp-wall";
 
 /** Subscribe to organizer camp wall pass events (private Realtime channel). */
-export function subscribeCampWall(
+export async function subscribeCampWall(
   supabase: SupabaseClient,
   channelName: string,
   accessToken: string,
   onPass: (payload: CampWallPassPayload) => void,
   onStatus?: (status: REALTIME_SUBSCRIBE_STATES) => void,
-): () => void {
-  supabase.realtime.setAuth(accessToken);
+): Promise<() => void> {
+  await Promise.resolve(supabase.realtime.setAuth(accessToken));
 
   const channel = supabase
     .channel(channelName, {

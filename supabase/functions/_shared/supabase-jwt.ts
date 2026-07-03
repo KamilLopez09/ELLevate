@@ -7,6 +7,7 @@ export interface OrganizerWallJwtClaims {
   iss: string;
   sub: string;
   role: string;
+  ref?: string;
   wall_topic: string;
 }
 
@@ -23,6 +24,7 @@ export async function issueOrganizerWallJwt(
   jwtSecret: string,
   wallTopic: string,
   ttlSeconds: number,
+  projectRef?: string,
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = base64UrlEncode(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
@@ -35,6 +37,9 @@ export async function issueOrganizerWallJwt(
     role: "authenticated",
     wall_topic: wallTopic,
   };
+  if (projectRef) {
+    payload.ref = projectRef;
+  }
   const payloadPart = base64UrlEncode(encoder.encode(JSON.stringify(payload)));
 
   const key = await crypto.subtle.importKey(

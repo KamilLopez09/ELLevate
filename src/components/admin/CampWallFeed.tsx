@@ -71,11 +71,14 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
         auth: { persistSession: false, autoRefreshToken: false },
       });
 
-      return subscribeCampWall(
+      return await subscribeCampWall(
         supabase,
         session.channel,
         session.access_token,
         (payload) => {
+          if (cancelled()) {
+            return;
+          }
           const entry: CampWallPassEvent = {
             ...payload,
             id: crypto.randomUUID(),
@@ -89,15 +92,22 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           setEvents((prev) => [entry, ...prev].slice(0, MAX_EVENTS));
         },
         (subscribeStatus) => {
+          if (cancelled()) {
+            return;
+          }
           if (subscribeStatus === "SUBSCRIBED") {
             setStatus("live");
             setStatusMessage("Listening for new week passes in real time.");
+            return;
           }
-          if (
-            subscribeStatus === "CHANNEL_ERROR" ||
-            subscribeStatus === "TIMED_OUT" ||
-            subscribeStatus === "CLOSED"
-          ) {
+          if (subscribeStatus === "CHANNEL_ERROR" || subscribeStatus === "TIMED_OUT") {
+            setStatus("offline");
+            setStatusMessage(
+              "Realtime rejected the camp wall connection. Apply migrations 014 and 015 in Supabase, disable Realtime public access, and confirm CAMP_WALL_JWT_SECRET matches the Legacy JWT secret.",
+            );
+            return;
+          }
+          if (subscribeStatus === "CLOSED") {
             setStatus("offline");
             setStatusMessage(
               "Lost connection to the camp wall. Refresh the page.",

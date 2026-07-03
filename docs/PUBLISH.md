@@ -162,7 +162,7 @@ supabase functions deploy organizer-wall-session --no-verify-jwt
 supabase functions deploy group-leaderboard --no-verify-jwt
 ```
 
-Apply SQL migrations **013** and **014** in the Supabase SQL Editor (paste each file, run in order) if not already applied. After **014**, disable **Allow public access** under **Project Settings → Realtime**.
+Apply SQL migrations **013**, **014**, and **015** in the Supabase SQL Editor (paste each file, run in order) if not already applied. After **014**, disable **Allow public access** under **Project Settings → Realtime**.
 
 | Secret / setting | Purpose |
 |------------------|---------|
