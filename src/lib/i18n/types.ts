@@ -135,7 +135,9 @@ export interface CampCopy {
     errors: {
       invalidCode: string;
       notFound: string;
+      notConfigured: string;
       network: string;
+      retry: string;
     };
   };
   counselor: {

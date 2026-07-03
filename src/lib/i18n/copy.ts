@@ -139,7 +139,10 @@ const EN: CampCopy = {
     errors: {
       invalidCode: "Enter the full 6-character code.",
       notFound: "Invalid or expired code.",
-      network: "Could not reach camp servers. Try again when online.",
+      notConfigured:
+        "Camp servers are not set up on this site. Ask your counselor to redeploy with Supabase keys.",
+      network: "Could not reach camp servers. Check Wi‑Fi and try again.",
+      retry: "Try again",
     },
   },
   counselor: {
@@ -343,7 +346,11 @@ const ES: CampCopy = {
     errors: {
       invalidCode: "Escribe el código completo de 6 caracteres.",
       notFound: "Código inválido o expirado.",
-      network: "No pudimos conectar con el campamento. Intenta cuando tengas internet.",
+      notConfigured:
+        "Los servidores del campamento no están configurados en este sitio. Pide a tu consejero que vuelva a publicar con las claves de Supabase.",
+      network:
+        "No pudimos conectar con el campamento. Revisa el Wi‑Fi e inténtalo de nuevo.",
+      retry: "Intentar de nuevo",
     },
   },
   counselor: {

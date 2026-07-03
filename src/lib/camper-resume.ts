@@ -5,6 +5,12 @@ import {
   type CampProgressSnapshot,
 } from "@/lib/camp-progress-snapshot";
 import { touchCampSessionClock } from "@/lib/session-store";
+import { getCopy } from "@/lib/i18n/copy";
+import {
+  isEdgeFetchFailure,
+  postEdgeFunction,
+  type EdgeFetchFailure,
+} from "@/lib/supabase/edge-functions";
 import { getSupabaseConfig } from "@/lib/supabase/client";
 
 export interface CreateResumeCodeResult {
@@ -22,27 +28,18 @@ export type RestoreResumeCodeResult =
   | { ok: true; snapshot: CampProgressSnapshot }
   | { ok: false; error: string };
 
+function resumeReachabilityError(failure: EdgeFetchFailure): string {
+  const copy = getCopy("en");
+  if (failure.kind === "not_configured") {
+    return copy.resume.errors.notConfigured;
+  }
+  return copy.resume.errors.network;
+}
+
 async function postResumeFunction(
   body: Record<string, unknown>,
-): Promise<Response | null> {
-  const config = getSupabaseConfig();
-  if (!config) {
-    return null;
-  }
-
-  try {
-    return await fetch(`${config.url}/functions/v1/camper-resume`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        apikey: config.key,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-  } catch {
-    return null;
-  }
+): Promise<Response | EdgeFetchFailure> {
+  return postEdgeFunction("camper-resume", body);
 }
 
 export async function createResumeCode(): Promise<
@@ -66,8 +63,8 @@ export async function createResumeCode(): Promise<
     camper_id: snapshot.camper.camper_id,
     session_started_at: snapshot.sessionStartedAt,
   });
-  if (!tokenResponse) {
-    return { ok: false, error: "Could not reach camp servers." };
+  if (isEdgeFetchFailure(tokenResponse)) {
+    return { ok: false, error: resumeReachabilityError(tokenResponse) };
   }
 
   const tokenPayload = (await tokenResponse.json().catch(() => null)) as {
@@ -87,8 +84,8 @@ export async function createResumeCode(): Promise<
     create_token: tokenPayload.create_token,
     snapshot,
   });
-  if (!response) {
-    return { ok: false, error: "Could not reach camp servers." };
+  if (isEdgeFetchFailure(response)) {
+    return { ok: false, error: resumeReachabilityError(response) };
   }
 
   const payload = (await response.json().catch(() => null)) as {
@@ -123,8 +120,8 @@ export async function restoreFromResumeCode(
     action: "restore",
     code: normalized,
   });
-  if (!response) {
-    return { ok: false, error: "Could not reach camp servers." };
+  if (isEdgeFetchFailure(response)) {
+    return { ok: false, error: resumeReachabilityError(response) };
   }
 
   const payload = (await response.json().catch(() => null)) as {

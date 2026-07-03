@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createResumeCode } from "@/lib/camper-resume";
 import { useCopy } from "@/lib/i18n/useCopy";
@@ -16,7 +16,26 @@ export function ResumeCodeModal({ open, onClose }: ResumeCodeModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [resumeCode, setResumeCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  const loadCode = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setResumeCode(null);
+    setExpiresAt(null);
+
+    const result = await createResumeCode();
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setResumeCode(result.resumeCode);
+    setExpiresAt(result.expiresAt);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -24,35 +43,12 @@ export function ResumeCodeModal({ open, onClose }: ResumeCodeModalProps) {
       setError(null);
       setResumeCode(null);
       setExpiresAt(null);
+      setAttempt(0);
       return;
     }
 
-    let cancelled = false;
-
-    async function loadCode() {
-      setLoading(true);
-      setError(null);
-      const result = await createResumeCode();
-      if (cancelled) {
-        return;
-      }
-      setLoading(false);
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      setResumeCode(result.resumeCode);
-      setExpiresAt(result.expiresAt);
-    }
-
     void loadCode();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
+  }, [open, attempt, loadCode]);
 
   useEffect(() => {
     if (!open) {
@@ -116,12 +112,23 @@ export function ResumeCodeModal({ open, onClose }: ResumeCodeModalProps) {
         ) : null}
 
         {error ? (
-          <p
-            role="alert"
-            className="mt-6 rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
-          >
-            {error}
-          </p>
+          <div className="mt-6 space-y-3">
+            <p
+              role="alert"
+              className="rounded-2xl bg-gold-accent/20 px-4 py-3 text-sm font-semibold text-ink/80"
+            >
+              {error}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => setAttempt((value) => value + 1)}
+              className="min-h-[48px] w-full"
+            >
+              {copy.resume.errors.retry}
+            </Button>
+          </div>
         ) : null}
 
         {resumeCode ? (

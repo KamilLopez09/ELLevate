@@ -8,6 +8,7 @@ import { GroupStandingsCard } from "@/components/menu/GroupStandingsCard";
 import { BentoCard, BentoGrid } from "@/components/ui/BentoGrid";
 import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
+import { CampLogo } from "@/components/ui/CampLogo";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { CounselorPinModal } from "@/components/ui/CounselorPinModal";
 import { ResetCamperModal } from "@/components/ui/ResetCamperModal";
@@ -154,46 +155,50 @@ export default function MenuPage() {
       >
         <div
           aria-hidden
-          className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56"
-        />
-        <div
-          aria-hidden
-          className="canvas-blob canvas-blob-gold right-0 top-32 h-48 w-48"
-        />
-        <div
-          aria-hidden
-          className="canvas-blob canvas-blob-teal bottom-10 left-1/3 h-64 w-64"
-        />
+          className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        >
+          <div className="canvas-blob canvas-blob-purple -left-20 top-10 h-56 w-56 opacity-20" />
+          <div className="canvas-blob canvas-blob-teal bottom-10 left-1/3 h-64 w-64 opacity-20" />
+        </div>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="relative mx-auto max-w-5xl"
+          className="relative z-0 mx-auto max-w-5xl"
         >
           <BentoGrid className="sm:auto-rows-[minmax(7rem,auto)]">
             <BentoCard
               index={0}
               span="sm:col-span-6"
-              accent="gold"
+              accent="warm"
               tilt={-0.4}
               className="!p-8"
             >
-              <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
-                {copy.menu.journeyLabel}
-              </p>
-              <h1
-                className="mt-2 font-display font-extrabold text-ink"
-                style={{ fontSize: "var(--text-h1)" }}
-              >
-                {copy.menu.greeting(firstName)}
-              </h1>
-              <p
-                className="mt-4 text-ink/80"
-                style={{ fontSize: "var(--text-body)" }}
-              >
-                {copy.menu.subtitle}
-              </p>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
+                    {copy.menu.journeyLabel}
+                  </p>
+                  <h1
+                    className="mt-2 font-display font-extrabold text-ink"
+                    style={{ fontSize: "var(--text-h1)" }}
+                  >
+                    {copy.menu.greeting(firstName)}
+                  </h1>
+                  <p
+                    className="mt-4 text-ink/80"
+                    style={{ fontSize: "var(--text-body)" }}
+                  >
+                    {copy.menu.subtitle}
+                  </p>
+                </div>
+                <CampLogo
+                  variant="wordmark"
+                  decorative
+                  className="shrink-0 opacity-95"
+                />
+              </div>
               <div
                 className="mt-5 flex flex-wrap gap-3"
                 aria-label="Your camp progress"
