@@ -193,5 +193,20 @@ export async function fetchOrganizerWallSession(
     throw new Error(payload.error ?? "Could not start camp wall session");
   }
 
+  if (
+    !payload.enabled ||
+    !payload.channel?.trim() ||
+    !payload.access_token?.trim()
+  ) {
+    return {
+      enabled: false,
+      error:
+        payload.error ??
+        (!payload.access_token?.trim()
+          ? "Camp wall Realtime auth is missing. Set CAMP_WALL_JWT_SECRET in Supabase secrets and redeploy organizer-wall-session."
+          : "Camp wall is not configured. Set CAMP_WALL_CHANNEL and CAMP_WALL_JWT_SECRET in Supabase secrets, then redeploy edge functions."),
+    };
+  }
+
   return payload;
 }

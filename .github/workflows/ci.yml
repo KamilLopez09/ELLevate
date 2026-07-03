@@ -33,4 +33,4 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
 
       - name: Audit production dependencies (high+)
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
