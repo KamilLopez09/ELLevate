@@ -4,6 +4,9 @@ import {
   isEdgeFetchFailure,
 } from "@/lib/supabase/edge-functions";
 
+/** Max sessions returned by organizer-telemetry (newest first). */
+export const ORGANIZER_TELEMETRY_LIMIT = 2000;
+
 export interface CamperTelemetryRecord {
   id: string;
   completed_at: string;
@@ -93,7 +96,10 @@ export function telemetryRowsToCsv(rows: CamperTelemetryRecord[]): string {
   ] as const;
 
   const escape = (value: string | number): string => {
-    const text = String(value);
+    let text = String(value);
+    if (/^[=+\-@\t\r]/.test(text)) {
+      text = `'${text}`;
+    }
     if (/[",\n]/.test(text)) {
       return `"${text.replace(/"/g, '""')}"`;
     }

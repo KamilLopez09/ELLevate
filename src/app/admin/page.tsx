@@ -22,6 +22,7 @@ import {
   clearLegacyOrganizerPasswordStorage,
   exportTelemetryCsv,
   fetchOrganizerTelemetry,
+  ORGANIZER_TELEMETRY_LIMIT,
   type CamperTelemetryRecord,
   type OrganizerSummary,
 } from "@/lib/organizer-api";
@@ -140,7 +141,10 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
     try {
-      const result = await fetchOrganizerTelemetry(organizerPassword, 2000);
+      const result = await fetchOrganizerTelemetry(
+        organizerPassword,
+        ORGANIZER_TELEMETRY_LIMIT,
+      );
       setAllRows(result.rows);
       setPassword(organizerPassword);
       setAuthenticated(true);
@@ -271,6 +275,14 @@ export default function AdminPage() {
               </p>
             ) : null}
 
+            {allRows.length >= ORGANIZER_TELEMETRY_LIMIT ? (
+              <p className="rounded-xl bg-gold-accent/20 px-4 py-3 text-sm text-ink/80">
+                Showing the newest {ORGANIZER_TELEMETRY_LIMIT.toLocaleString()}{" "}
+                sessions only. Older passes are not loaded — use Supabase Table
+                Editor for full history.
+              </p>
+            ) : null}
+
             <CampWallFeed password={password} />
 
             <OrganizerFiltersBar
@@ -288,7 +300,7 @@ export default function AdminPage() {
               passesByGroup={filteredSummary.passesByGroup}
             />
             <GroupLeaderboardPanel
-              rows={filteredRows}
+              rows={allRows}
               activeGroup={filters.group}
             />
             <p className="text-sm text-ink/60">

@@ -24,9 +24,9 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | Severity | Open | Resolved |
 |----------|------|----------|
-| Critical | 1 | 0 |
-| High | 6 | 0 |
-| Medium | 11 | 0 |
+| Critical | 0 | 1 |
+| High | 2 | 4 |
+| Medium | 7 | 4 |
 | Low | 8 | 0 |
 
 **Suggested fix order:** Session/privacy (A) → Scoring & badges (B) → Admin accuracy (D) → Edge security (E, F) → i18n & polish (C, G)
@@ -406,6 +406,19 @@ These were fixed before or during the July 2026 camp wall / curriculum work. Log
 | Resume code “Could not reach camp servers” | Deployed `camper-resume`; set `RESUME_ATTESTATION_SECRET`. |
 | Remote curriculum panel errors | **Removed** remote curriculum feature; bundled catalog only (`3252f0f`). Update [RESOLVE.md](RESOLVE.md) Phase 5 when docs are refreshed. |
 
+### Sprint 1–2 cleanup (local, pending commit)
+
+| ID | Fix |
+|----|-----|
+| A1 | `clearAllCamperDeviceStorage()` on 12h TTL — clears all camp keys + telemetry queue |
+| A2 | `clearCampSession()` uses same full clear |
+| B1 | `first_pass` derived from `weeksPassed >= 1`; pass badges preserved on reconcile |
+| B2 | Cumulative score applied only on pass via `applyPassedSessionScore()` |
+| D1 | Leaderboard uses `allRows` (group filter only) |
+| D2 | Banner when loaded rows ≥ 2,000 |
+| D3 | Date filters use `America/New_York` calendar days |
+| D4 | CSV cells escaped against formula injection |
+
 ---
 
 ## Sprint schedule (recommended)
@@ -423,16 +436,16 @@ Sprint 4 — Polish           C1 → C2 → F2 → G1 → G2
 
 | ID | Task | Severity | Status | Depends |
 |----|------|----------|--------|---------|
-| A1 | Session expiry full clear | Critical | Open | — |
-| A2 | Telemetry queue on reset | Medium | Open | A1 |
-| B1 | `first_pass` reconcile | High | Open | — |
-| B2 | Score on retry | High | Open | — |
+| A1 | Session expiry full clear | Critical | **Resolved** | — |
+| A2 | Telemetry queue on reset | Medium | **Resolved** | A1 |
+| B1 | `first_pass` reconcile | High | **Resolved** | — |
+| B2 | Score on retry | High | **Resolved** | — |
 | C1 | Resume i18n errors | Medium | Open | — |
 | C2 | Lesson gate per week | Medium | Open | — |
-| D1 | Leaderboard uses `allRows` | High | Open | — |
-| D2 | 2k cap warning | High | Open | — |
-| D3 | ET date filters | Medium | Open | — |
-| D4 | CSV injection guard | Medium | Open | — |
+| D1 | Leaderboard uses `allRows` | High | **Resolved** | — |
+| D2 | 2k cap warning | High | **Resolved** | — |
+| D3 | ET date filters | Medium | **Resolved** | — |
+| D4 | CSV injection guard | Medium | **Resolved** | — |
 | E1 | Duplicate pass guard | Medium | Open | — |
 | E2 | Rate limit tuning | Medium | Open | — |
 | E3 | Resume token single-use | Medium | Open | — |

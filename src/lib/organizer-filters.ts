@@ -25,9 +25,14 @@ export function hasActiveFilters(filters: OrganizerFilters): boolean {
   );
 }
 
+/** Certified Angels camp local time — matches admin display and date filters. */
+export const CAMP_TIME_ZONE = "America/New_York";
+
 function completedDateKey(iso: string): string {
   try {
-    return iso.slice(0, 10);
+    return new Date(iso).toLocaleDateString("en-CA", {
+      timeZone: CAMP_TIME_ZONE,
+    });
   } catch {
     return "";
   }

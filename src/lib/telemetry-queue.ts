@@ -1,7 +1,8 @@
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import { postCamperTelemetryDirect } from "@/lib/telemetry-send";
 
-const QUEUE_KEY = "elle_telemetry_queue_v1";
+export const TELEMETRY_QUEUE_KEY = "elle_telemetry_queue_v1";
+const QUEUE_KEY = TELEMETRY_QUEUE_KEY;
 const MAX_QUEUE_SIZE = 24;
 
 function isBrowser(): boolean {
@@ -56,6 +57,11 @@ export function enqueueTelemetry(payload: CamperTelemetryRow): void {
 
 export function getQueuedTelemetryCount(): number {
   return readQueue().length;
+}
+
+/** Clears offline retry queue (call on camper reset and session expiry). */
+export function clearTelemetryQueue(): void {
+  writeQueue([]);
 }
 
 /** Sends queued telemetry payloads; removes entries that succeed. */

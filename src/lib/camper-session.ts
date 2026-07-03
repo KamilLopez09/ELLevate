@@ -1,12 +1,11 @@
 import type { CamperSessionData, AgeBracket } from "@/types/sentence-canvas";
 import {
-  allCampSessionKeys,
   CAMPER_SESSION_KEY,
   LESSON_COMPLETE_KEY,
   SELECTED_GAME_MODE_KEY,
 } from "@/lib/camp-session-keys";
 import {
-  clearCampSessionStorage,
+  clearAllCamperDeviceStorage,
   getCampSessionItem,
   removeCampSessionItem,
   setCampSessionItem,
@@ -129,26 +128,33 @@ export function writeCamperSession(data: CamperSessionData): void {
   setCampSessionItem(CAMPER_SESSION_KEY, JSON.stringify(data));
 }
 
-export function addSessionScore(points: number, modeId: string): void {
+/** Applies cumulative score and mode progress after a passed practice session only. */
+export function applyPassedSessionScore(
+  totalPoints: number,
+  modeIds: string[],
+): void {
   const session = readCamperSession();
   if (!session) {
     return;
   }
 
-  const completedModes = session.completedModes.includes(modeId)
-    ? session.completedModes
-    : [...session.completedModes, modeId];
+  const completedModes = [...session.completedModes];
+  for (const modeId of modeIds) {
+    if (!completedModes.includes(modeId)) {
+      completedModes.push(modeId);
+    }
+  }
 
   writeCamperSession({
     ...session,
-    cumulativeScore: session.cumulativeScore + points,
+    cumulativeScore: session.cumulativeScore + totalPoints,
     completedModes,
   });
 }
 
 /** Wipes all camper progress on this browser (use between campers on a shared device). */
 export function clearCampSession(): void {
-  clearCampSessionStorage(allCampSessionKeys());
+  clearAllCamperDeviceStorage();
 }
 
 /** Marks the lesson step as watched so the application step unlocks. */

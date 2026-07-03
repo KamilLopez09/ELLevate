@@ -6,6 +6,9 @@
  * campers with clearCampSession().
  */
 
+import { allCampSessionKeys } from "@/lib/camp-session-keys";
+import { clearTelemetryQueue } from "@/lib/telemetry-queue";
+
 const SESSION_STARTED_AT_KEY = "elle_session_started_at";
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
@@ -46,7 +49,7 @@ export function getCampSessionItem(key: string): string | null {
     return null;
   }
   if (isCampSessionExpired()) {
-    clearCampSessionStorage();
+    clearAllCamperDeviceStorage();
     return null;
   }
   return window.localStorage.getItem(key);
@@ -69,7 +72,13 @@ export function removeCampSessionItem(key: string): void {
   window.localStorage.removeItem(key);
 }
 
-/** Removes all ELLevate progress keys (use between campers on a shared tablet). */
+/** Wipes camp progress keys and the telemetry retry queue (TTL expiry + counselor reset). */
+export function clearAllCamperDeviceStorage(): void {
+  clearCampSessionStorage(allCampSessionKeys());
+  clearTelemetryQueue();
+}
+
+/** Removes listed localStorage keys (use between campers on a shared tablet). */
 export function clearCampSessionStorage(extraKeys: string[] = []): void {
   if (!isBrowser()) {
     return;

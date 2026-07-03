@@ -15,7 +15,7 @@ import {
   type Prompt,
 } from "@/data/curriculum";
 import {
-  addSessionScore,
+  applyPassedSessionScore,
   getSelectedGameMode,
   readCamperSession,
 } from "@/lib/camper-session";
@@ -211,6 +211,9 @@ export function LessonCanvas({
           scoreResultsRef.current,
           firstTryScore,
         );
+        applyPassedSessionScore(summary.totalPoints, [
+          ...modesUsedRef.current,
+        ]);
         unlockAchievementsAfterPass({
           weekNumber,
           correctFirstTry: firstTryScore,
@@ -232,7 +235,6 @@ export function LessonCanvas({
       const modeId = resolveGameMode(prompt, getSelectedGameMode());
       modesUsedRef.current.add(modeId);
       scoreResultsRef.current.push(payload.scoreResult);
-      addSessionScore(payload.scoreResult.total, modeId);
 
       if (!payload.correct) {
         errorCountRef.current += 1;

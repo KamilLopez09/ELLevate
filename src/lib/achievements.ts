@@ -85,6 +85,10 @@ export function evaluateAchievements(
     grant("speed_star");
   }
 
+  if (!pass && progress.weeksPassed >= 1) {
+    grant("first_pass");
+  }
+
   if (progress.weeksPassed >= 4) {
     grant("halfway_hero");
   }
@@ -151,9 +155,13 @@ export function reconcileAchievementsWithProgress(): AchievementId[] {
   };
 
   const progressBased = evaluateAchievements(null, progress, []);
+  const passSessionBadges = new Set<AchievementId>([
+    "first_pass",
+    "perfect_week",
+    "speed_star",
+  ]);
   const sessionOnly = (session.unlockedAchievements ?? []).filter(
-    (id): id is AchievementId =>
-      isAchievementId(id) && (id === "perfect_week" || id === "speed_star"),
+    (id): id is AchievementId => isAchievementId(id) && passSessionBadges.has(id),
   );
   const merged = [...new Set([...progressBased, ...sessionOnly])];
 
