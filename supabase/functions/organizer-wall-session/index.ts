@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
   try {
     const ip = getClientIp(req);
-    const failKey = `organizer-fail:${ip}`;
+    const failKey = `organizer-wall-fail:${ip}`;
 
     const lockout = isRateLimited(failKey, FAIL_LIMIT, FAIL_WINDOW_MS);
     if (!lockout.allowed) {

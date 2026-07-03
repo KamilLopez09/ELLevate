@@ -19,6 +19,7 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ellevate.pages.dev"),
   title: "ELLevate | Certified Angels",
   description:
     "A free, interactive ESL web app for Certified Angels summer camp — learn English through creative play.",

@@ -24,7 +24,7 @@ function formatWhen(iso: string): string {
 }
 
 function eventId(payload: CampWallPassEvent): string {
-  return `${payload.completed_at}-${payload.first_name}-${payload.week_number}`;
+  return `${payload.completed_at}-${payload.first_name}-${payload.last_initial}-${payload.group_letter}-${payload.week_number}`;
 }
 
 export interface CampWallFeedProps {
@@ -41,6 +41,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
   const seenIds = useRef(new Set<string>());
 
   const connect = useCallback(async (cancelled: () => boolean) => {
+    seenIds.current.clear();
     setStatus("connecting");
     setStatusMessage("Connecting to live camp feed…");
 
@@ -93,7 +94,8 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           }
           if (
             subscribeStatus === "CHANNEL_ERROR" ||
-            subscribeStatus === "TIMED_OUT"
+            subscribeStatus === "TIMED_OUT" ||
+            subscribeStatus === "CLOSED"
           ) {
             setStatus("offline");
             setStatusMessage(

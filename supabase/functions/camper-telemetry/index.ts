@@ -8,11 +8,15 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getClientIp } from "../_shared/client-ip.ts";
-import { consumeRateLimit } from "../_shared/rate-limit.ts";
+import {
+  incrementRateLimit,
+  isRateLimited,
+} from "../_shared/rate-limit.ts";
 import {
   broadcastCampWallPass,
   buildCampWallPayload,
 } from "../_shared/camp-wall-broadcast.ts";
+import { slugifyCamperId } from "../_shared/resume-snapshot.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -158,6 +162,13 @@ function validate(
     return { ok: false, error: "Invalid group_letter" };
   }
 
+  const firstName = (b.first_name as string).trim();
+  const lastInitial = b.last_initial as string;
+  const camperId = b.camper_id as string;
+  if (slugifyCamperId(firstName, lastInitial) !== camperId) {
+    return { ok: false, error: "Invalid camper_id" };
+  }
+
   // Only whitelisted fields are forwarded — prevents mass-assignment of columns.
   const row: TelemetryInsert = {
     module_name: "sentence_canvas",
@@ -173,9 +184,9 @@ function validate(
     cumulative_score: b.cumulative_score as number,
     speed_bonuses_earned: b.speed_bonuses_earned as number,
     accuracy_rate: b.accuracy_rate as number,
-    camper_id: b.camper_id as string,
-    first_name: b.first_name as string,
-    last_initial: b.last_initial as string,
+    camper_id: camperId,
+    first_name: firstName,
+    last_initial: lastInitial,
     age_bracket: b.age_bracket as string,
     native_language: b.native_language as string,
     group_letter: b.group_letter as string,
@@ -192,8 +203,9 @@ Deno.serve(async (req) => {
   }
 
   const clientIp = getClientIp(req);
-  const rateLimit = consumeRateLimit(
-    `camper-telemetry:${clientIp}`,
+  const rateLimitKey = `camper-telemetry:${clientIp}`;
+  const rateLimit = isRateLimited(
+    rateLimitKey,
     TELEMETRY_RATE_LIMIT,
     TELEMETRY_RATE_WINDOW_MS,
   );
@@ -226,10 +238,18 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const { error } = await supabase.from("camper_telemetry").insert(result.row);
+  const completedAt = new Date().toISOString();
+  const { error } = await supabase
+    .from("camper_telemetry")
+    .insert({ ...result.row, completed_at: completedAt });
   if (error) {
+    if (error.code === "23505") {
+      return jsonResponse({ ok: true, duplicate: true }, 200);
+    }
     return jsonResponse({ error: error.message }, 500);
   }
+
+  incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
 
   const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
   if (wallChannel) {
@@ -237,7 +257,7 @@ Deno.serve(async (req) => {
       await broadcastCampWallPass(
         supabase,
         wallChannel,
-        buildCampWallPayload(result.row),
+        buildCampWallPayload(result.row, completedAt),
       );
     } catch (broadcastError) {
       console.error("camp wall broadcast failed", broadcastError);

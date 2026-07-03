@@ -137,6 +137,13 @@ export interface CampCopy {
       notFound: string;
       notConfigured: string;
       network: string;
+      rateLimited: string;
+      noSession: string;
+      sessionUnverified: string;
+      authorizeFailed: string;
+      createFailed: string;
+      tooManyActive: string;
+      applyFailed: string;
       retry: string;
     };
   };

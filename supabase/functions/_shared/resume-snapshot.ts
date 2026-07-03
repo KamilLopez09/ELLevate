@@ -26,6 +26,8 @@ export interface CampProgressSnapshot {
   camper: SnapshotCamper;
   currentWeek?: number;
   weekPassed: Record<string, boolean>;
+  lessonCompleteWeek?: number;
+  /** @deprecated Legacy boolean from older clients. */
   lessonComplete?: boolean;
   selectedGameMode?: string | null;
   sessionStartedAt?: number;
@@ -159,7 +161,15 @@ export function validateSnapshot(
   if (currentWeek !== undefined) {
     snapshot.currentWeek = currentWeek;
   }
-  if (typeof record.lessonComplete === "boolean") {
+  const lessonCompleteWeek = record.lessonCompleteWeek;
+  if (
+    typeof lessonCompleteWeek === "number" &&
+    Number.isInteger(lessonCompleteWeek) &&
+    lessonCompleteWeek >= 1 &&
+    lessonCompleteWeek <= 8
+  ) {
+    snapshot.lessonCompleteWeek = lessonCompleteWeek;
+  } else if (typeof record.lessonComplete === "boolean") {
     snapshot.lessonComplete = record.lessonComplete;
   }
   if (record.selectedGameMode === null) {

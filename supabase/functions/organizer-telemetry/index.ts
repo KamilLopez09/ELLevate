@@ -62,7 +62,7 @@ function buildSummary(
 }
 
 function organizerFailKey(clientIp: string): string {
-  return `organizer-fail:${clientIp}`;
+  return `organizer-telemetry-fail:${clientIp}`;
 }
 
 Deno.serve(async (req) => {

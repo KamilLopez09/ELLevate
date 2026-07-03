@@ -21,17 +21,20 @@ function sanitizeWallName(name: string): string {
   return cleaned.length >= 1 ? cleaned : "Camper";
 }
 
-export function buildCampWallPayload(row: {
-  first_name: string;
-  last_initial: string;
-  group_letter: string;
-  week_number: number;
-  correct_first_try: number;
-  accuracy_rate: number;
-  total_points: number;
-}): CampWallPassPayload {
+export function buildCampWallPayload(
+  row: {
+    first_name: string;
+    last_initial: string;
+    group_letter: string;
+    week_number: number;
+    correct_first_try: number;
+    accuracy_rate: number;
+    total_points: number;
+  },
+  completedAt?: string,
+): CampWallPassPayload {
   return {
-    completed_at: new Date().toISOString(),
+    completed_at: completedAt ?? new Date().toISOString(),
     first_name: sanitizeWallName(row.first_name),
     last_initial: row.last_initial,
     group_letter: row.group_letter,

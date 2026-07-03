@@ -25,9 +25,9 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 | Severity | Open | Resolved |
 |----------|------|----------|
 | Critical | 0 | 1 |
-| High | 2 | 4 |
-| Medium | 7 | 4 |
-| Low | 8 | 0 |
+| High | 1 | 5 |
+| Medium | 1 | 10 |
+| Low | 0 | 1 |
 
 **Suggested fix order:** Session/privacy (A) → Scoring & badges (B) → Admin accuracy (D) → Edge security (E, F) → i18n & polish (C, G)
 
@@ -39,7 +39,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Critical |
 | **Symptom** | Privacy copy promises data expires after 12 hours; profile and progress remain in `localStorage` indefinitely. |
 | **Root cause** | On expiry, `getCampSessionItem()` calls `clearCampSessionStorage()` with no keys — only `elle_session_started_at` is removed. Next read sees no clock, so expiry is false and stale data returns. |
@@ -62,7 +62,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Prior camper’s queued telemetry can POST after device reset. |
 | **Root cause** | `clearCampSession()` clears camp keys only; `elle_telemetry_queue_v1` is separate (`telemetry-queue.ts`). |
@@ -88,7 +88,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | High |
 | **Symptom** | “First pass” disappears when returning to menu or after resume restore. |
 | **Root cause** | `reconcileAchievementsWithProgress()` rebuilds from progress-only rules; preserves `perfect_week` and `speed_star` but not `first_pass`. Pass-only badges need a pass context — `evaluateAchievements(null, …)` never grants `first_pass`. |
@@ -111,7 +111,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | High |
 | **Symptom** | Failed attempt + “Try again” double-counts points; mid-session refresh can double-count. |
 | **Root cause** | `addSessionScore()` runs every prompt; `handleTryAgain()` resets UI state but not stored cumulative score / `completedModes`. |
@@ -136,7 +136,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Spanish campers see English errors from resume API. |
 | **Root cause** | `camper-resume.ts` returns English strings; UI displays them raw instead of `copy.resume.errors`. |
@@ -154,7 +154,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Direct URL to `/application` can skip lesson video for a new week. |
 | **Root cause** | Single `lesson_complete` flag not tied to active week; `startWeek()` may not clear it consistently for guards. |
@@ -174,7 +174,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | High |
 | **Symptom** | Week/date filters change group standings incorrectly. |
 | **Root cause** | `GroupLeaderboardPanel` receives `filteredRows`; cumulative max is computed on subset. |
@@ -194,7 +194,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | High |
 | **Symptom** | Older passes missing from table, charts, CSV, leaderboard. |
 | **Root cause** | `fetchOrganizerTelemetry(..., 2000)` hard cap, newest first, no UI warning. |
@@ -211,7 +211,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Evening ET passes fall on wrong calendar day in From/To filters. |
 | **Root cause** | `completedDateKey()` uses `iso.slice(0, 10)` (UTC). |
@@ -228,7 +228,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Crafted `first_name` like `=cmd()` can execute in Excel. |
 | **Root cause** | CSV escape handles quotes only, not formula prefixes. |
@@ -247,7 +247,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Multiple rows per camper/week from retries, queue replay, or direct API. |
 | **Root cause** | No unique constraint on `(camper_id, week_number)`; client queue dedupes locally only. |
@@ -264,7 +264,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Camp NAT blocked after typos; counselor PIN exhausted on success; telemetry quota burned on bad payloads. |
 | **Root cause** | Shared `organizer-fail:${ip}` bucket; counselor limit counts all attempts; telemetry limit before validation; in-memory per-isolate counters. |
@@ -283,7 +283,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | Stolen create token can mint multiple codes within 15 minutes. |
 | **Root cause** | No single-use mark on attestation tokens. |
@@ -300,7 +300,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | High |
 | **Symptom** | Anyone with anon key can POST valid-looking pass rows. |
 | **Root cause** | Validation is syntactic only — no proof-of-play or resume attestation on write path. |
@@ -344,7 +344,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Low–Medium |
 | **Symptom** | Wall time ≠ table time; duplicate events for same name/week; badge stuck on disconnect. |
 | **Root cause** | `completed_at` set at broadcast time; weak dedupe key; incomplete Realtime status handling. |
@@ -366,7 +366,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Low |
 | **Symptom** | Build warns; social preview URLs default to `localhost`. |
 | **Files** | `src/app/layout.tsx` |
@@ -440,19 +440,19 @@ Sprint 4 — Polish           C1 → C2 → F2 → G1 → G2
 | A2 | Telemetry queue on reset | Medium | **Resolved** | A1 |
 | B1 | `first_pass` reconcile | High | **Resolved** | — |
 | B2 | Score on retry | High | **Resolved** | — |
-| C1 | Resume i18n errors | Medium | Open | — |
-| C2 | Lesson gate per week | Medium | Open | — |
+| C1 | Resume i18n errors | Medium | **Resolved** | — |
+| C2 | Lesson gate per week | Medium | **Resolved** | — |
 | D1 | Leaderboard uses `allRows` | High | **Resolved** | — |
 | D2 | 2k cap warning | High | **Resolved** | — |
 | D3 | ET date filters | Medium | **Resolved** | — |
 | D4 | CSV injection guard | Medium | **Resolved** | — |
-| E1 | Duplicate pass guard | Medium | Open | — |
-| E2 | Rate limit tuning | Medium | Open | — |
-| E3 | Resume token single-use | Medium | Open | — |
-| E4 | Telemetry auth hardening | High | Open | E1 |
+| E1 | Duplicate pass guard | Medium | **Resolved** | — |
+| E2 | Rate limit tuning | Medium | **Resolved** | — |
+| E3 | Resume token single-use | Medium | **Resolved** | — |
+| E4 | Telemetry auth hardening | High | **Resolved** | E1 |
 | F1 | Realtime authorization | High | Open | — |
-| F2 | Wall payload / dedupe | Low | Open | F1 |
-| G1 | metadataBase | Low | Open | — |
+| F2 | Wall payload / dedupe | Low | **Resolved** | F1 |
+| G1 | metadataBase | Low | **Resolved** | — |
 | G2 | Regression tests | Medium | Open | A1, B1, D3, D4 |
 
 ---

@@ -87,7 +87,7 @@ export default function LessonPage() {
     if (!minWatchMet) {
       return;
     }
-    setLessonComplete();
+    setLessonComplete(weekNumber);
     router.push("/application");
   };
 

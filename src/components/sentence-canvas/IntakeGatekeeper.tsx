@@ -10,6 +10,7 @@ import {
   writeCamperSession,
 } from "@/lib/camper-session";
 import { restoreFromResumeCode } from "@/lib/camper-resume";
+import { resumeErrorMessage } from "@/lib/resume-errors";
 import { SESSION_TTL_MS } from "@/lib/session-store";
 import { useCopyForLanguage } from "@/lib/i18n/useCopy";
 import type {
@@ -141,7 +142,7 @@ export function IntakeGatekeeper() {
     setRestoring(false);
 
     if (!result.ok) {
-      setError(result.error);
+      setError(resumeErrorMessage(result.code, copy.resume.errors));
       return;
     }
 

@@ -2,7 +2,10 @@
 // PIN lives in Supabase secrets (COUNSELOR_RESET_PIN), never in the static bundle.
 
 import { getClientIp } from "../_shared/client-ip.ts";
-import { consumeRateLimit } from "../_shared/rate-limit.ts";
+import {
+  incrementRateLimit,
+  isRateLimited,
+} from "../_shared/rate-limit.ts";
 import { secureCompare } from "../_shared/secure-compare.ts";
 
 const corsHeaders: Record<string, string> = {
@@ -45,11 +48,8 @@ Deno.serve(async (req) => {
   }
 
   const clientIp = getClientIp(req);
-  const limited = consumeRateLimit(
-    `counselor-reset:${clientIp}`,
-    VERIFY_LIMIT,
-    VERIFY_WINDOW_MS,
-  );
+  const failKey = `counselor-reset-fail:${clientIp}`;
+  const limited = isRateLimited(failKey, VERIFY_LIMIT, VERIFY_WINDOW_MS);
   if (!limited.allowed) {
     return jsonResponse(
       { error: "Too many attempts. Try again later." },
@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
 
   const match = await secureCompare(pin, expectedPin);
   if (!match) {
+    incrementRateLimit(failKey, VERIFY_WINDOW_MS);
     return jsonResponse({ ok: false }, 401);
   }
 

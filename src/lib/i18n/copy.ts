@@ -143,6 +143,14 @@ const EN: CampCopy = {
         "Camp servers are not set up on this site. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then redeploy.",
       network:
         "Could not reach camp servers. Check Wi‑Fi and that Supabase Edge Functions are deployed.",
+      rateLimited: "Too many attempts. Wait a few minutes and try again.",
+      noSession: "Sign in on this tablet first, then get a resume code.",
+      sessionUnverified: "Could not verify this device session. Try again.",
+      authorizeFailed: "Could not authorize resume code. Try again.",
+      createFailed: "Could not create resume code. Try again.",
+      tooManyActive:
+        "Too many active codes for this camper. Use an existing code or wait.",
+      applyFailed: "Could not load progress from that code.",
       retry: "Try again",
     },
   },
@@ -351,6 +359,14 @@ const ES: CampCopy = {
         "Los servidores del campamento no están configurados en este sitio. Pide a tu consejero que vuelva a publicar con las claves de Supabase.",
       network:
         "No pudimos conectar con el campamento. Revisa el Wi‑Fi e inténtalo de nuevo.",
+      rateLimited: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+      noSession: "Regístrate en esta tablet primero y luego pide un código.",
+      sessionUnverified: "No pudimos verificar esta sesión. Inténtalo de nuevo.",
+      authorizeFailed: "No pudimos autorizar el código. Inténtalo de nuevo.",
+      createFailed: "No pudimos crear el código. Inténtalo de nuevo.",
+      tooManyActive:
+        "Demasiados códigos activos para este campista. Usa uno existente o espera.",
+      applyFailed: "No pudimos cargar el progreso de ese código.",
       retry: "Intentar de nuevo",
     },
   },

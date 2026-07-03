@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createResumeCode } from "@/lib/camper-resume";
+import { resumeErrorMessage } from "@/lib/resume-errors";
 import { useCopy } from "@/lib/i18n/useCopy";
 
 export interface ResumeCodeModalProps {
@@ -29,13 +30,13 @@ export function ResumeCodeModal({ open, onClose }: ResumeCodeModalProps) {
     setLoading(false);
 
     if (!result.ok) {
-      setError(result.error);
+      setError(resumeErrorMessage(result.code, copy.resume.errors));
       return;
     }
 
     setResumeCode(result.resumeCode);
     setExpiresAt(result.expiresAt);
-  }, []);
+  }, [copy.resume.errors]);
 
   useEffect(() => {
     if (!open) {

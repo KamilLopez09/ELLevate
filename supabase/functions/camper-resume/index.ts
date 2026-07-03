@@ -32,7 +32,34 @@ const CREATE_WINDOW_MS = 60 * 60 * 1000;
 const RESTORE_LIMIT = 30;
 const RESTORE_WINDOW_MS = 60 * 60 * 1000;
 
-const RESTORE_ERROR = "Invalid or expired code.";
+const RESTORE_ERROR_CODE = "not_found";
+
+async function hashCreateToken(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(token),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function markCreateTokenSpent(
+  admin: ReturnType<typeof createClient>,
+  createToken: string,
+): Promise<boolean> {
+  const tokenHash = await hashCreateToken(createToken);
+  const { error } = await admin.from("camper_resume_spent_tokens").insert({
+    token_hash: tokenHash,
+  });
+  if (error?.code === "23505") {
+    return false;
+  }
+  if (error) {
+    throw new Error(error.message);
+  }
+  return true;
+}
 
 function jsonResponse(
   body: unknown,
@@ -119,7 +146,7 @@ Deno.serve(async (req) => {
     );
     if (!limited.allowed) {
       return jsonResponse(
-        { error: "Too many requests. Try again later." },
+        { error_code: "rate_limited" },
         429,
         limited.retryAfterSeconds
           ? { "Retry-After": String(limited.retryAfterSeconds) }
@@ -135,7 +162,7 @@ Deno.serve(async (req) => {
       !Number.isFinite(sessionStartedAt) ||
       sessionStartedAt <= 0
     ) {
-      return jsonResponse({ error: "Invalid session" }, 400);
+      return jsonResponse({ error_code: "invalid_session" }, 400);
     }
 
     const createToken = await issueCreateToken(
@@ -159,7 +186,7 @@ Deno.serve(async (req) => {
     );
     if (!limited.allowed) {
       return jsonResponse(
-        { error: "Too many codes created. Try again later." },
+        { error_code: "rate_limited" },
         429,
         limited.retryAfterSeconds
           ? { "Retry-After": String(limited.retryAfterSeconds) }
@@ -169,12 +196,12 @@ Deno.serve(async (req) => {
 
     const createToken = body.create_token;
     if (typeof createToken !== "string" || createToken.length < 10) {
-      return jsonResponse({ error: "Missing create attestation" }, 401);
+      return jsonResponse({ error_code: "authorize_failed" }, 401);
     }
 
     const validated = validateSnapshot(body.snapshot);
     if (!validated.ok) {
-      return jsonResponse({ error: validated.error }, 400);
+      return jsonResponse({ error_code: "create_failed" }, 400);
     }
 
     const tokenValid = await verifyCreateToken(
@@ -184,7 +211,17 @@ Deno.serve(async (req) => {
       validated.snapshot.sessionStartedAt,
     );
     if (!tokenValid) {
-      return jsonResponse({ error: "Invalid or expired attestation" }, 401);
+      return jsonResponse({ error_code: "authorize_failed" }, 401);
+    }
+
+    let tokenReserved = false;
+    try {
+      tokenReserved = await markCreateTokenSpent(admin, createToken);
+    } catch {
+      return jsonResponse({ error_code: "create_failed" }, 500);
+    }
+    if (!tokenReserved) {
+      return jsonResponse({ error_code: "authorize_failed" }, 401);
     }
 
     const { count, error: countError } = await admin
@@ -194,17 +231,13 @@ Deno.serve(async (req) => {
       .gt("expires_at", new Date().toISOString());
 
     if (countError) {
-      return jsonResponse({ error: "Could not create resume code" }, 500);
+      return jsonResponse({ error_code: "create_failed" }, 500);
     }
     if ((count ?? 0) >= MAX_ACTIVE_SNAPSHOTS_PER_CAMPER) {
-      return jsonResponse(
-        { error: "Too many active codes for this camper. Try again later." },
-        429,
-      );
+      return jsonResponse({ error_code: "too_many_active" }, 429);
     }
 
     const expiresAt = new Date(Date.now() + SNAPSHOT_TTL_MS).toISOString();
-    let lastError: string | null = null;
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const resumeCode = randomCode();
@@ -225,14 +258,10 @@ Deno.serve(async (req) => {
       if (error.code === "23505") {
         continue;
       }
-      lastError = error.message;
       break;
     }
 
-    return jsonResponse(
-      { error: lastError ?? "Could not create resume code" },
-      500,
-    );
+    return jsonResponse({ error_code: "create_failed" }, 500);
   }
 
   if (action === "restore") {
@@ -243,7 +272,7 @@ Deno.serve(async (req) => {
     );
     if (!limited.allowed) {
       return jsonResponse(
-        { error: "Too many restore attempts. Try again later." },
+        { error_code: "rate_limited" },
         429,
         limited.retryAfterSeconds
           ? { "Retry-After": String(limited.retryAfterSeconds) }
@@ -253,7 +282,7 @@ Deno.serve(async (req) => {
 
     const code = normalizeCode(body.code);
     if (!code) {
-      return jsonResponse({ error: RESTORE_ERROR }, 400);
+      return jsonResponse({ error_code: "invalid_code" }, 400);
     }
 
     const { data, error } = await admin
@@ -263,20 +292,20 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (error) {
-      return jsonResponse({ error: RESTORE_ERROR }, 400);
+      return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
     }
 
     if (!data || new Date(data.expires_at).getTime() < Date.now()) {
       if (data) {
         await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
       }
-      return jsonResponse({ error: RESTORE_ERROR }, 400);
+      return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
     }
 
     const validated = validateSnapshot(data.snapshot);
     if (!validated.ok) {
       await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
-      return jsonResponse({ error: RESTORE_ERROR }, 400);
+      return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
     }
 
     await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);

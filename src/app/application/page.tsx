@@ -17,7 +17,7 @@ import { useCurriculum } from "@/components/providers/CurriculumProvider";
 import {
   clearSelectedGameMode,
   getSelectedGameMode,
-  isLessonComplete,
+  isLessonCompleteForWeek,
   readCamperSession,
   setSelectedGameMode,
 } from "@/lib/camper-session";
@@ -75,12 +75,13 @@ export default function ApplicationPage() {
       router.replace("/");
       return;
     }
-    if (!isLessonComplete()) {
+    const week = getCurrentWeek();
+    if (!isLessonCompleteForWeek(week)) {
       router.replace("/lesson");
       return;
     }
 
-    setWeekNumber(getCurrentWeek());
+    setWeekNumber(week);
     setSelectedMode(getSelectedGameMode());
     setReady(true);
   }, [router]);

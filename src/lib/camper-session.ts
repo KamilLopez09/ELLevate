@@ -157,11 +157,25 @@ export function clearCampSession(): void {
   clearAllCamperDeviceStorage();
 }
 
-/** Marks the lesson step as watched so the application step unlocks. */
-export function setLessonComplete(): void {
-  setCampSessionItem(LESSON_COMPLETE_KEY, "true");
+/** Marks the lesson step as watched for a specific week so application unlocks. */
+export function setLessonComplete(weekNumber: number): void {
+  setCampSessionItem(LESSON_COMPLETE_KEY, String(weekNumber));
 }
 
+export function getLessonCompleteWeek(): number | null {
+  const raw = getCampSessionItem(LESSON_COMPLETE_KEY);
+  if (!raw || raw === "true") {
+    return null;
+  }
+  const week = Number.parseInt(raw, 10);
+  return Number.isFinite(week) ? week : null;
+}
+
+export function isLessonCompleteForWeek(weekNumber: number): boolean {
+  return getLessonCompleteWeek() === weekNumber;
+}
+
+/** @deprecated Prefer isLessonCompleteForWeek(getCurrentWeek()) */
 export function isLessonComplete(): boolean {
   return getCampSessionItem(LESSON_COMPLETE_KEY) === "true";
 }

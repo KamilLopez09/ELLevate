@@ -1,5 +1,6 @@
 import type { CamperSessionData } from "@/types/sentence-canvas";
 import {
+  getLessonCompleteWeek,
   parseCamperSessionData,
   readCamperSession,
   writeCamperSession,
@@ -23,6 +24,9 @@ export interface CampProgressSnapshot {
   camper: CamperSessionData;
   currentWeek?: number;
   weekPassed: Record<string, boolean>;
+  /** Week whose lesson video was completed (gates application for that week). */
+  lessonCompleteWeek?: number;
+  /** @deprecated Legacy boolean — ignored on restore. */
   lessonComplete?: boolean;
   selectedGameMode?: string | null;
   sessionStartedAt?: number;
@@ -57,6 +61,8 @@ export function captureCampProgressSnapshot(): CampProgressSnapshot | null {
     ? Number.parseInt(currentWeekRaw, 10)
     : undefined;
 
+  const lessonCompleteWeek = getLessonCompleteWeek();
+
   return {
     camper,
     weekPassed,
@@ -64,7 +70,7 @@ export function captureCampProgressSnapshot(): CampProgressSnapshot | null {
       currentWeek !== undefined && Number.isFinite(currentWeek)
         ? currentWeek
         : undefined,
-    lessonComplete: getCampSessionItem(LESSON_COMPLETE_KEY) === "true",
+    lessonCompleteWeek: lessonCompleteWeek ?? undefined,
     selectedGameMode: getCampSessionItem(SELECTED_GAME_MODE_KEY),
     sessionStartedAt: readSessionStartedAt(),
   };
@@ -96,8 +102,8 @@ export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): boole
     setCampSessionItem(CURRENT_WEEK_KEY, String(snapshot.currentWeek));
   }
 
-  if (snapshot.lessonComplete) {
-    setCampSessionItem(LESSON_COMPLETE_KEY, "true");
+  if (snapshot.lessonCompleteWeek !== undefined) {
+    setCampSessionItem(LESSON_COMPLETE_KEY, String(snapshot.lessonCompleteWeek));
   } else if (typeof window !== "undefined") {
     window.localStorage.removeItem(LESSON_COMPLETE_KEY);
   }

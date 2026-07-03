@@ -4,9 +4,9 @@ import {
   captureCampProgressSnapshot,
   type CampProgressSnapshot,
 } from "@/lib/camp-progress-snapshot";
+import type { ResumeErrorCode } from "@/lib/resume-errors";
 import { touchCampSessionClock } from "@/lib/session-store";
 import {
-  edgeFetchFailureMessage,
   isEdgeFetchFailure,
   postEdgeFunction,
   type EdgeFetchFailure,
@@ -21,15 +21,18 @@ export interface CreateResumeCodeResult {
 
 export type CreateResumeCodeError = {
   ok: false;
-  error: string;
+  code: ResumeErrorCode;
 };
 
 export type RestoreResumeCodeResult =
   | { ok: true; snapshot: CampProgressSnapshot }
-  | { ok: false; error: string };
+  | { ok: false; code: ResumeErrorCode };
 
-function resumeReachabilityError(failure: EdgeFetchFailure): string {
-  return edgeFetchFailureMessage(failure);
+function networkCode(failure: EdgeFetchFailure): ResumeErrorCode {
+  if (failure.kind === "not_configured") {
+    return "not_configured";
+  }
+  return "network";
 }
 
 async function postResumeFunction(
@@ -38,19 +41,33 @@ async function postResumeFunction(
   return postEdgeFunction("camper-resume", body);
 }
 
+function parseErrorCode(
+  payload: { error_code?: string } | null,
+  fallback: ResumeErrorCode,
+): ResumeErrorCode {
+  const code = payload?.error_code;
+  if (code === "invalid_session") {
+    return "session_unverified";
+  }
+  if (typeof code === "string") {
+    return code as ResumeErrorCode;
+  }
+  return fallback;
+}
+
 export async function createResumeCode(): Promise<
   CreateResumeCodeResult | CreateResumeCodeError
 > {
   let snapshot = captureCampProgressSnapshot();
   if (!snapshot) {
-    return { ok: false, error: "No camper session on this device." };
+    return { ok: false, code: "no_session" };
   }
 
   if (!snapshot.sessionStartedAt) {
     touchCampSessionClock();
     snapshot = captureCampProgressSnapshot();
     if (!snapshot?.sessionStartedAt) {
-      return { ok: false, error: "Could not verify this device session." };
+      return { ok: false, code: "session_unverified" };
     }
   }
 
@@ -60,18 +77,22 @@ export async function createResumeCode(): Promise<
     session_started_at: snapshot.sessionStartedAt,
   });
   if (isEdgeFetchFailure(tokenResponse)) {
-    return { ok: false, error: resumeReachabilityError(tokenResponse) };
+    return { ok: false, code: networkCode(tokenResponse) };
   }
 
   const tokenPayload = (await tokenResponse.json().catch(() => null)) as {
     create_token?: string;
-    error?: string;
+    error_code?: string;
   } | null;
+
+  if (tokenResponse.status === 429) {
+    return { ok: false, code: "rate_limited" };
+  }
 
   if (!tokenResponse.ok || !tokenPayload?.create_token) {
     return {
       ok: false,
-      error: tokenPayload?.error ?? "Could not authorize resume code.",
+      code: parseErrorCode(tokenPayload, "authorize_failed"),
     };
   }
 
@@ -81,19 +102,26 @@ export async function createResumeCode(): Promise<
     snapshot,
   });
   if (isEdgeFetchFailure(response)) {
-    return { ok: false, error: resumeReachabilityError(response) };
+    return { ok: false, code: networkCode(response) };
   }
 
   const payload = (await response.json().catch(() => null)) as {
     resume_code?: string;
     expires_at?: string;
-    error?: string;
+    error_code?: string;
   } | null;
+
+  if (response.status === 429) {
+    return {
+      ok: false,
+      code: parseErrorCode(payload, "rate_limited"),
+    };
+  }
 
   if (!response.ok || !payload?.resume_code || !payload.expires_at) {
     return {
       ok: false,
-      error: payload?.error ?? "Could not create resume code.",
+      code: parseErrorCode(payload, "create_failed"),
     };
   }
 
@@ -109,7 +137,7 @@ export async function restoreFromResumeCode(
 ): Promise<RestoreResumeCodeResult> {
   const normalized = code.trim().toUpperCase();
   if (normalized.length !== 6) {
-    return { ok: false, error: "Enter the 6-character code." };
+    return { ok: false, code: "invalid_code" };
   }
 
   const response = await postResumeFunction({
@@ -117,24 +145,28 @@ export async function restoreFromResumeCode(
     code: normalized,
   });
   if (isEdgeFetchFailure(response)) {
-    return { ok: false, error: resumeReachabilityError(response) };
+    return { ok: false, code: networkCode(response) };
   }
 
   const payload = (await response.json().catch(() => null)) as {
     snapshot?: CampProgressSnapshot;
-    error?: string;
+    error_code?: string;
   } | null;
+
+  if (response.status === 429) {
+    return { ok: false, code: "rate_limited" };
+  }
 
   if (!response.ok || !payload?.snapshot?.camper) {
     return {
       ok: false,
-      error: payload?.error ?? "Invalid or expired code.",
+      code: parseErrorCode(payload, "not_found"),
     };
   }
 
   const applied = applyCampProgressSnapshot(payload.snapshot);
   if (!applied) {
-    return { ok: false, error: "Could not apply progress from that code." };
+    return { ok: false, code: "apply_failed" };
   }
 
   reconcileAchievementsWithProgress();
