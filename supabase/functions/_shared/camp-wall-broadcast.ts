@@ -72,7 +72,9 @@ export async function broadcastCampWallPass(
   channelName: string,
   payload: CampWallPassPayload,
 ): Promise<void> {
-  const channel = supabase.channel(channelName);
+  const channel = supabase.channel(channelName, {
+    config: { private: true },
+  });
   await waitForChannelSubscribe(channel);
   await channel.send({
     type: "broadcast",

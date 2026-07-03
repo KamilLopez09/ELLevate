@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "supabase:deploy-organizer": "node scripts/deploy-organizer-telemetry.mjs",
     "supabase:deploy-edge": "node scripts/deploy-edge-functions.mjs"
   },
@@ -35,6 +37,8 @@
     "postcss": "^8.5.2",
     "shadcn": "^4.12.0",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5",
+    "jsdom": "^26.0.0"
   }
 }

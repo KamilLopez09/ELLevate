@@ -33,6 +33,10 @@ function requireEnv(name) {
     } else if (name === "CAMP_WALL_CHANNEL") {
       console.error("Secret Realtime broadcast channel for organizer camp wall.");
       console.error('PowerShell: $env:CAMP_WALL_CHANNEL = "camp-wall-your-random-string"');
+    } else if (name === "SUPABASE_JWT_SECRET") {
+      console.error("Project JWT secret for private Realtime camp wall subscribe tokens.");
+      console.error("Dashboard: Project Settings → API → JWT Secret");
+      console.error('PowerShell: $env:SUPABASE_JWT_SECRET = "your-jwt-secret"');
     }
     process.exit(1);
   }
@@ -60,6 +64,7 @@ const resumeAttestationSecret = requireEnv("RESUME_ATTESTATION_SECRET");
 const campWallChannel =
   process.env.CAMP_WALL_CHANNEL ??
   `camp-wall-${randomBytes(16).toString("hex")}`;
+const jwtSecret = requireEnv("SUPABASE_JWT_SECRET");
 
 run("npx", ["supabase", "link", "--project-ref", process.env.SUPABASE_PROJECT_REF, "--yes"]);
 run("npx", [
@@ -70,6 +75,7 @@ run("npx", [
   `COUNSELOR_RESET_PIN=${counselorPin}`,
   `RESUME_ATTESTATION_SECRET=${resumeAttestationSecret}`,
   `CAMP_WALL_CHANNEL=${campWallChannel}`,
+  `SUPABASE_JWT_SECRET=${jwtSecret}`,
 ]);
 
 const functions = [
@@ -87,7 +93,8 @@ for (const name of functions) {
 
 console.log("");
 console.log("Done.");
-console.log("- Apply migration 010_camper_resume_snapshots.sql if not yet applied.");
+console.log("- Apply migrations 013 and 014 if not yet applied (telemetry dedup + Realtime auth).");
+console.log("- Disable Realtime 'Allow public access' in Supabase project settings after migration 014.");
 console.log("- Telemetry writes through camper-telemetry.");
 console.log("- Resume codes through camper-resume.");
 console.log("- Counselor quick-reset through counselor-reset (COUNSELOR_RESET_PIN).");

@@ -8,6 +8,7 @@ import {
   isRateLimited,
 } from "../_shared/rate-limit.ts";
 import { secureCompare } from "../_shared/secure-compare.ts";
+import { issueOrganizerWallJwt } from "../_shared/supabase-jwt.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,7 @@ const corsHeaders: Record<string, string> = {
 
 const FAIL_LIMIT = 5;
 const FAIL_WINDOW_MS = 15 * 60 * 1000;
+const WALL_JWT_TTL_SECONDS = 60 * 60;
 
 function jsonResponse(
   body: unknown,
@@ -84,9 +86,32 @@ Deno.serve(async (req) => {
 
     clearRateLimit(failKey);
 
+    const jwtSecret = Deno.env.get("SUPABASE_JWT_SECRET");
+    if (!jwtSecret) {
+      return jsonResponse(
+        {
+          enabled: false,
+          error:
+            "Camp wall Realtime auth is not configured. Set SUPABASE_JWT_SECRET in Supabase secrets.",
+        },
+        503,
+      );
+    }
+
+    const accessToken = await issueOrganizerWallJwt(
+      jwtSecret,
+      wallChannel,
+      WALL_JWT_TTL_SECONDS,
+    );
+    const expiresAt = new Date(
+      Date.now() + WALL_JWT_TTL_SECONDS * 1000,
+    ).toISOString();
+
     return jsonResponse({
       enabled: true,
       channel: wallChannel,
+      access_token: accessToken,
+      expires_at: expiresAt,
     });
   } catch (error) {
     console.error("organizer-wall-session error", error);

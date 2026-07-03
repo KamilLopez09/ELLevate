@@ -77,6 +77,17 @@ export async function fetchOrganizerTelemetry(
   return payload;
 }
 
+export function escapeCsvCell(value: string | number): string {
+  let text = String(value);
+  if (/^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`;
+  }
+  if (/[",\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
 export function telemetryRowsToCsv(rows: CamperTelemetryRecord[]): string {
   const headers = [
     "completed_at",
@@ -95,21 +106,10 @@ export function telemetryRowsToCsv(rows: CamperTelemetryRecord[]): string {
     "cumulative_score",
   ] as const;
 
-  const escape = (value: string | number): string => {
-    let text = String(value);
-    if (/^[=+\-@\t\r]/.test(text)) {
-      text = `'${text}`;
-    }
-    if (/[",\n]/.test(text)) {
-      return `"${text.replace(/"/g, '""')}"`;
-    }
-    return text;
-  };
-
   const lines = [
     headers.join(","),
     ...rows.map((row) =>
-      headers.map((header) => escape(row[header] ?? "")).join(","),
+      headers.map((header) => escapeCsvCell(row[header] ?? "")).join(","),
     ),
   ];
 
@@ -144,6 +144,8 @@ export function exportTelemetryCsv(
 export interface OrganizerWallSession {
   enabled: boolean;
   channel?: string;
+  access_token?: string;
+  expires_at?: string;
   error?: string;
 }
 

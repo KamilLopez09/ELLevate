@@ -25,8 +25,8 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 | Severity | Open | Resolved |
 |----------|------|----------|
 | Critical | 0 | 1 |
-| High | 1 | 5 |
-| Medium | 1 | 10 |
+| High | 0 | 6 |
+| Medium | 0 | 11 |
 | Low | 0 | 1 |
 
 **Suggested fix order:** Session/privacy (A) → Scoring & badges (B) → Admin accuracy (D) → Edge security (E, F) → i18n & polish (C, G)
@@ -323,7 +323,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | High |
 | **Symptom** | Channel name hidden behind password, but anon clients may subscribe/publish once known. |
 | **Root cause** | No Realtime Authorization / private channel; broadcast uses public anon client pattern. |
@@ -381,7 +381,7 @@ Update status and add a **Resolved** note (PR/commit + verify steps) when each i
 
 | | |
 |---|---|
-| **Status** | Open |
+| **Status** | **Resolved** |
 | **Severity** | Medium |
 | **Symptom** | No automated tests; bugs can regress silently. |
 | **Files** | New `*.test.ts`, `package.json`, CI |
@@ -450,10 +450,10 @@ Sprint 4 — Polish           C1 → C2 → F2 → G1 → G2
 | E2 | Rate limit tuning | Medium | **Resolved** | — |
 | E3 | Resume token single-use | Medium | **Resolved** | — |
 | E4 | Telemetry auth hardening | High | **Resolved** | E1 |
-| F1 | Realtime authorization | High | Open | — |
+| F1 | Realtime authorization | High | **Resolved** | — |
 | F2 | Wall payload / dedupe | Low | **Resolved** | F1 |
 | G1 | metadataBase | Low | **Resolved** | — |
-| G2 | Regression tests | Medium | Open | A1, B1, D3, D4 |
+| G2 | Regression tests | Medium | **Resolved** | A1, B1, D3, D4 |
 
 ---
 

@@ -51,11 +51,11 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
         return undefined;
       }
 
-      if (!session.enabled || !session.channel) {
+      if (!session.enabled || !session.channel || !session.access_token) {
         setStatus("disabled");
         setStatusMessage(
           session.error ??
-            "Camp wall is not configured. Set CAMP_WALL_CHANNEL in Supabase secrets.",
+            "Camp wall is not configured. Set CAMP_WALL_CHANNEL and SUPABASE_JWT_SECRET in Supabase secrets.",
         );
         return undefined;
       }
@@ -74,6 +74,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
       return subscribeCampWall(
         supabase,
         session.channel,
+        session.access_token,
         (payload) => {
           const entry: CampWallPassEvent = {
             ...payload,
