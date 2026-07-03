@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { CampLogo } from "@/components/ui/CampLogo";
 import { GroupLeaderboardPanel } from "@/components/admin/GroupLeaderboardPanel";
 import { CampWallFeed } from "@/components/admin/CampWallFeed";
 import { CurriculumPublishPanel } from "@/components/admin/CurriculumPublishPanel";
@@ -180,25 +181,28 @@ export default function AdminPage() {
     >
       <div className="mx-auto max-w-6xl space-y-8">
         <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
-              Camp organizer
-            </p>
-            <h1
-              className="mt-2 font-display font-extrabold text-ink"
-              style={{ fontSize: "var(--text-h1)" }}
-            >
-              Camper activity
-            </h1>
-            <p className="mt-3 max-w-2xl text-ink/80">
-              Password-protected view of passed practice sessions. Your password
-              stays in this tab only — sign in again after refresh. Campers never
-              see this page — bookmark{" "}
-              <code className="rounded bg-paper/80 px-1.5 py-0.5 text-sm">
-                /admin
-              </code>{" "}
-              on your laptop or counselor device.
-            </p>
+          <div className="space-y-4">
+            <CampLogo variant="sidebar" href="/" className="max-w-[280px]" />
+            <div>
+              <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
+                Camp organizer
+              </p>
+              <h1
+                className="mt-2 font-display font-extrabold text-ink"
+                style={{ fontSize: "var(--text-h1)" }}
+              >
+                Camper activity
+              </h1>
+              <p className="mt-3 max-w-2xl text-ink/80">
+                Password-protected view of passed practice sessions. Your password
+                stays in this tab only — sign in again after refresh. Campers never
+                see this page — bookmark{" "}
+                <code className="rounded bg-paper/80 px-1.5 py-0.5 text-sm">
+                  /admin
+                </code>{" "}
+                on your laptop or counselor device.
+              </p>
+            </div>
           </div>
           <Link
             href="/"

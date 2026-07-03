@@ -1,4 +1,5 @@
 import { IntakeGatekeeper } from "@/components/sentence-canvas/IntakeGatekeeper";
+import { CampLogo } from "@/components/ui/CampLogo";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { StepRail } from "@/components/ui/StepRail";
 
@@ -25,13 +26,9 @@ export default function HomePage() {
 
         <div className="relative mx-auto flex max-w-3xl flex-col gap-8">
           <header className="ca-surface p-8 shadow-bento">
-            <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-              Certified Angels Summer Camp
-            </p>
-            <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
-              ELLevate
-            </h1>
-            <p className="mt-4 text-lg text-ink/80">
+            <h1 className="sr-only">ELLevate — Certified Angels Summer Camp</h1>
+            <CampLogo variant="hero" priority decorative className="mx-auto" />
+            <p className="mt-6 text-lg text-ink/80">
               Paint your way through English and Spanish — no tests, just creative
               play on your sentence canvas.
             </p>

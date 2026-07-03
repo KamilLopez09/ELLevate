@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { CampLogo } from "@/components/ui/CampLogo";
 import {
   CAMP_NAV,
   CAMP_SCREEN_LABELS,
@@ -71,14 +72,13 @@ function SidebarPanel({
   onNavigate?: () => void;
 }) {
   const items = CAMP_NAV[screen];
+  const logoHref = screen === "home" ? "/" : "/menu";
 
   return (
     <div className="flex h-full flex-col gap-6 p-5">
       <div>
-        <p className="text-bento-label font-semibold uppercase tracking-widest text-accent">
-          ELLevate
-        </p>
-        <h2 className="mt-1 font-display text-lg font-extrabold text-ink">
+        <CampLogo variant="sidebar" href={logoHref} />
+        <h2 className="mt-3 font-display text-lg font-extrabold text-ink">
           {CAMP_SCREEN_LABELS[screen]}
         </h2>
       </div>
@@ -220,20 +220,22 @@ export function CampScreenLayout({
       </AnimatePresence>
 
       <div className="md:pl-[260px]">
-        <header className="sticky top-0 z-20 flex min-h-[64px] items-center border-b border-border bg-card/95 px-4 backdrop-blur-sm md:hidden">
+        <header className="sticky top-0 z-20 flex min-h-[64px] items-center gap-3 border-b border-border bg-card/95 px-4 backdrop-blur-sm md:hidden">
           <button
             ref={toggleRef}
             type="button"
             aria-expanded={mobileOpen}
             aria-controls="camp-mobile-nav"
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex min-h-[64px] min-w-[64px] items-center justify-center rounded-xl border border-border bg-card font-display text-sm font-bold text-body transition hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-[64px] min-w-[64px] shrink-0 items-center justify-center rounded-xl border border-border bg-card font-display text-sm font-bold text-body transition hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {mobileOpen ? "Close" : "Menu"}
           </button>
-          <p className="ml-3 font-display font-bold text-ink">
-            {CAMP_SCREEN_LABELS[screen]}
-          </p>
+          <CampLogo
+            variant="compact"
+            href={screen === "home" ? "/" : "/menu"}
+            className="min-w-0 flex-1"
+          />
         </header>
 
         <div className="relative">{children}</div>

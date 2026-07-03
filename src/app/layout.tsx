@@ -25,6 +25,20 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icon.svg",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "ELLevate | Certified Angels",
+    description:
+      "A free, interactive ESL web app for Certified Angels summer camp — learn English through creative play.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1024,
+        height: 341,
+        alt: "ELLevate — Certified Angels Summer Camp",
+      },
+    ],
   },
 };
 
