@@ -70,6 +70,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run build` | Production static export to `out/` |
 | `npm run start` | Serve production build (after build) |
 | `npm run lint` | ESLint via Next.js |
+| `npm run test` | Vitest regression tests |
 
 ---
 
@@ -100,9 +101,14 @@ supabase/migrations/001_camper_telemetry.sql
 007_coppa_compliance_schema.sql
 008_telemetry_edge_write_proxy.sql
 009_lock_camper_intake.sql
+010_camper_resume_snapshots.sql
+011_curriculum_revisions.sql   (optional legacy)
+012_group_leaderboard.sql
+013_telemetry_week_unique_and_resume_tokens.sql
+014_realtime_camp_wall_authorization.sql
 ```
 
-Fresh projects: run all nine. Existing projects: apply any missing files in sequence.
+Fresh projects: run all through **014**. Existing projects: apply any missing files in sequence (paste each into the Supabase **SQL Editor** and run).
 
 RLS **denies all direct table access** to the anon/authenticated roles on `camper_telemetry` (migration `008`); `camper_intake` direct INSERT is also revoked (`009`). Telemetry is written by the **`camper-telemetry` Edge Function** using the service role key. Deploy the Edge Functions:
 

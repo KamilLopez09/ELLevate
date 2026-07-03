@@ -139,9 +139,7 @@ never ships to browsers**.
   an IP for 15 minutes after **5 failed password attempts** (constant-time compare).
 - **`camper-resume`** — issue attestation token, create/restore 6-character progress codes (7-day TTL, single-use on restore). Rate limited per IP.
 - **`counselor-reset`** — verifies `COUNSELOR_RESET_PIN` for hidden quick-reset on shared tablets.
-- **`curriculum-fetch`** — public read of the active curriculum revision (rate limited; 404 when none published).
-- **`curriculum-publish`** — organizer password required; validates JSON and activates a new revision.
-- **`organizer-wall-session`** — returns the Realtime broadcast channel name after organizer password check.
+- **`organizer-wall-session`** — returns the Realtime channel name and a short-lived JWT after organizer password check (private channel subscribe).
 - **`camper-telemetry`** also broadcasts sanitized pass events to `CAMP_WALL_CHANNEL` when that secret is set.
 
 ### Deploy once per Supabase project
@@ -155,22 +153,24 @@ npm run supabase:deploy-edge
 npm run supabase:deploy-organizer
 
 # ...or manually:
-supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password" COUNSELOR_RESET_PIN="your-camp-pin" RESUME_ATTESTATION_SECRET="your-random-secret" CAMP_WALL_CHANNEL="camp-wall-your-random-string"
+supabase secrets set ORGANIZER_PASSWORD="..." COUNSELOR_RESET_PIN="..." RESUME_ATTESTATION_SECRET="..." CAMP_WALL_CHANNEL="camp-wall-..." CAMP_WALL_JWT_SECRET="legacy-jwt-secret-from-dashboard"
 supabase functions deploy camper-telemetry --no-verify-jwt
 supabase functions deploy organizer-telemetry --no-verify-jwt
 supabase functions deploy camper-resume --no-verify-jwt
 supabase functions deploy counselor-reset --no-verify-jwt
-supabase functions deploy curriculum-fetch --no-verify-jwt
-supabase functions deploy curriculum-publish --no-verify-jwt
 supabase functions deploy organizer-wall-session --no-verify-jwt
+supabase functions deploy group-leaderboard --no-verify-jwt
 ```
+
+Apply SQL migrations **013** and **014** in the Supabase SQL Editor (paste each file, run in order) if not already applied. After **014**, disable **Allow public access** under **Project Settings → Realtime**.
 
 | Secret / setting | Purpose |
 |------------------|---------|
-| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry, curriculum-publish, camp wall) |
+| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry, camp wall) |
 | `COUNSELOR_RESET_PIN` | PIN for counselor quick-reset (counselor-reset; not in client bundle) |
 | `RESUME_ATTESTATION_SECRET` | HMAC secret for resume-code create attestation (camper-resume; not in client bundle) |
 | `CAMP_WALL_CHANNEL` | Secret Realtime broadcast channel for live pass feed (organizer-wall-session + camper-telemetry) |
+| `CAMP_WALL_JWT_SECRET` | **Legacy JWT secret** from **Project Settings → JWT Keys → Reveal** — signs organizer Realtime subscribe tokens. Names cannot use the `SUPABASE_` prefix. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime; used by Edge Functions |
 | `verify_jwt = false` | Functions are called with the anon key; auth is custom (password) or open write-proxy |
 
