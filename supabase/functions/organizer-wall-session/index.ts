@@ -86,13 +86,13 @@ Deno.serve(async (req) => {
 
     clearRateLimit(failKey);
 
-    const jwtSecret = Deno.env.get("SUPABASE_JWT_SECRET");
+    const jwtSecret = Deno.env.get("CAMP_WALL_JWT_SECRET");
     if (!jwtSecret) {
       return jsonResponse(
         {
           enabled: false,
           error:
-            "Camp wall Realtime auth is not configured. Set SUPABASE_JWT_SECRET in Supabase secrets.",
+            "Camp wall Realtime auth is not configured. Set CAMP_WALL_JWT_SECRET in Supabase secrets.",
         },
         503,
       );

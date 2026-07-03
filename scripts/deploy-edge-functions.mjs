@@ -33,10 +33,10 @@ function requireEnv(name) {
     } else if (name === "CAMP_WALL_CHANNEL") {
       console.error("Secret Realtime broadcast channel for organizer camp wall.");
       console.error('PowerShell: $env:CAMP_WALL_CHANNEL = "camp-wall-your-random-string"');
-    } else if (name === "SUPABASE_JWT_SECRET") {
-      console.error("Project JWT secret for private Realtime camp wall subscribe tokens.");
-      console.error("Dashboard: Project Settings → API → JWT Secret");
-      console.error('PowerShell: $env:SUPABASE_JWT_SECRET = "your-jwt-secret"');
+    } else if (name === "CAMP_WALL_JWT_SECRET") {
+      console.error("Legacy JWT secret for private Realtime camp wall subscribe tokens.");
+      console.error("Dashboard: Project Settings → JWT Keys → Legacy JWT secret (Reveal)");
+      console.error('PowerShell: $env:CAMP_WALL_JWT_SECRET = "your-jwt-secret"');
     }
     process.exit(1);
   }
@@ -64,7 +64,7 @@ const resumeAttestationSecret = requireEnv("RESUME_ATTESTATION_SECRET");
 const campWallChannel =
   process.env.CAMP_WALL_CHANNEL ??
   `camp-wall-${randomBytes(16).toString("hex")}`;
-const jwtSecret = requireEnv("SUPABASE_JWT_SECRET");
+const jwtSecret = requireEnv("CAMP_WALL_JWT_SECRET");
 
 run("npx", ["supabase", "link", "--project-ref", process.env.SUPABASE_PROJECT_REF, "--yes"]);
 run("npx", [
@@ -75,7 +75,7 @@ run("npx", [
   `COUNSELOR_RESET_PIN=${counselorPin}`,
   `RESUME_ATTESTATION_SECRET=${resumeAttestationSecret}`,
   `CAMP_WALL_CHANNEL=${campWallChannel}`,
-  `SUPABASE_JWT_SECRET=${jwtSecret}`,
+  `CAMP_WALL_JWT_SECRET=${jwtSecret}`,
 ]);
 
 const functions = [

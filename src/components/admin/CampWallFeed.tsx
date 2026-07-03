@@ -55,7 +55,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
         setStatus("disabled");
         setStatusMessage(
           session.error ??
-            "Camp wall is not configured. Set CAMP_WALL_CHANNEL and SUPABASE_JWT_SECRET in Supabase secrets.",
+            "Camp wall is not configured. Set CAMP_WALL_CHANNEL and CAMP_WALL_JWT_SECRET in Supabase secrets.",
         );
         return undefined;
       }
