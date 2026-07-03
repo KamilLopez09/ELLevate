@@ -7,6 +7,7 @@
 | [ANALYTICS.md](ANALYTICS.md) | **Camp organizers:** view interactions in Supabase dashboard + SQL |
 | [CONSTRAINTS.md](CONSTRAINTS.md) | Known limits (static export, RLS, curriculum in bundle) |
 | [RESOLVE.md](RESOLVE.md) | Phased roadmap with plain-English summaries |
+| [BUG_RESOLVE.md](BUG_RESOLVE.md) | **Bug scan backlog:** findings, nested fix phases, sprint order |
 | [REVIEW.md](REVIEW.md) | Security & UI/UX audit (July 2026) |
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Task batches from REVIEW + Fable 5 review workflow |
 | [DESIGN.md](DESIGN.md) | Architecture decision records (ADRs) |
