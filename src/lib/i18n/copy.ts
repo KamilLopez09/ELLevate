@@ -140,8 +140,9 @@ const EN: CampCopy = {
       invalidCode: "Enter the full 6-character code.",
       notFound: "Invalid or expired code.",
       notConfigured:
-        "Camp servers are not set up on this site. Ask your counselor to redeploy with Supabase keys.",
-      network: "Could not reach camp servers. Check Wi‑Fi and try again.",
+        "Camp servers are not set up on this site. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then redeploy.",
+      network:
+        "Could not reach camp servers. Check Wi‑Fi and that Supabase Edge Functions are deployed.",
       retry: "Try again",
     },
   },

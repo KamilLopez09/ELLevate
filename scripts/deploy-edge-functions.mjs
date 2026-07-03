@@ -77,8 +77,6 @@ const functions = [
   "organizer-telemetry",
   "camper-resume",
   "counselor-reset",
-  "curriculum-fetch",
-  "curriculum-publish",
   "organizer-wall-session",
   "group-leaderboard",
 ];
@@ -93,7 +91,6 @@ console.log("- Apply migration 010_camper_resume_snapshots.sql if not yet applie
 console.log("- Telemetry writes through camper-telemetry.");
 console.log("- Resume codes through camper-resume.");
 console.log("- Counselor quick-reset through counselor-reset (COUNSELOR_RESET_PIN).");
-console.log("- Remote curriculum through curriculum-fetch + curriculum-publish.");
 console.log("- Live camp wall through organizer-wall-session + camper-telemetry broadcast.");
 console.log("- Apply migration 012_group_leaderboard.sql if not yet applied.");
 console.log("- Group standings for campers through group-leaderboard (RPC).");

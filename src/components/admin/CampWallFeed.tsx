@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { Button } from "@/components/ui/button";
 import { subscribeCampWall } from "@/lib/camp-wall-realtime";
 import { fetchOrganizerWallSession } from "@/lib/organizer-api";
 import { getSupabaseConfig } from "@/lib/supabase/client";
@@ -36,92 +37,98 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
     "connecting",
   );
   const [statusMessage, setStatusMessage] = useState("");
+  const [connectAttempt, setConnectAttempt] = useState(0);
   const seenIds = useRef(new Set<string>());
+
+  const connect = useCallback(async (cancelled: () => boolean) => {
+    setStatus("connecting");
+    setStatusMessage("Connecting to live camp feed…");
+
+    try {
+      const session = await fetchOrganizerWallSession(password);
+      if (cancelled()) {
+        return undefined;
+      }
+
+      if (!session.enabled || !session.channel) {
+        setStatus("disabled");
+        setStatusMessage(
+          session.error ??
+            "Camp wall is not configured. Set CAMP_WALL_CHANNEL in Supabase secrets.",
+        );
+        return undefined;
+      }
+
+      const config = getSupabaseConfig();
+      if (!config) {
+        setStatus("offline");
+        setStatusMessage("Supabase is not configured in this build.");
+        return undefined;
+      }
+
+      const supabase = createClient(config.url, config.key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+
+      return subscribeCampWall(
+        supabase,
+        session.channel,
+        (payload) => {
+          const entry: CampWallPassEvent = {
+            ...payload,
+            id: crypto.randomUUID(),
+          };
+          const dedupeKey = eventId(entry);
+          if (seenIds.current.has(dedupeKey)) {
+            return;
+          }
+          seenIds.current.add(dedupeKey);
+
+          setEvents((prev) => [entry, ...prev].slice(0, MAX_EVENTS));
+        },
+        (subscribeStatus) => {
+          if (subscribeStatus === "SUBSCRIBED") {
+            setStatus("live");
+            setStatusMessage("Listening for new week passes in real time.");
+          }
+          if (
+            subscribeStatus === "CHANNEL_ERROR" ||
+            subscribeStatus === "TIMED_OUT"
+          ) {
+            setStatus("offline");
+            setStatusMessage(
+              "Lost connection to the camp wall. Refresh the page.",
+            );
+          }
+        },
+      );
+    } catch (error) {
+      if (cancelled()) {
+        return undefined;
+      }
+      setStatus("offline");
+      setStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not connect to the camp wall.",
+      );
+      return undefined;
+    }
+  }, [password]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     let cancelled = false;
 
-    const connect = async () => {
-      setStatus("connecting");
-      setStatusMessage("Connecting to live camp feed…");
-
-      try {
-        const session = await fetchOrganizerWallSession(password);
-        if (cancelled) {
-          return;
-        }
-
-        if (!session.enabled || !session.channel) {
-          setStatus("disabled");
-          setStatusMessage(
-            session.error ??
-              "Camp wall is not configured. Set CAMP_WALL_CHANNEL in Supabase secrets.",
-          );
-          return;
-        }
-
-        const config = getSupabaseConfig();
-        if (!config) {
-          setStatus("offline");
-          setStatusMessage("Supabase is not configured in this build.");
-          return;
-        }
-
-        const supabase = createClient(config.url, config.key, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
-
-        unsubscribe = subscribeCampWall(
-          supabase,
-          session.channel,
-          (payload) => {
-            const entry: CampWallPassEvent = {
-              ...payload,
-              id: crypto.randomUUID(),
-            };
-            const dedupeKey = eventId(entry);
-            if (seenIds.current.has(dedupeKey)) {
-              return;
-            }
-            seenIds.current.add(dedupeKey);
-
-            setEvents((prev) => [entry, ...prev].slice(0, MAX_EVENTS));
-          },
-          (subscribeStatus) => {
-            if (subscribeStatus === "SUBSCRIBED") {
-              setStatus("live");
-              setStatusMessage("Listening for new week passes in real time.");
-            }
-            if (
-              subscribeStatus === "CHANNEL_ERROR" ||
-              subscribeStatus === "TIMED_OUT"
-            ) {
-              setStatus("offline");
-              setStatusMessage("Lost connection to the camp wall. Refresh the page.");
-            }
-          },
-        );
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-        setStatus("offline");
-        setStatusMessage(
-          error instanceof Error
-            ? error.message
-            : "Could not connect to the camp wall.",
-        );
-      }
-    };
-
-    void connect();
+    void connect(() => cancelled).then((cleanup) => {
+      unsubscribe = cleanup;
+    });
 
     return () => {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [password]);
+  }, [connect, connectAttempt]);
 
   return (
     <section
@@ -154,6 +161,18 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
       </div>
 
       <p className="text-sm text-ink/70">{statusMessage}</p>
+
+      {status === "offline" || status === "disabled" ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={() => setConnectAttempt((value) => value + 1)}
+          className="min-h-[44px]"
+        >
+          Retry connection
+        </Button>
+      ) : null}
 
       {events.length === 0 ? (
         <p className="rounded-xl bg-surface-muted px-4 py-6 text-center text-sm text-ink/70">

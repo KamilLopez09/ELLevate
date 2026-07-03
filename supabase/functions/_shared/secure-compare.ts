@@ -14,5 +14,14 @@ export async function secureCompare(
     sha256(provided),
     sha256(expected),
   ]);
-  return crypto.subtle.timingSafeEqual(providedHash, expectedHash);
+
+  if (providedHash.length !== expectedHash.length) {
+    return false;
+  }
+
+  let diff = 0;
+  for (let i = 0; i < providedHash.length; i += 1) {
+    diff |= providedHash[i]! ^ expectedHash[i]!;
+  }
+  return diff === 0;
 }

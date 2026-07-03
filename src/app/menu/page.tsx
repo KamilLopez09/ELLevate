@@ -63,7 +63,7 @@ const COUNSELOR_HOLD_MS = 2500;
 export default function MenuPage() {
   const router = useRouter();
   const copy = useCopy();
-  const { curriculum, isLoading: curriculumLoading } = useCurriculum();
+  const { curriculum } = useCurriculum();
   const weekNumbers = getWeekNumbers();
   const totalWeeks = getTotalWeeks();
   const [ready, setReady] = useState(false);
@@ -81,9 +81,6 @@ export default function MenuPage() {
   const counselorHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (curriculumLoading) {
-      return;
-    }
     const camper = readCamperSession();
     if (!camper) {
       router.replace("/");
@@ -100,7 +97,7 @@ export default function MenuPage() {
       (refreshed?.unlockedAchievements ?? []).filter(isAchievementId),
     );
     setReady(true);
-  }, [router, curriculumLoading]);
+  }, [router]);
 
   const startWeek = (weekNumber: number) => {
     setCurrentWeek(weekNumber);

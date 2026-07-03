@@ -1,4 +1,8 @@
-import { getSupabaseConfig } from "@/lib/supabase/client";
+import {
+  callEdgeFunction,
+  edgeFetchFailureMessage,
+  isEdgeFetchFailure,
+} from "@/lib/supabase/edge-functions";
 
 export interface CamperTelemetryRecord {
   id: string;
@@ -42,26 +46,15 @@ export async function fetchOrganizerTelemetry(
   password: string,
   limit = 500,
 ): Promise<OrganizerTelemetryResponse> {
-  const config = getSupabaseConfig();
-  if (!config) {
-    throw new Error(
-      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
+  const response = await callEdgeFunction("organizer-telemetry", {
+    method: "POST",
+    body: { limit },
+    headers: { "x-organizer-password": password },
+  });
 
-  const response = await fetch(
-    `${config.url}/functions/v1/organizer-telemetry`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        apikey: config.key,
-        "Content-Type": "application/json",
-        "x-organizer-password": password,
-      },
-      body: JSON.stringify({ limit }),
-    },
-  );
+  if (isEdgeFetchFailure(response)) {
+    throw new Error(edgeFetchFailureMessage(response));
+  }
 
   const payload = (await response.json()) as OrganizerTelemetryResponse & {
     error?: string;
@@ -142,98 +135,6 @@ export function exportTelemetryCsv(
   );
 }
 
-export interface CurriculumRevisionInfo {
-  active: boolean;
-  revision_tag?: string;
-  published_at?: string;
-}
-
-export interface PublishCurriculumPayload {
-  content: unknown;
-  revision_tag?: string;
-  published_by?: string;
-}
-
-export interface PublishCurriculumResult {
-  ok: boolean;
-  revision_tag: string;
-  published_at: string;
-}
-
-export async function fetchCurriculumRevision(): Promise<CurriculumRevisionInfo> {
-  const config = getSupabaseConfig();
-  if (!config) {
-    throw new Error("Supabase is not configured.");
-  }
-
-  const response = await fetch(
-    `${config.url}/functions/v1/curriculum-fetch`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        apikey: config.key,
-      },
-    },
-  );
-
-  if (response.status === 404) {
-    return { active: false };
-  }
-
-  const payload = (await response.json()) as CurriculumRevisionInfo & {
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(payload.error ?? "Could not load curriculum status");
-  }
-
-  return {
-    active: true,
-    revision_tag: payload.revision_tag,
-    published_at: payload.published_at,
-  };
-}
-
-export async function publishCurriculumRevision(
-  password: string,
-  body: PublishCurriculumPayload,
-): Promise<PublishCurriculumResult> {
-  const config = getSupabaseConfig();
-  if (!config) {
-    throw new Error("Supabase is not configured.");
-  }
-
-  const response = await fetch(
-    `${config.url}/functions/v1/curriculum-publish`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        apikey: config.key,
-        "Content-Type": "application/json",
-        "x-organizer-password": password,
-      },
-      body: JSON.stringify(body),
-    },
-  );
-
-  const payload = (await response.json()) as PublishCurriculumResult & {
-    error?: string;
-  };
-
-  if (response.status === 429) {
-    throw new Error(payload.error ?? "Too many attempts. Wait and try again.");
-  }
-
-  if (!response.ok) {
-    throw new Error(payload.error ?? "Could not publish curriculum");
-  }
-
-  return payload;
-}
-
 export interface OrganizerWallSession {
   enabled: boolean;
   channel?: string;
@@ -243,27 +144,22 @@ export interface OrganizerWallSession {
 export async function fetchOrganizerWallSession(
   password: string,
 ): Promise<OrganizerWallSession> {
-  const config = getSupabaseConfig();
-  if (!config) {
-    throw new Error("Supabase is not configured.");
+  const response = await callEdgeFunction("organizer-wall-session", {
+    method: "POST",
+    headers: { "x-organizer-password": password },
+  });
+
+  if (isEdgeFetchFailure(response)) {
+    throw new Error(edgeFetchFailureMessage(response));
   }
 
-  const response = await fetch(
-    `${config.url}/functions/v1/organizer-wall-session`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.key}`,
-        apikey: config.key,
-        "Content-Type": "application/json",
-        "x-organizer-password": password,
-      },
-    },
-  );
+  const payload = (await response.json().catch(() => null)) as
+    | (OrganizerWallSession & { error?: string })
+    | null;
 
-  const payload = (await response.json()) as OrganizerWallSession & {
-    error?: string;
-  };
+  if (!payload) {
+    throw new Error("Camp wall returned an invalid response.");
+  }
 
   if (response.status === 429) {
     throw new Error(
@@ -279,7 +175,9 @@ export async function fetchOrganizerWallSession(
   if (response.status === 503) {
     return {
       enabled: false,
-      error: payload.error ?? "Camp wall is not configured.",
+      error:
+        payload.error ??
+        "Camp wall is not configured. Run npm run supabase:deploy-edge to set CAMP_WALL_CHANNEL.",
     };
   }
 

@@ -43,45 +43,53 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
-  const ip = getClientIp(req);
-  const failKey = `organizer-fail:${ip}`;
+  try {
+    const ip = getClientIp(req);
+    const failKey = `organizer-fail:${ip}`;
 
-  if (isRateLimited(failKey, FAIL_LIMIT, FAIL_WINDOW_MS).allowed === false) {
-    return jsonResponse(
-      { error: "Too many failed sign-in attempts. Wait 15 minutes." },
-      429,
-      { "Retry-After": "900" },
-    );
+    const lockout = isRateLimited(failKey, FAIL_LIMIT, FAIL_WINDOW_MS);
+    if (!lockout.allowed) {
+      return jsonResponse(
+        { error: "Too many failed sign-in attempts. Wait 15 minutes." },
+        429,
+        lockout.retryAfterSeconds
+          ? { "Retry-After": String(lockout.retryAfterSeconds) }
+          : { "Retry-After": "900" },
+      );
+    }
+
+    const expectedPassword = Deno.env.get("ORGANIZER_PASSWORD");
+    const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
+
+    if (!expectedPassword) {
+      return jsonResponse({ error: "Organizer access is not configured" }, 503);
+    }
+
+    if (!wallChannel) {
+      return jsonResponse(
+        {
+          enabled: false,
+          error: "Camp wall is not configured on the server.",
+        },
+        503,
+      );
+    }
+
+    const providedPassword = req.headers.get("x-organizer-password") ?? "";
+    const passwordValid = await secureCompare(providedPassword, expectedPassword);
+    if (!passwordValid) {
+      incrementRateLimit(failKey, FAIL_WINDOW_MS);
+      return jsonResponse({ error: "Invalid organizer password" }, 401);
+    }
+
+    clearRateLimit(failKey);
+
+    return jsonResponse({
+      enabled: true,
+      channel: wallChannel,
+    });
+  } catch (error) {
+    console.error("organizer-wall-session error", error);
+    return jsonResponse({ error: "Could not start camp wall session" }, 500);
   }
-
-  const expectedPassword = Deno.env.get("ORGANIZER_PASSWORD");
-  const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
-
-  if (!expectedPassword) {
-    return jsonResponse({ error: "Organizer access is not configured" }, 503);
-  }
-
-  if (!wallChannel) {
-    return jsonResponse(
-      {
-        enabled: false,
-        error: "Camp wall is not configured on the server.",
-      },
-      503,
-    );
-  }
-
-  const providedPassword = req.headers.get("x-organizer-password") ?? "";
-  const passwordValid = await secureCompare(providedPassword, expectedPassword);
-  if (!passwordValid) {
-    incrementRateLimit(failKey, FAIL_WINDOW_MS);
-    return jsonResponse({ error: "Invalid organizer password" }, 401);
-  }
-
-  clearRateLimit(failKey);
-
-  return jsonResponse({
-    enabled: true,
-    channel: wallChannel,
-  });
 });

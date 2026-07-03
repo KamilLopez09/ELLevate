@@ -4,11 +4,11 @@ import type {
   LessonWeek,
   Prompt,
 } from "@/data/curriculum";
+import { curriculum } from "@/data/curriculum";
 import {
   CURRENT_WEEK_KEY,
   weekPassedKey,
 } from "@/lib/camp-session-keys";
-import { getActiveCurriculum } from "@/lib/curriculum-active";
 import {
   getCampSessionItem,
   setCampSessionItem,
@@ -18,7 +18,7 @@ import type { AgeBracket } from "@/types/sentence-canvas";
 export { CURRENT_WEEK_KEY, weekPassedKey } from "@/lib/camp-session-keys";
 
 export function getWeekNumbers(): number[] {
-  return Object.keys(getActiveCurriculum())
+  return Object.keys(curriculum)
     .map(Number)
     .sort((a, b) => a - b);
 }
@@ -31,7 +31,7 @@ export function getCurrentWeek(): number {
   if (typeof window === "undefined") {
     return 1;
   }
-  const catalog = getActiveCurriculum();
+  const catalog = curriculum;
   const raw = getCampSessionItem(CURRENT_WEEK_KEY);
   const parsed = raw ? Number.parseInt(raw, 10) : 1;
   return catalog[parsed] ? parsed : 1;
@@ -83,7 +83,7 @@ export function countWeeksPassed(): number {
 }
 
 export function getLessonWeek(weekNumber: number): LessonWeek | null {
-  return getActiveCurriculum()[weekNumber] ?? null;
+  return curriculum[weekNumber] ?? null;
 }
 
 export function toAgeGroup(ageBracket: AgeBracket): AgeGroup {

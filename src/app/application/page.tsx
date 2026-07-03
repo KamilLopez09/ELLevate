@@ -34,7 +34,7 @@ const DEFAULT_AGE_BRACKET = "8-10";
 export default function ApplicationPage() {
   const router = useRouter();
   const copy = useCopy();
-  const { curriculum, isLoading: curriculumLoading } = useCurriculum();
+  const { curriculum } = useCurriculum();
   const [ready, setReady] = useState(false);
   const [weekNumber, setWeekNumber] = useState(1);
   const [progress, setProgress] = useState<LessonProgressState>(
@@ -71,9 +71,6 @@ export default function ApplicationPage() {
   );
 
   useEffect(() => {
-    if (curriculumLoading) {
-      return;
-    }
     if (!readCamperSession()) {
       router.replace("/");
       return;
@@ -86,7 +83,7 @@ export default function ApplicationPage() {
     setWeekNumber(getCurrentWeek());
     setSelectedMode(getSelectedGameMode());
     setReady(true);
-  }, [router, curriculumLoading]);
+  }, [router]);
 
   useEffect(() => {
     setProgress(createInitialProgress(sessionPrompts.length || 10));

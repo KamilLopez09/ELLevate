@@ -5,8 +5,8 @@ import {
   type CampProgressSnapshot,
 } from "@/lib/camp-progress-snapshot";
 import { touchCampSessionClock } from "@/lib/session-store";
-import { getCopy } from "@/lib/i18n/copy";
 import {
+  edgeFetchFailureMessage,
   isEdgeFetchFailure,
   postEdgeFunction,
   type EdgeFetchFailure,
@@ -29,11 +29,7 @@ export type RestoreResumeCodeResult =
   | { ok: false; error: string };
 
 function resumeReachabilityError(failure: EdgeFetchFailure): string {
-  const copy = getCopy("en");
-  if (failure.kind === "not_configured") {
-    return copy.resume.errors.notConfigured;
-  }
-  return copy.resume.errors.network;
+  return edgeFetchFailureMessage(failure);
 }
 
 async function postResumeFunction(

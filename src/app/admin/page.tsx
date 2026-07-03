@@ -5,7 +5,6 @@ import Link from "next/link";
 import { CampLogo } from "@/components/ui/CampLogo";
 import { GroupLeaderboardPanel } from "@/components/admin/GroupLeaderboardPanel";
 import { CampWallFeed } from "@/components/admin/CampWallFeed";
-import { CurriculumPublishPanel } from "@/components/admin/CurriculumPublishPanel";
 import {
   OrganizerFiltersBar,
   EMPTY_ORGANIZER_FILTERS,
@@ -282,8 +281,6 @@ export default function AdminPage() {
               onChange={setFilters}
               onReset={() => setFilters(EMPTY_ORGANIZER_FILTERS)}
             />
-
-            <CurriculumPublishPanel password={password} />
 
             <SummaryCards summary={filteredSummary} />
             <SummaryCharts
