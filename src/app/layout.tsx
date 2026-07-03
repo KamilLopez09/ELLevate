@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Open_Sans } from "next/font/google";
 import "./globals.css";
+import { CurriculumProvider } from "@/components/providers/CurriculumProvider";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { MotionProvider } from "@/components/providers/MotionProvider";
 import { PwaProvider } from "@/components/providers/PwaProvider";
@@ -44,7 +45,9 @@ export default function RootLayout({
         </a>
         <MotionProvider>
           <LocaleProvider>
-            <PwaProvider>{children}</PwaProvider>
+            <CurriculumProvider>
+              <PwaProvider>{children}</PwaProvider>
+            </CurriculumProvider>
           </LocaleProvider>
         </MotionProvider>
       </body>

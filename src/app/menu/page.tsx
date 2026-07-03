@@ -10,14 +10,14 @@ import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { CounselorPinModal } from "@/components/ui/CounselorPinModal";
 import { ResetCamperModal } from "@/components/ui/ResetCamperModal";
 import { ResumeCodeModal } from "@/components/ui/ResumeCodeModal";
-import { curriculum } from "@/data/curriculum";
+import { useCurriculum } from "@/components/providers/CurriculumProvider";
 import {
   countWeeksPassed,
+  getTotalWeeks,
+  getWeekNumbers,
   isWeekPassed,
   isWeekUnlocked,
   setCurrentWeek,
-  TOTAL_WEEKS,
-  WEEK_NUMBERS,
 } from "@/lib/curriculum-engine";
 import {
   clearCampSession,
@@ -55,6 +55,9 @@ const COUNSELOR_HOLD_MS = 2500;
 export default function MenuPage() {
   const router = useRouter();
   const copy = useCopy();
+  const { curriculum, isLoading: curriculumLoading } = useCurriculum();
+  const weekNumbers = getWeekNumbers();
+  const totalWeeks = getTotalWeeks();
   const [ready, setReady] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [weeksPassed, setWeeksPassed] = useState(0);
@@ -65,6 +68,9 @@ export default function MenuPage() {
   const counselorHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (curriculumLoading) {
+      return;
+    }
     const camper = readCamperSession();
     if (!camper) {
       router.replace("/");
@@ -74,7 +80,7 @@ export default function MenuPage() {
     setWeeksPassed(countWeeksPassed());
     setCumulativeScore(camper.cumulativeScore);
     setReady(true);
-  }, [router]);
+  }, [router, curriculumLoading]);
 
   const startWeek = (weekNumber: number) => {
     setCurrentWeek(weekNumber);
@@ -174,7 +180,7 @@ export default function MenuPage() {
                 aria-label="Your camp progress"
               >
                 <span className="inline-flex min-h-[44px] items-center rounded-full bg-purple-accent/15 px-4 py-2 text-bento-label font-bold text-purple-accent">
-                  {copy.menu.weeksPassed(weeksPassed, TOTAL_WEEKS)}
+                  {copy.menu.weeksPassed(weeksPassed, totalWeeks)}
                 </span>
                 <span className="inline-flex min-h-[44px] items-center rounded-full bg-teal-accent/15 px-4 py-2 text-bento-label font-bold tabular-nums text-teal-accent">
                   {copy.menu.totalPoints(cumulativeScore.toLocaleString())}
@@ -202,7 +208,7 @@ export default function MenuPage() {
               </div>
             </BentoCard>
 
-            {WEEK_NUMBERS.map((weekNumber, index) => {
+            {weekNumbers.map((weekNumber, index) => {
               const week = curriculum[weekNumber];
               const unlocked = isWeekUnlocked(weekNumber);
               const passed = isWeekPassed(weekNumber);
@@ -224,6 +230,7 @@ export default function MenuPage() {
                     <WeekCardContent
                       weekNumber={weekNumber}
                       theme={week.theme}
+                      totalWeeks={totalWeeks}
                       unlocked={false}
                       passed={false}
                       copy={copy}
@@ -246,6 +253,7 @@ export default function MenuPage() {
                   <WeekCardContent
                     weekNumber={weekNumber}
                     theme={week.theme}
+                    totalWeeks={totalWeeks}
                     unlocked
                     passed={passed}
                     copy={copy}
@@ -255,7 +263,7 @@ export default function MenuPage() {
             })}
 
             <BentoCard
-              index={WEEK_NUMBERS.length + 1}
+              index={weekNumbers.length + 1}
               span="sm:col-span-6"
               accent="warm"
               tilt={0}
@@ -297,12 +305,14 @@ export default function MenuPage() {
 function WeekCardContent({
   weekNumber,
   theme,
+  totalWeeks,
   unlocked,
   passed,
   copy,
 }: {
   weekNumber: number;
   theme: string;
+  totalWeeks: number;
   unlocked: boolean;
   passed: boolean;
   copy: CampCopy;
@@ -326,7 +336,7 @@ function WeekCardContent({
         {theme}
       </span>
       <span className="text-bento-label text-ink/70">
-        {copy.menu.weekOf(weekNumber, TOTAL_WEEKS)}
+        {copy.menu.weekOf(weekNumber, totalWeeks)}
       </span>
       {unlocked ? (
         passed ? (

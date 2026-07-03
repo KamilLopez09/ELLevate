@@ -141,3 +141,151 @@ export function exportTelemetryCsv(
     telemetryRowsToCsv(rows),
   );
 }
+
+export interface CurriculumRevisionInfo {
+  active: boolean;
+  revision_tag?: string;
+  published_at?: string;
+}
+
+export interface PublishCurriculumPayload {
+  content: unknown;
+  revision_tag?: string;
+  published_by?: string;
+}
+
+export interface PublishCurriculumResult {
+  ok: boolean;
+  revision_tag: string;
+  published_at: string;
+}
+
+export async function fetchCurriculumRevision(): Promise<CurriculumRevisionInfo> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const response = await fetch(
+    `${config.url}/functions/v1/curriculum-fetch`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${config.key}`,
+        apikey: config.key,
+      },
+    },
+  );
+
+  if (response.status === 404) {
+    return { active: false };
+  }
+
+  const payload = (await response.json()) as CurriculumRevisionInfo & {
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Could not load curriculum status");
+  }
+
+  return {
+    active: true,
+    revision_tag: payload.revision_tag,
+    published_at: payload.published_at,
+  };
+}
+
+export async function publishCurriculumRevision(
+  password: string,
+  body: PublishCurriculumPayload,
+): Promise<PublishCurriculumResult> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const response = await fetch(
+    `${config.url}/functions/v1/curriculum-publish`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.key}`,
+        apikey: config.key,
+        "Content-Type": "application/json",
+        "x-organizer-password": password,
+      },
+      body: JSON.stringify(body),
+    },
+  );
+
+  const payload = (await response.json()) as PublishCurriculumResult & {
+    error?: string;
+  };
+
+  if (response.status === 429) {
+    throw new Error(payload.error ?? "Too many attempts. Wait and try again.");
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Could not publish curriculum");
+  }
+
+  return payload;
+}
+
+export interface OrganizerWallSession {
+  enabled: boolean;
+  channel?: string;
+  error?: string;
+}
+
+export async function fetchOrganizerWallSession(
+  password: string,
+): Promise<OrganizerWallSession> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const response = await fetch(
+    `${config.url}/functions/v1/organizer-wall-session`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.key}`,
+        apikey: config.key,
+        "Content-Type": "application/json",
+        "x-organizer-password": password,
+      },
+    },
+  );
+
+  const payload = (await response.json()) as OrganizerWallSession & {
+    error?: string;
+  };
+
+  if (response.status === 429) {
+    throw new Error(
+      payload.error ??
+        "Too many sign-in attempts. Wait a few minutes and try again.",
+    );
+  }
+
+  if (response.status === 401) {
+    throw new Error(payload.error ?? "Invalid organizer password");
+  }
+
+  if (response.status === 503) {
+    return {
+      enabled: false,
+      error: payload.error ?? "Camp wall is not configured.",
+    };
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Could not start camp wall session");
+  }
+
+  return payload;
+}

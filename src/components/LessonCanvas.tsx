@@ -9,8 +9,8 @@ import { RapidFire } from "@/components/sentence-canvas/RapidFire";
 import { SentenceBuilder } from "@/components/sentence-canvas/SentenceBuilder";
 import { PassCelebration } from "@/components/ui/PassCelebration";
 import { Scoreboard } from "@/components/ui/Scoreboard";
+import { useCurriculum } from "@/components/providers/CurriculumProvider";
 import {
-  curriculum,
   type AgeGroup,
   type Prompt,
 } from "@/data/curriculum";
@@ -122,6 +122,7 @@ export function LessonCanvas({
 }: LessonCanvasProps) {
   const router = useRouter();
   const copy = useCopy();
+  const { curriculum } = useCurriculum();
   const [promptIndex, setPromptIndex] = useState(0);
   const [correctFirstTry, setCorrectFirstTry] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
@@ -140,7 +141,7 @@ export function LessonCanvas({
       return { ...base, prompts: sessionPrompts };
     }
     return base;
-  }, [weekNumber, ageGroup, sessionPrompts]);
+  }, [weekNumber, ageGroup, sessionPrompts, curriculum]);
 
   const totalPrompts = bracket?.prompts.length ?? 0;
 

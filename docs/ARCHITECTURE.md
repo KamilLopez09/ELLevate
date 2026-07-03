@@ -28,6 +28,7 @@ persistence is Supabase, reached through two Deno **Edge Functions**:
 - **`camper-telemetry`** — public write proxy. The client `POST`s a passed-session
   summary; the function validates it and inserts with the service role key.
 - **`organizer-telemetry`** — password-protected reads for `/admin`.
+- **`organizer-wall-session`** — reveals the secret Realtime broadcast channel after organizer password check (Batch G5 camp wall).
 
 ---
 
@@ -39,7 +40,7 @@ persistence is Supabase, reached through two Deno **Edge Functions**:
 | `/menu` | Week grid (`BentoGrid`) | Requires session | Select week; **New camper** resets device storage |
 | `/lesson` | YouTube embed + tabs | Requires session | Watch week video; sets `lesson_complete` |
 | `/application` | `LessonCanvas` | Session + `lesson_complete` | 10-prompt practice session; telemetry on pass |
-| `/admin` | Organizer dashboard | Organizer password + Edge Function | Read-only camper telemetry; not linked from camper nav |
+| `/admin` | Organizer dashboard | Organizer password + Edge Function | Read-only camper telemetry; live camp wall (Realtime); curriculum publish; not linked from camper nav |
 
 Navigation shell: `CampScreenLayout` (sidebar on desktop, modal drawer on mobile). `/admin` uses a standalone layout.
 
@@ -72,7 +73,8 @@ Legacy age brackets (`5-7`, `8-10`, `11-14`) are migrated on read in `camper-ses
 
 ## Curriculum engine
 
-- **Source:** `src/data/curriculum.ts` — 8 weeks × 3 age groups (`5-7`, `8-10`, `11-14` mapped from intake brackets).
+- **Bundled fallback:** `src/data/curriculum.ts` — shipped in the static bundle for offline camp use.
+- **Remote override (Batch G4):** When an active row exists in `curriculum_revisions`, `CurriculumProvider` loads it via `curriculum-fetch` (6h localStorage cache). Organizers publish from `/admin`.
 - **Unlock rule:** Week 1 always open; week *N* requires `lesson_{N-1}_passed`.
 - **Pass rule:** ≥ 8 of 10 prompts answered correctly on **first try** (`PASS_THRESHOLD` in `src/lib/constants.ts`, enforced client-side and in `camper-telemetry`).
 - **Prompt routing:** `category === "review"` → Flashcard Drill; otherwise → Sentence Builder.
@@ -135,6 +137,7 @@ LessonCanvas → postCamperTelemetry() → fetch POST
 - The **service role key never reaches the client**; it lives only in the Edge Function environment.
 - **Writes:** client → `camper-telemetry` Edge Function (validates, inserts via service role).
 - **Organizer reads:** `/admin` → `organizer-telemetry` Edge Function (service role server-side, `ORGANIZER_PASSWORD` secret).
+- **Live camp wall (G5):** After each pass insert, `camper-telemetry` broadcasts a sanitized payload (no `camper_id`) to the secret `CAMP_WALL_CHANNEL`. `/admin` subscribes via `organizer-wall-session` + Supabase Realtime.
 
 ---
 

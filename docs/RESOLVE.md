@@ -125,16 +125,19 @@ Camper enters a **6-character resume code** at intake (or gets one from the menu
 
 ---
 
-## Phase 5 — Remote curriculum (deferred)
+## Phase 5 — Remote curriculum ✅ (Batch G4)
 
 ### What this means for camp
 
-Teachers change lesson text **without** redeploying the whole site — content lives in Supabase or a CMS.
+Teachers change lesson text **without** redeploying the whole site — content lives in Supabase (`curriculum_revisions`).
 
-### Why deferred
+### Shipped
 
-- Curriculum is stable for one summer; git + deploy is acceptable for v1.
-- Requires caching, fallbacks, and editor workflow.
+- Table `curriculum_revisions` (migration `011`); no direct client DB access.
+- Edge Functions `curriculum-fetch` (public read) and `curriculum-publish` (organizer password).
+- Client: `CurriculumProvider` + bundled fallback; `/admin` publish panel.
+
+**Deploy:** Apply migration `011`; deploy both curriculum Edge Functions via `npm run supabase:deploy-edge`.
 
 ---
 
@@ -146,7 +149,7 @@ Teachers change lesson text **without** redeploying the whole site — content l
 | `GameModeSelector` | All four modes + “Recommended (Auto)”; selection stored in session until week reset. |
 | Locked week menu | Theme title visible on locked cards (blurred/desaturated preview). |
 | `certified-angels-site/` | **Removed** — legacy static HTML/CSS deleted; nothing referenced it. |
-| Teacher overrides | Out of scope until remote curriculum exists |
+| Teacher overrides | Available via `/admin` curriculum publish (Batch G4) |
 
 ---
 

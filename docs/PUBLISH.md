@@ -116,12 +116,15 @@ Apply in the SQL Editor in numeric order:
 8. `008_telemetry_edge_write_proxy.sql` — revoke direct client INSERT (writes move to the Edge Function)
 9. `009_lock_camper_intake.sql` — revoke direct INSERT on unused `camper_intake` table
 10. `010_camper_resume_snapshots.sql` — resume codes for cross-device progress (Batch G1)
+11. `011_curriculum_revisions.sql` — remote curriculum CMS (Batch G4)
 
 Do not skip numbers on existing databases.
 
 After applying `009`, redeploy **`camper-telemetry`** if you already deployed an older version — the function now rejects rows below the pass threshold (`correct_first_try` < 8).
 
 After applying `010`, deploy **`camper-resume`** (see Edge Functions below).
+
+After applying `011`, deploy **`curriculum-fetch`** and **`curriculum-publish`**.
 
 ---
 
@@ -136,30 +139,38 @@ never ships to browsers**.
   an IP for 15 minutes after **5 failed password attempts** (constant-time compare).
 - **`camper-resume`** — issue attestation token, create/restore 6-character progress codes (7-day TTL, single-use on restore). Rate limited per IP.
 - **`counselor-reset`** — verifies `COUNSELOR_RESET_PIN` for hidden quick-reset on shared tablets.
+- **`curriculum-fetch`** — public read of the active curriculum revision (rate limited; 404 when none published).
+- **`curriculum-publish`** — organizer password required; validates JSON and activates a new revision.
+- **`organizer-wall-session`** — returns the Realtime broadcast channel name after organizer password check.
+- **`camper-telemetry`** also broadcasts sanitized pass events to `CAMP_WALL_CHANNEL` when that secret is set.
 
 ### Deploy once per Supabase project
 
 ```bash
 # From repo root, with Supabase CLI logged in and project linked.
-# Deploys all four functions and sets organizer + counselor secrets:
+# Deploys all Edge Functions and sets organizer + counselor + camp wall secrets:
 npm run supabase:deploy-edge
 
 # Legacy (camper + organizer only):
 npm run supabase:deploy-organizer
 
 # ...or manually:
-supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password" COUNSELOR_RESET_PIN="your-camp-pin" RESUME_ATTESTATION_SECRET="your-random-secret"
+supabase secrets set ORGANIZER_PASSWORD="your-strong-camp-password" COUNSELOR_RESET_PIN="your-camp-pin" RESUME_ATTESTATION_SECRET="your-random-secret" CAMP_WALL_CHANNEL="camp-wall-your-random-string"
 supabase functions deploy camper-telemetry --no-verify-jwt
 supabase functions deploy organizer-telemetry --no-verify-jwt
 supabase functions deploy camper-resume --no-verify-jwt
 supabase functions deploy counselor-reset --no-verify-jwt
+supabase functions deploy curriculum-fetch --no-verify-jwt
+supabase functions deploy curriculum-publish --no-verify-jwt
+supabase functions deploy organizer-wall-session --no-verify-jwt
 ```
 
 | Secret / setting | Purpose |
 |------------------|---------|
-| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry only) |
+| `ORGANIZER_PASSWORD` | Password counselors enter on `/admin` (organizer-telemetry, curriculum-publish, camp wall) |
 | `COUNSELOR_RESET_PIN` | PIN for counselor quick-reset (counselor-reset; not in client bundle) |
 | `RESUME_ATTESTATION_SECRET` | HMAC secret for resume-code create attestation (camper-resume; not in client bundle) |
+| `CAMP_WALL_CHANNEL` | Secret Realtime broadcast channel for live pass feed (organizer-wall-session + camper-telemetry) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase at runtime; used by Edge Functions |
 | `verify_jwt = false` | Functions are called with the anon key; auth is custom (password) or open write-proxy |
 

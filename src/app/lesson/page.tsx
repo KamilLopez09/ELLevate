@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useCurriculum } from "@/components/providers/CurriculumProvider";
 import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { StepRail } from "@/components/ui/StepRail";
@@ -23,6 +24,7 @@ const SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
 export default function LessonPage() {
   const router = useRouter();
   const copy = useCopy();
+  const { isLoading: curriculumLoading } = useCurriculum();
   const [ready, setReady] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [watchStartedAt, setWatchStartedAt] = useState<number | null>(null);
@@ -39,12 +41,15 @@ export default function LessonPage() {
     : null;
 
   useEffect(() => {
+    if (curriculumLoading) {
+      return;
+    }
     if (!readCamperSession()) {
       router.replace("/");
       return;
     }
     setReady(true);
-  }, [router]);
+  }, [router, curriculumLoading]);
 
   useEffect(() => {
     if (!ready) return;

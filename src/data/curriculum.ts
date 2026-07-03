@@ -1,4 +1,5 @@
 import { curriculumWeeks3Through8 } from "./curriculum-weeks-3-8";
+import { validateCurriculumCatalog } from "@/lib/curriculum-validate";
 
 /**
  * Curriculum design (each age bracket, each week):
@@ -45,7 +46,9 @@ export interface LessonWeek {
   brackets: Record<AgeGroup, BracketData>;
 }
 
-export const curriculum: Record<number, LessonWeek> = {
+export type CurriculumCatalog = Record<number, LessonWeek>;
+
+export const curriculum: CurriculumCatalog = {
   1: {
     weekNumber: 1,
     theme: "Identity & Greetings",
@@ -414,46 +417,8 @@ export const curriculum: Record<number, LessonWeek> = {
 };
 
 if (process.env.NODE_ENV === "development") {
-  const EXPECTED_CATEGORIES: PromptCategory[] = [
-    "review",
-    "review",
-    "review",
-    "core",
-    "core",
-    "core",
-    "core",
-    "generative",
-    "generative",
-    "generative",
-  ];
-
-  Object.entries(curriculum).forEach(([week, lesson]) => {
-    const weekNum = Number(week);
-    Object.entries(lesson.brackets).forEach(([group, bracket]) => {
-      if (bracket.prompts.length !== 10) {
-        throw new Error(
-          `Curriculum error: Week ${week}, Age ${group} has ${bracket.prompts.length} prompts. Expected exactly 10.`,
-        );
-      }
-
-      if (weekNum === 1) {
-        bracket.prompts.forEach((prompt, index) => {
-          if (prompt.category !== "core") {
-            throw new Error(
-              `Curriculum error: Week 1, Age ${group}, prompt ${index} must be core (Week 1 exception).`,
-            );
-          }
-        });
-        return;
-      }
-
-      bracket.prompts.forEach((prompt, index) => {
-        if (prompt.category !== EXPECTED_CATEGORIES[index]) {
-          throw new Error(
-            `Curriculum error: Week ${week}, Age ${group}, prompt ${index} is "${prompt.category}". Expected "${EXPECTED_CATEGORIES[index]}".`,
-          );
-        }
-      });
-    });
-  });
+  const error = validateCurriculumCatalog(curriculum);
+  if (error) {
+    throw new Error(`Curriculum error: ${error}`);
+  }
 }

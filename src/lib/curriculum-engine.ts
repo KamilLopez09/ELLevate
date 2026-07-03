@@ -1,14 +1,14 @@
-import {
-  curriculum,
-  type AgeGroup,
-  type BracketData,
-  type LessonWeek,
-  type Prompt,
+import type {
+  AgeGroup,
+  BracketData,
+  LessonWeek,
+  Prompt,
 } from "@/data/curriculum";
 import {
   CURRENT_WEEK_KEY,
   weekPassedKey,
 } from "@/lib/camp-session-keys";
+import { getActiveCurriculum } from "@/lib/curriculum-active";
 import {
   getCampSessionItem,
   setCampSessionItem,
@@ -17,19 +17,24 @@ import type { AgeBracket } from "@/types/sentence-canvas";
 
 export { CURRENT_WEEK_KEY, weekPassedKey } from "@/lib/camp-session-keys";
 
-export const WEEK_NUMBERS = Object.keys(curriculum)
-  .map(Number)
-  .sort((a, b) => a - b);
+export function getWeekNumbers(): number[] {
+  return Object.keys(getActiveCurriculum())
+    .map(Number)
+    .sort((a, b) => a - b);
+}
 
-export const TOTAL_WEEKS = WEEK_NUMBERS.length;
+export function getTotalWeeks(): number {
+  return getWeekNumbers().length;
+}
 
 export function getCurrentWeek(): number {
   if (typeof window === "undefined") {
     return 1;
   }
+  const catalog = getActiveCurriculum();
   const raw = getCampSessionItem(CURRENT_WEEK_KEY);
   const parsed = raw ? Number.parseInt(raw, 10) : 1;
-  return curriculum[parsed] ? parsed : 1;
+  return catalog[parsed] ? parsed : 1;
 }
 
 export function setCurrentWeek(weekNumber: number): void {
@@ -74,11 +79,11 @@ export function isWeekUnlocked(weekNumber: number): boolean {
 
 /** Count weeks marked passed on this device. */
 export function countWeeksPassed(): number {
-  return WEEK_NUMBERS.filter((weekNumber) => isWeekPassed(weekNumber)).length;
+  return getWeekNumbers().filter((weekNumber) => isWeekPassed(weekNumber)).length;
 }
 
 export function getLessonWeek(weekNumber: number): LessonWeek | null {
-  return curriculum[weekNumber] ?? null;
+  return getActiveCurriculum()[weekNumber] ?? null;
 }
 
 export function toAgeGroup(ageBracket: AgeBracket): AgeGroup {

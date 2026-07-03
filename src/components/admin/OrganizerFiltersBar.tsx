@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { TOTAL_WEEKS, WEEK_NUMBERS } from "@/lib/curriculum-engine";
+import { getTotalWeeks, getWeekNumbers } from "@/lib/curriculum-engine";
 import {
   EMPTY_ORGANIZER_FILTERS,
   hasActiveFilters,
@@ -62,8 +62,8 @@ export function OrganizerFiltersBar({
               });
             }}
           >
-            <option value="all">All weeks (1–{TOTAL_WEEKS})</option>
-            {WEEK_NUMBERS.map((week) => (
+            <option value="all">All weeks (1–{getTotalWeeks()})</option>
+            {getWeekNumbers().map((week) => (
               <option key={week} value={week}>
                 Week {week}
               </option>

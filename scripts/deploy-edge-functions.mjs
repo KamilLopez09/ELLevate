@@ -3,6 +3,7 @@
  * Uses process.env so PowerShell $env:VAR works on Windows.
  */
 import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -29,6 +30,9 @@ function requireEnv(name) {
     } else if (name === "RESUME_ATTESTATION_SECRET") {
       console.error("HMAC secret for resume-code create attestation (32+ random chars).");
       console.error('PowerShell: $env:RESUME_ATTESTATION_SECRET = "your-secret"');
+    } else if (name === "CAMP_WALL_CHANNEL") {
+      console.error("Secret Realtime broadcast channel for organizer camp wall.");
+      console.error('PowerShell: $env:CAMP_WALL_CHANNEL = "camp-wall-your-random-string"');
     }
     process.exit(1);
   }
@@ -53,6 +57,9 @@ requireEnv("SUPABASE_PROJECT_REF");
 const organizerPassword = requireEnv("ORGANIZER_PASSWORD");
 const counselorPin = requireEnv("COUNSELOR_RESET_PIN");
 const resumeAttestationSecret = requireEnv("RESUME_ATTESTATION_SECRET");
+const campWallChannel =
+  process.env.CAMP_WALL_CHANNEL ??
+  `camp-wall-${randomBytes(16).toString("hex")}`;
 
 run("npx", ["supabase", "link", "--project-ref", process.env.SUPABASE_PROJECT_REF, "--yes"]);
 run("npx", [
@@ -62,6 +69,7 @@ run("npx", [
   `ORGANIZER_PASSWORD=${organizerPassword}`,
   `COUNSELOR_RESET_PIN=${counselorPin}`,
   `RESUME_ATTESTATION_SECRET=${resumeAttestationSecret}`,
+  `CAMP_WALL_CHANNEL=${campWallChannel}`,
 ]);
 
 const functions = [
@@ -69,6 +77,9 @@ const functions = [
   "organizer-telemetry",
   "camper-resume",
   "counselor-reset",
+  "curriculum-fetch",
+  "curriculum-publish",
+  "organizer-wall-session",
 ];
 
 for (const name of functions) {
@@ -81,3 +92,6 @@ console.log("- Apply migration 010_camper_resume_snapshots.sql if not yet applie
 console.log("- Telemetry writes through camper-telemetry.");
 console.log("- Resume codes through camper-resume.");
 console.log("- Counselor quick-reset through counselor-reset (COUNSELOR_RESET_PIN).");
+console.log("- Remote curriculum through curriculum-fetch + curriculum-publish.");
+console.log("- Live camp wall through organizer-wall-session + camper-telemetry broadcast.");
+console.log(`- CAMP_WALL_CHANNEL set to: ${campWallChannel}`);

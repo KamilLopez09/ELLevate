@@ -9,6 +9,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getClientIp } from "../_shared/client-ip.ts";
 import { consumeRateLimit } from "../_shared/rate-limit.ts";
+import {
+  broadcastCampWallPass,
+  buildCampWallPayload,
+} from "../_shared/camp-wall-broadcast.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -225,6 +229,19 @@ Deno.serve(async (req) => {
   const { error } = await supabase.from("camper_telemetry").insert(result.row);
   if (error) {
     return jsonResponse({ error: error.message }, 500);
+  }
+
+  const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
+  if (wallChannel) {
+    try {
+      await broadcastCampWallPass(
+        supabase,
+        wallChannel,
+        buildCampWallPayload(result.row),
+      );
+    } catch (broadcastError) {
+      console.error("camp wall broadcast failed", broadcastError);
+    }
   }
 
   return jsonResponse({ ok: true }, 201);

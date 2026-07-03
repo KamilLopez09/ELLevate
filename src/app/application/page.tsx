@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { CampLoading } from "@/components/ui/CampLoading";
 import { CampScreenLayout } from "@/components/ui/CampScreenLayout";
 import { PracticeProgressHeader } from "@/components/ui/PracticeProgressHeader";
-import { curriculum } from "@/data/curriculum";
+import { useCurriculum } from "@/components/providers/CurriculumProvider";
 import {
   clearSelectedGameMode,
   getSelectedGameMode,
@@ -34,6 +34,7 @@ const DEFAULT_AGE_BRACKET = "8-10";
 export default function ApplicationPage() {
   const router = useRouter();
   const copy = useCopy();
+  const { curriculum, isLoading: curriculumLoading } = useCurriculum();
   const [ready, setReady] = useState(false);
   const [weekNumber, setWeekNumber] = useState(1);
   const [progress, setProgress] = useState<LessonProgressState>(
@@ -56,7 +57,7 @@ export default function ApplicationPage() {
       builderPrompts: builder,
       sessionPrompts: [...review, ...builder],
     };
-  }, [ageGroup, weekNumber]);
+  }, [ageGroup, weekNumber, curriculum]);
 
   const handleProgressChange = useCallback((state: LessonProgressState) => {
     setProgress(state);
@@ -70,6 +71,9 @@ export default function ApplicationPage() {
   );
 
   useEffect(() => {
+    if (curriculumLoading) {
+      return;
+    }
     if (!readCamperSession()) {
       router.replace("/");
       return;
@@ -82,7 +86,7 @@ export default function ApplicationPage() {
     setWeekNumber(getCurrentWeek());
     setSelectedMode(getSelectedGameMode());
     setReady(true);
-  }, [router]);
+  }, [router, curriculumLoading]);
 
   useEffect(() => {
     setProgress(createInitialProgress(sessionPrompts.length || 10));

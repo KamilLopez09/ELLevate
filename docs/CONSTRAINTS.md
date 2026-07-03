@@ -99,7 +99,9 @@ after refresh. Password compare on the server uses a constant-time digest check.
 
 ### Curriculum and content
 
-- Source: `src/data/curriculum.ts`
+- **Bundled fallback:** `src/data/curriculum.ts` (always shipped in the static bundle).
+- **Remote override (Batch G4):** Organizers publish full 8-week JSON via `/admin`; campers load it through `curriculum-fetch` with 6h cache + ETag revalidation. Falls back to bundled when no active revision or fetch fails.
+- **Live camp wall (Batch G5):** Organizer `/admin` subscribes to a secret Realtime broadcast channel (`CAMP_WALL_CHANNEL`); payloads exclude `camper_id`.
 - Unlock: week *N* requires passing week *N − 1* (8 of 10 first-try correct).
 - Only Flashcard Drill and Sentence Builder are wired in `LessonCanvas.tsx`. The
   unused `MatchBlitz`/`RapidFire` components were removed temporarily; Batch E restored
