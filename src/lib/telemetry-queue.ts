@@ -1,4 +1,5 @@
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
+import { notifyProgressSynced } from "@/lib/progress-events";
 import { postCamperTelemetryDirect } from "@/lib/telemetry-send";
 
 export const TELEMETRY_QUEUE_KEY = "elle_telemetry_queue_v1";
@@ -84,5 +85,8 @@ export async function flushTelemetryQueue(): Promise<number> {
   }
 
   writeQueue(remaining);
+  if (flushed > 0) {
+    notifyProgressSynced();
+  }
   return flushed;
 }

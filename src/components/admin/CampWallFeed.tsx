@@ -3,13 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
+import {
+  campWallEventKey,
+  telemetryRowsToCampWallEvents,
+} from "@/lib/camp-wall-events";
 import { subscribeCampWall } from "@/lib/camp-wall-realtime";
-import { fetchOrganizerWallSession } from "@/lib/organizer-api";
+import {
+  fetchOrganizerTelemetry,
+  fetchOrganizerWallSession,
+} from "@/lib/organizer-api";
 import { getSupabaseConfig } from "@/lib/supabase/client";
-import type { CampWallPassEvent } from "@/types/camp-wall";
+import type { CampWallPassEvent, CampWallPassPayload } from "@/types/camp-wall";
 
 const CAMP_TIME_ZONE = "America/New_York";
 const MAX_EVENTS = 40;
+const POLL_INTERVAL_MS = 20_000;
 
 function formatWhen(iso: string): string {
   try {
@@ -23,111 +31,186 @@ function formatWhen(iso: string): string {
   }
 }
 
-function eventId(payload: CampWallPassEvent): string {
-  return `${payload.completed_at}-${payload.first_name}-${payload.last_initial}-${payload.group_letter}-${payload.week_number}`;
-}
-
 export interface CampWallFeedProps {
   password: string;
 }
 
 export function CampWallFeed({ password }: CampWallFeedProps) {
   const [events, setEvents] = useState<CampWallPassEvent[]>([]);
-  const [status, setStatus] = useState<"connecting" | "live" | "offline" | "disabled">(
-    "connecting",
-  );
+  const [status, setStatus] = useState<
+    "connecting" | "live" | "polling" | "offline" | "disabled"
+  >("connecting");
   const [statusMessage, setStatusMessage] = useState("");
   const [connectAttempt, setConnectAttempt] = useState(0);
   const seenIds = useRef(new Set<string>());
+  const wasLiveRef = useRef(false);
 
-  const connect = useCallback(async (cancelled: () => boolean) => {
-    seenIds.current.clear();
-    setStatus("connecting");
-    setStatusMessage("Connecting to live camp feed…");
+  const ingestPass = useCallback((payload: CampWallPassPayload) => {
+    const dedupeKey = campWallEventKey(payload);
+    if (seenIds.current.has(dedupeKey)) {
+      return;
+    }
+    seenIds.current.add(dedupeKey);
 
+    const entry: CampWallPassEvent = {
+      ...payload,
+      id: crypto.randomUUID(),
+    };
+    setEvents((prev) => [entry, ...prev].slice(0, MAX_EVENTS));
+  }, []);
+
+  const pollRecentPasses = useCallback(async () => {
     try {
-      const session = await fetchOrganizerWallSession(password);
-      if (cancelled()) {
-        return undefined;
+      const { rows } = await fetchOrganizerTelemetry(password, 25);
+      for (const payload of telemetryRowsToCampWallEvents(rows)) {
+        ingestPass(payload);
       }
+    } catch {
+      // Polling is best-effort when Realtime is unavailable.
+    }
+  }, [ingestPass, password]);
 
-      if (!session.enabled || !session.channel || !session.access_token) {
-        setStatus("disabled");
+  const connect = useCallback(
+    async (cancelled: () => boolean) => {
+      seenIds.current.clear();
+      wasLiveRef.current = false;
+      setStatus("connecting");
+      setStatusMessage("Connecting to live camp feed…");
+
+      try {
+        const session = await fetchOrganizerWallSession(password);
+        if (cancelled()) {
+          return undefined;
+        }
+
+        if (!session.enabled || !session.channel || !session.access_token) {
+          setStatus("disabled");
+          setStatusMessage(
+            session.error ??
+              "Camp wall is not configured. Set CAMP_WALL_CHANNEL and CAMP_WALL_JWT_SECRET in Supabase secrets.",
+          );
+          return undefined;
+        }
+
+        const config = getSupabaseConfig();
+        if (!config) {
+          setStatus("offline");
+          setStatusMessage("Supabase is not configured in this build.");
+          return undefined;
+        }
+
+        await pollRecentPasses();
+
+        const supabase = createClient(config.url, config.key, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const startPolling = () => {
+          if (cancelled()) {
+            return undefined;
+          }
+          setStatus("polling");
+          setStatusMessage(
+            "Live Realtime is unavailable — refreshing pass feed every 20 seconds.",
+          );
+          const intervalId = window.setInterval(() => {
+            if (!cancelled()) {
+              void pollRecentPasses();
+            }
+          }, POLL_INTERVAL_MS);
+          return () => {
+            window.clearInterval(intervalId);
+          };
+        };
+
+        const trySubscribe = async (
+          privateChannel: boolean,
+        ): Promise<"live" | "failed"> => {
+          const cleanup = await subscribeCampWall(
+            supabase,
+            session.channel!,
+            session.access_token!,
+            (payload) => {
+              if (!cancelled()) {
+                ingestPass(payload);
+              }
+            },
+            (subscribeStatus) => {
+              if (cancelled()) {
+                return;
+              }
+              if (subscribeStatus === "SUBSCRIBED") {
+                wasLiveRef.current = true;
+                setStatus("live");
+                setStatusMessage("Listening for new week passes in real time.");
+                return;
+              }
+              if (
+                subscribeStatus === "CHANNEL_ERROR" ||
+                subscribeStatus === "TIMED_OUT" ||
+                (subscribeStatus === "CLOSED" && !wasLiveRef.current)
+              ) {
+                wasLiveRef.current = false;
+              }
+              if (subscribeStatus === "CLOSED" && wasLiveRef.current) {
+                setStatus("offline");
+                setStatusMessage(
+                  "Lost connection to the camp wall. Refresh the page.",
+                );
+              }
+            },
+            { privateChannel },
+          );
+
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, privateChannel ? 5000 : 3000);
+          });
+
+          if (cancelled()) {
+            cleanup?.();
+            return "failed";
+          }
+
+          if (wasLiveRef.current) {
+            return "live";
+          }
+
+          cleanup?.();
+          return "failed";
+        };
+
+        if ((await trySubscribe(true)) === "live") {
+          return () => {
+            void supabase.removeAllChannels();
+          };
+        }
+
+        wasLiveRef.current = false;
+        if ((await trySubscribe(false)) === "live") {
+          setStatusMessage(
+            "Listening on public Realtime channel (private auth unavailable).",
+          );
+          return () => {
+            void supabase.removeAllChannels();
+          };
+        }
+
+        return startPolling();
+      } catch (error) {
+        if (cancelled()) {
+          return undefined;
+        }
+        setStatus("offline");
         setStatusMessage(
-          session.error ??
-            "Camp wall is not configured. Set CAMP_WALL_CHANNEL and CAMP_WALL_JWT_SECRET in Supabase secrets.",
+          error instanceof Error
+            ? error.message
+            : "Could not connect to the camp wall.",
         );
         return undefined;
       }
-
-      const config = getSupabaseConfig();
-      if (!config) {
-        setStatus("offline");
-        setStatusMessage("Supabase is not configured in this build.");
-        return undefined;
-      }
-
-      const supabase = createClient(config.url, config.key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-
-      return await subscribeCampWall(
-        supabase,
-        session.channel,
-        session.access_token,
-        (payload) => {
-          if (cancelled()) {
-            return;
-          }
-          const entry: CampWallPassEvent = {
-            ...payload,
-            id: crypto.randomUUID(),
-          };
-          const dedupeKey = eventId(entry);
-          if (seenIds.current.has(dedupeKey)) {
-            return;
-          }
-          seenIds.current.add(dedupeKey);
-
-          setEvents((prev) => [entry, ...prev].slice(0, MAX_EVENTS));
-        },
-        (subscribeStatus) => {
-          if (cancelled()) {
-            return;
-          }
-          if (subscribeStatus === "SUBSCRIBED") {
-            setStatus("live");
-            setStatusMessage("Listening for new week passes in real time.");
-            return;
-          }
-          if (subscribeStatus === "CHANNEL_ERROR" || subscribeStatus === "TIMED_OUT") {
-            setStatus("offline");
-            setStatusMessage(
-              "Realtime rejected the camp wall connection. Apply migrations 014 and 015 in Supabase, disable Realtime public access, and confirm CAMP_WALL_JWT_SECRET matches the Legacy JWT secret.",
-            );
-            return;
-          }
-          if (subscribeStatus === "CLOSED") {
-            setStatus("offline");
-            setStatusMessage(
-              "Lost connection to the camp wall. Refresh the page.",
-            );
-          }
-        },
-      );
-    } catch (error) {
-      if (cancelled()) {
-        return undefined;
-      }
-      setStatus("offline");
-      setStatusMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not connect to the camp wall.",
-      );
-      return undefined;
-    }
-  }, [password]);
+    },
+    [ingestPass, password, pollRecentPasses],
+  );
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -162,14 +245,18 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
         <span
           className={[
             "inline-flex min-h-[36px] items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide",
-            status === "live"
+            status === "live" || status === "polling"
               ? "bg-teal-accent/15 text-teal-accent"
               : status === "connecting"
                 ? "bg-purple-accent/15 text-purple-accent"
                 : "bg-ink/10 text-muted-foreground",
           ].join(" ")}
         >
-          {status === "live" ? "Live" : status === "connecting" ? "Connecting" : "Offline"}
+          {status === "live" || status === "polling"
+            ? "Live"
+            : status === "connecting"
+              ? "Connecting"
+              : "Offline"}
         </span>
       </div>
 
@@ -189,7 +276,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
 
       {events.length === 0 ? (
         <p className="rounded-xl bg-surface-muted px-4 py-6 text-center text-sm text-ink/70">
-          {status === "live"
+          {status === "live" || status === "polling"
             ? "Waiting for the next pass…"
             : "No live events yet."}
         </p>

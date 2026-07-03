@@ -34,6 +34,7 @@ import { unlockAchievementsAfterPass } from "@/lib/achievements";
 import { PASS_THRESHOLD } from "@/lib/constants";
 import { useCopy } from "@/lib/i18n/useCopy";
 import { postCamperTelemetry } from "@/lib/telemetry";
+import { notifyProgressSynced } from "@/lib/progress-events";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
 import type { LessonProgressState } from "@/types/lesson-progress";
@@ -296,6 +297,7 @@ export function LessonCanvas({
     );
 
     if (camper) {
+      const fresh = readCamperSession();
       const payload: CamperTelemetryRow = {
         module_name: "sentence_canvas",
         score: correctFirstTry,
@@ -310,7 +312,7 @@ export function LessonCanvas({
         total_points: sessionSummary.totalPoints,
         week_number: weekNumber,
         correct_first_try: correctFirstTry,
-        cumulative_score: camper.cumulativeScore,
+        cumulative_score: fresh?.cumulativeScore ?? camper.cumulativeScore,
         speed_bonuses_earned: sessionSummary.totalSpeedBonus,
         accuracy_rate: accuracyRate,
         camper_id: camper.camper_id,
@@ -323,6 +325,9 @@ export function LessonCanvas({
 
       const saved = await postCamperTelemetry(payload);
       setTelemetryWarning(!saved);
+      if (saved) {
+        notifyProgressSynced();
+      }
     }
 
     setIsSaving(false);

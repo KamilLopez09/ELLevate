@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BentoCard } from "@/components/ui/BentoGrid";
 import {
   fetchGroupLeaderboard,
   type GroupLeaderboardResult,
 } from "@/lib/group-leaderboard";
 import { useCopy } from "@/lib/i18n/useCopy";
+import { PROGRESS_SYNCED_EVENT } from "@/lib/progress-events";
 
 export function GroupStandingsCard({
   groupLetter,
@@ -21,6 +22,13 @@ export function GroupStandingsCard({
   );
   const [loading, setLoading] = useState(true);
 
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const result = await fetchGroupLeaderboard(groupLetter, camperId);
+    setStandings(result);
+    setLoading(false);
+  }, [camperId, groupLetter]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -33,10 +41,36 @@ export function GroupStandingsCard({
       }
     })();
 
+    const onSync = () => {
+      if (!cancelled) {
+        void refresh();
+      }
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        onSync();
+      }
+    };
+
+    window.addEventListener(PROGRESS_SYNCED_EVENT, onSync);
+    window.addEventListener("focus", onSync);
+    document.addEventListener("visibilitychange", onVisible);
+
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        onSync();
+      }
+    }, 30_000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener(PROGRESS_SYNCED_EVENT, onSync);
+      window.removeEventListener("focus", onSync);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [groupLetter, camperId]);
+  }, [camperId, groupLetter, refresh]);
 
   return (
     <BentoCard index={0} span="sm:col-span-6" accent="teal" tilt={0.5}>

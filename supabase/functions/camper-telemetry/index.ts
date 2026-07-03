@@ -239,20 +239,66 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   const completedAt = new Date().toISOString();
-  const { error } = await supabase
-    .from("camper_telemetry")
-    .insert({ ...result.row, completed_at: completedAt });
-  if (error) {
-    if (error.code === "23505") {
-      return jsonResponse({ ok: true, duplicate: true }, 200);
+  const insertRow = { ...result.row, completed_at: completedAt };
+  const { error } = await supabase.from("camper_telemetry").insert(insertRow);
+  let shouldBroadcast = !error;
+
+  if (error?.code === "23505") {
+    const { data: existing, error: readError } = await supabase
+      .from("camper_telemetry")
+      .select("cumulative_score, total_points")
+      .eq("camper_id", result.row.camper_id)
+      .eq("week_number", result.row.week_number)
+      .maybeSingle();
+
+    if (readError) {
+      return jsonResponse({ error: readError.message }, 500);
     }
+
+    const shouldUpdate =
+      existing !== null &&
+      (result.row.cumulative_score > (existing.cumulative_score ?? 0) ||
+        result.row.total_points > (existing.total_points ?? 0));
+
+    if (shouldUpdate) {
+      const { error: updateError } = await supabase
+        .from("camper_telemetry")
+        .update(insertRow)
+        .eq("camper_id", result.row.camper_id)
+        .eq("week_number", result.row.week_number);
+
+      if (updateError) {
+        return jsonResponse({ error: updateError.message }, 500);
+      }
+      shouldBroadcast = true;
+    }
+
+    incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
+
+    const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
+    if (wallChannel && shouldBroadcast) {
+      try {
+        await broadcastCampWallPass(
+          supabase,
+          wallChannel,
+          buildCampWallPayload(result.row, completedAt),
+        );
+      } catch (broadcastError) {
+        console.error("camp wall broadcast failed", broadcastError);
+      }
+    }
+
+    return jsonResponse({ ok: true, duplicate: true, updated: shouldUpdate }, 200);
+  }
+
+  if (error) {
     return jsonResponse({ error: error.message }, 500);
   }
 
   incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
 
   const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
-  if (wallChannel) {
+  if (wallChannel && shouldBroadcast) {
     try {
       await broadcastCampWallPass(
         supabase,
