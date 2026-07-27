@@ -263,14 +263,16 @@ Deno.serve(async (req) => {
     if (shouldUpdate) {
       const { error: updateError } = await supabase
         .from("camper_telemetry")
-        .update(insertRow)
+        // Preserve the original pass timestamp. Replayed older-week payloads
+        // can improve score fields, but must not become the camper's "latest"
+        // cumulative row for standings.
+        .update(result.row)
         .eq("camper_id", result.row.camper_id)
         .eq("week_number", result.row.week_number);
 
       if (updateError) {
         return jsonResponse({ error: updateError.message }, 500);
       }
-      shouldBroadcast = true;
     }
 
     incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
