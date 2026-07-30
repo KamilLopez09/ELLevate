@@ -1,4 +1,5 @@
--- Use the latest pass row per camper (not max cumulative) so retried syncs stay accurate.
+-- Use the highest cumulative score per camper. Offline retries are inserted with
+-- server sync time, so completed_at cannot safely identify progress order.
 
 CREATE OR REPLACE FUNCTION public.get_group_leaderboard(p_group_letter text)
 RETURNS TABLE (
@@ -17,10 +18,7 @@ AS $$
     t.camper_id,
     (array_agg(t.first_name ORDER BY t.completed_at DESC))[1] AS first_name,
     (array_agg(t.last_initial ORDER BY t.completed_at DESC))[1] AS last_initial,
-    coalesce(
-      (array_agg(t.cumulative_score ORDER BY t.completed_at DESC))[1],
-      0
-    )::integer AS cumulative_score,
+    max(t.cumulative_score)::integer AS cumulative_score,
     count(DISTINCT t.week_number) AS weeks_passed
   FROM public.camper_telemetry AS t
   WHERE t.group_letter = upper(trim(p_group_letter))
