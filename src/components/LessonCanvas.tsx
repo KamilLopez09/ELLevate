@@ -15,7 +15,7 @@ import {
   type Prompt,
 } from "@/data/curriculum";
 import {
-  applyPassedSessionScore,
+  applyPassedWeekProgress,
   getSelectedGameMode,
   readCamperSession,
 } from "@/lib/camper-session";
@@ -23,7 +23,7 @@ import {
   pickTelemetryGameMode,
   resolveGameMode,
 } from "@/lib/game-mode-routing";
-import { markWeekCompleted, getLessonWeek } from "@/lib/curriculum-engine";
+import { getLessonWeek } from "@/lib/curriculum-engine";
 import {
   summarizeSession,
   type GameModeId,
@@ -152,6 +152,7 @@ export function LessonCanvas({
   const modesUsedRef = useRef<Set<GameModeId>>(new Set());
   const errorCountRef = useRef(0);
   const weekCompletedRef = useRef(false);
+  const shouldSyncPassRef = useRef(false);
   const [outcomeVersion, bumpOutcomes] = useState(0);
 
   useEffect(() => {
@@ -165,6 +166,7 @@ export function LessonCanvas({
 
   useEffect(() => {
     weekCompletedRef.current = false;
+    shouldSyncPassRef.current = false;
   }, [weekNumber]);
 
   const sessionSummary: SessionScoreSummary = useMemo(
@@ -205,22 +207,25 @@ export function LessonCanvas({
         setShowCelebration(true);
         if (!weekCompletedRef.current) {
           weekCompletedRef.current = true;
-          markWeekCompleted(weekNumber);
+          const summary = summarizeSession(
+            scoreResultsRef.current,
+            firstTryScore,
+          );
+          const appliedProgress = applyPassedWeekProgress(
+            weekNumber,
+            summary.totalPoints,
+            [...modesUsedRef.current],
+          );
+          shouldSyncPassRef.current = appliedProgress;
+          if (appliedProgress) {
+            unlockAchievementsAfterPass({
+              weekNumber,
+              correctFirstTry: firstTryScore,
+              totalPrompts,
+              totalSpeedBonus: summary.totalSpeedBonus,
+            });
+          }
         }
-
-        const summary = summarizeSession(
-          scoreResultsRef.current,
-          firstTryScore,
-        );
-        applyPassedSessionScore(summary.totalPoints, [
-          ...modesUsedRef.current,
-        ]);
-        unlockAchievementsAfterPass({
-          weekNumber,
-          correctFirstTry: firstTryScore,
-          totalPrompts,
-          totalSpeedBonus: summary.totalSpeedBonus,
-        });
       }
       setPromptIndex(totalPrompts);
     },
@@ -279,6 +284,7 @@ export function LessonCanvas({
     setShowCelebration(false);
     setRetryCount((count) => count + 1);
     weekCompletedRef.current = false;
+    shouldSyncPassRef.current = false;
     resetSession();
   };
 
@@ -296,7 +302,7 @@ export function LessonCanvas({
       getSelectedGameMode(),
     );
 
-    if (camper) {
+    if (camper && shouldSyncPassRef.current) {
       const fresh = readCamperSession();
       const payload: CamperTelemetryRow = {
         module_name: "sentence_canvas",

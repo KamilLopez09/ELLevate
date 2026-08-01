@@ -3,6 +3,7 @@ import {
   CAMPER_SESSION_KEY,
   LESSON_COMPLETE_KEY,
   SELECTED_GAME_MODE_KEY,
+  weekPassedKey,
 } from "@/lib/camp-session-keys";
 import {
   clearAllCamperDeviceStorage,
@@ -150,6 +151,41 @@ export function applyPassedSessionScore(
     cumulativeScore: session.cumulativeScore + totalPoints,
     completedModes,
   });
+}
+
+/**
+ * Applies score and week completion only for the first successful pass.
+ * Replays should be practice-only so campers cannot inflate cumulative points.
+ */
+export function applyPassedWeekProgress(
+  weekNumber: number,
+  totalPoints: number,
+  modeIds: string[],
+): boolean {
+  const completedWeek = Math.max(1, Math.floor(weekNumber));
+  if (getCampSessionItem(weekPassedKey(completedWeek)) === "true") {
+    return false;
+  }
+
+  const session = readCamperSession();
+  if (!session) {
+    return false;
+  }
+
+  const completedModes = [...session.completedModes];
+  for (const modeId of modeIds) {
+    if (!completedModes.includes(modeId)) {
+      completedModes.push(modeId);
+    }
+  }
+
+  writeCamperSession({
+    ...session,
+    cumulativeScore: session.cumulativeScore + totalPoints,
+    completedModes,
+  });
+  setCampSessionItem(weekPassedKey(completedWeek), "true");
+  return true;
 }
 
 /** Wipes all camper progress on this browser (use between campers on a shared device). */
