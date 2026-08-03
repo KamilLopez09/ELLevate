@@ -1,6 +1,7 @@
 import type { CamperSessionData, AgeBracket } from "@/types/sentence-canvas";
 import {
   CAMPER_SESSION_KEY,
+  CURRENT_WEEK_KEY,
   LESSON_COMPLETE_KEY,
   SELECTED_GAME_MODE_KEY,
 } from "@/lib/camp-session-keys";
@@ -14,9 +15,13 @@ import {
 
 export {
   CAMPER_SESSION_KEY,
+  CURRENT_WEEK_KEY,
   LESSON_COMPLETE_KEY,
   SELECTED_GAME_MODE_KEY,
 } from "@/lib/camp-session-keys";
+
+const MIN_WEEK_NUMBER = 1;
+const MAX_WEEK_NUMBER = 8;
 
 function migrateAgeBracket(bracket: string): AgeBracket {
   if (bracket === "5-7" || bracket === "8-10" || bracket === "5-9") {
@@ -162,13 +167,35 @@ export function setLessonComplete(weekNumber: number): void {
   setCampSessionItem(LESSON_COMPLETE_KEY, String(weekNumber));
 }
 
-export function getLessonCompleteWeek(): number | null {
-  const raw = getCampSessionItem(LESSON_COMPLETE_KEY);
-  if (!raw || raw === "true") {
+function normalizeWeekNumber(value: number): number | null {
+  if (
+    !Number.isInteger(value) ||
+    value < MIN_WEEK_NUMBER ||
+    value > MAX_WEEK_NUMBER
+  ) {
     return null;
   }
+  return value;
+}
+
+function getLegacyLessonCompleteWeek(): number {
+  const raw = getCampSessionItem(CURRENT_WEEK_KEY);
+  const parsed = raw ? Number.parseInt(raw, 10) : MIN_WEEK_NUMBER;
+  return normalizeWeekNumber(parsed) ?? MIN_WEEK_NUMBER;
+}
+
+export function getLessonCompleteWeek(): number | null {
+  const raw = getCampSessionItem(LESSON_COMPLETE_KEY);
+  if (!raw) {
+    return null;
+  }
+  if (raw === "true") {
+    const week = getLegacyLessonCompleteWeek();
+    setCampSessionItem(LESSON_COMPLETE_KEY, String(week));
+    return week;
+  }
   const week = Number.parseInt(raw, 10);
-  return Number.isFinite(week) ? week : null;
+  return normalizeWeekNumber(week);
 }
 
 export function isLessonCompleteForWeek(weekNumber: number): boolean {
@@ -177,7 +204,7 @@ export function isLessonCompleteForWeek(weekNumber: number): boolean {
 
 /** @deprecated Prefer isLessonCompleteForWeek(getCurrentWeek()) */
 export function isLessonComplete(): boolean {
-  return getCampSessionItem(LESSON_COMPLETE_KEY) === "true";
+  return getLessonCompleteWeek() !== null;
 }
 
 /** Clears the lesson-stage gate so a new week must be watched before painting. */

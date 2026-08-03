@@ -26,7 +26,7 @@ export interface CampProgressSnapshot {
   weekPassed: Record<string, boolean>;
   /** Week whose lesson video was completed (gates application for that week). */
   lessonCompleteWeek?: number;
-  /** @deprecated Legacy boolean — ignored on restore. */
+  /** @deprecated Legacy boolean — restored against currentWeek when true. */
   lessonComplete?: boolean;
   selectedGameMode?: string | null;
   sessionStartedAt?: number;
@@ -42,6 +42,31 @@ function readSessionStartedAt(): number | undefined {
   }
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function normalizeSnapshotWeek(value: number | undefined): number | undefined {
+  if (
+    value === undefined ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > 8
+  ) {
+    return undefined;
+  }
+  return value;
+}
+
+function resolveLessonCompleteWeek(
+  snapshot: CampProgressSnapshot,
+): number | undefined {
+  const lessonCompleteWeek = normalizeSnapshotWeek(snapshot.lessonCompleteWeek);
+  if (lessonCompleteWeek !== undefined) {
+    return lessonCompleteWeek;
+  }
+  if (snapshot.lessonComplete === true) {
+    return normalizeSnapshotWeek(snapshot.currentWeek) ?? 1;
+  }
+  return undefined;
 }
 
 /** Serializes current browser progress for cloud resume codes. */
@@ -102,8 +127,9 @@ export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): boole
     setCampSessionItem(CURRENT_WEEK_KEY, String(snapshot.currentWeek));
   }
 
-  if (snapshot.lessonCompleteWeek !== undefined) {
-    setCampSessionItem(LESSON_COMPLETE_KEY, String(snapshot.lessonCompleteWeek));
+  const lessonCompleteWeek = resolveLessonCompleteWeek(snapshot);
+  if (lessonCompleteWeek !== undefined) {
+    setCampSessionItem(LESSON_COMPLETE_KEY, String(lessonCompleteWeek));
   } else if (typeof window !== "undefined") {
     window.localStorage.removeItem(LESSON_COMPLETE_KEY);
   }
