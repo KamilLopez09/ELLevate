@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 import {
   readCamperSession,
   slugify,
+  startNewCamperSession,
   toLastInitial,
-  writeCamperSession,
 } from "@/lib/camper-session";
 import { restoreFromResumeCode } from "@/lib/camper-resume";
 import { resumeErrorMessage } from "@/lib/resume-errors";
@@ -128,7 +128,7 @@ export function IntakeGatekeeper() {
       unlockedAchievements: [],
     };
 
-    writeCamperSession(data);
+    startNewCamperSession(data);
     setError(null);
     router.push("/menu");
   };
