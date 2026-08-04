@@ -1,11 +1,13 @@
 import type { CamperSessionData, AgeBracket } from "@/types/sentence-canvas";
 import {
+  allCampSessionKeys,
   CAMPER_SESSION_KEY,
   LESSON_COMPLETE_KEY,
   SELECTED_GAME_MODE_KEY,
 } from "@/lib/camp-session-keys";
 import {
   clearAllCamperDeviceStorage,
+  clearCampSessionStorage,
   getCampSessionItem,
   removeCampSessionItem,
   setCampSessionItem,
@@ -126,6 +128,12 @@ export function readCamperSession(): CamperSessionData | null {
 export function writeCamperSession(data: CamperSessionData): void {
   touchCampSessionClock();
   setCampSessionItem(CAMPER_SESSION_KEY, JSON.stringify(data));
+}
+
+/** Starts a new camper on a shared device without inheriting stale progress keys. */
+export function startNewCamperSession(data: CamperSessionData): void {
+  clearCampSessionStorage(allCampSessionKeys());
+  writeCamperSession(data);
 }
 
 /** Applies cumulative score and mode progress after a passed practice session only. */

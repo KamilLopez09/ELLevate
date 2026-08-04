@@ -6,12 +6,14 @@ import {
   writeCamperSession,
 } from "@/lib/camper-session";
 import {
+  allCampSessionKeys,
   CURRENT_WEEK_KEY,
   LESSON_COMPLETE_KEY,
   SELECTED_GAME_MODE_KEY,
   weekPassedKey,
 } from "@/lib/camp-session-keys";
 import {
+  clearCampSessionStorage,
   getCampSessionItem,
   setCampSessionItem,
   touchCampSessionClock,
@@ -87,6 +89,7 @@ export function applyCampProgressSnapshot(snapshot: CampProgressSnapshot): boole
     return false;
   }
 
+  clearCampSessionStorage(allCampSessionKeys());
   writeCamperSession(camper);
 
   for (let week = 1; week <= 8; week += 1) {
