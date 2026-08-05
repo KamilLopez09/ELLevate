@@ -16,7 +16,7 @@ import {
   broadcastCampWallPass,
   buildCampWallPayload,
 } from "../_shared/camp-wall-broadcast.ts";
-import { slugifyCamperId } from "../_shared/resume-snapshot.ts";
+import { isCamperIdForName } from "../_shared/resume-snapshot.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -165,7 +165,7 @@ function validate(
   const firstName = (b.first_name as string).trim();
   const lastInitial = b.last_initial as string;
   const camperId = b.camper_id as string;
-  if (slugifyCamperId(firstName, lastInitial) !== camperId) {
+  if (!isCamperIdForName(camperId, firstName, lastInitial)) {
     return { ok: false, error: "Invalid camper_id" };
   }
 

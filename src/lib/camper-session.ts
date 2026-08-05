@@ -51,6 +51,41 @@ export function slugify(firstName: string, lastInitial: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+const CAMPER_ID_SUFFIX_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
+const CAMPER_ID_SUFFIX_LENGTH = 8;
+
+function randomCamperIdSuffix(): string {
+  const cryptoApi = globalThis.crypto;
+  if (cryptoApi?.getRandomValues) {
+    const bytes = cryptoApi.getRandomValues(
+      new Uint8Array(CAMPER_ID_SUFFIX_LENGTH),
+    );
+    return Array.from(
+      bytes,
+      (byte) => CAMPER_ID_SUFFIX_CHARS[byte % CAMPER_ID_SUFFIX_CHARS.length],
+    ).join("");
+  }
+
+  return Array.from({ length: CAMPER_ID_SUFFIX_LENGTH }, () =>
+    CAMPER_ID_SUFFIX_CHARS[
+      Math.floor(Math.random() * CAMPER_ID_SUFFIX_CHARS.length)
+    ],
+  ).join("");
+}
+
+/**
+ * Creates a COPPA-safe, non-PII stable id for a local camper session.
+ * The name prefix keeps organizer exports readable; the random suffix prevents
+ * two campers with the same first name and last initial from sharing records.
+ */
+export function createCamperId(firstName: string, lastInitial: string): string {
+  const base = slugify(firstName, lastInitial);
+  if (!base) {
+    return "";
+  }
+  return `${base}-${randomCamperIdSuffix()}`;
+}
+
 function migrateLegacyName(parsed: Partial<CamperSessionData>): {
   first_name: string;
   last_initial: string;

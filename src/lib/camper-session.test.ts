@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  createCamperId,
   getLessonCompleteWeek,
   isLessonCompleteForWeek,
+  parseCamperSessionData,
   setLessonComplete,
   clearLessonComplete,
+  slugify,
 } from "@/lib/camper-session";
 import { touchCampSessionClock } from "@/lib/session-store";
+import { isCamperIdForName } from "../../supabase/functions/_shared/resume-snapshot";
 
 describe("lesson complete per week", () => {
   beforeEach(() => {
@@ -24,5 +28,32 @@ describe("lesson complete per week", () => {
     setLessonComplete(1);
     clearLessonComplete();
     expect(isLessonCompleteForWeek(1)).toBe(false);
+  });
+});
+
+describe("camper id generation", () => {
+  it("adds a non-PII suffix so same-name campers do not collide", () => {
+    const first = createCamperId("Maria", "G");
+    const second = createCamperId("Maria", "G");
+
+    expect(first).toMatch(/^maria-g-[a-z0-9]{8}$/);
+    expect(second).toMatch(/^maria-g-[a-z0-9]{8}$/);
+    expect(first).not.toBe(second);
+    expect(isCamperIdForName(first, "Maria", "G")).toBe(true);
+  });
+
+  it("still accepts legacy slug-only camper ids", () => {
+    const legacyId = slugify("Maria", "G");
+    expect(isCamperIdForName(legacyId, "Maria", "G")).toBe(true);
+    expect(
+      parseCamperSessionData({
+        camper_id: legacyId,
+        first_name: "Maria",
+        last_initial: "G",
+        age_bracket: "5-9",
+        native_language: "English",
+        group_letter: "A",
+      }),
+    ).toMatchObject({ camper_id: legacyId });
   });
 });
