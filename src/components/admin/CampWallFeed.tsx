@@ -123,9 +123,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           };
         };
 
-        const trySubscribe = async (
-          privateChannel: boolean,
-        ): Promise<"live" | "failed"> => {
+        const trySubscribe = async (): Promise<"live" | "failed"> => {
           const cleanup = await subscribeCampWall(
             supabase,
             session.channel!,
@@ -159,11 +157,10 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
                 );
               }
             },
-            { privateChannel },
           );
 
           await new Promise((resolve) => {
-            window.setTimeout(resolve, privateChannel ? 5000 : 3000);
+            window.setTimeout(resolve, 5000);
           });
 
           if (cancelled()) {
@@ -179,17 +176,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           return "failed";
         };
 
-        if ((await trySubscribe(true)) === "live") {
-          return () => {
-            void supabase.removeAllChannels();
-          };
-        }
-
-        wasLiveRef.current = false;
-        if ((await trySubscribe(false)) === "live") {
-          setStatusMessage(
-            "Listening on public Realtime channel (private auth unavailable).",
-          );
+        if ((await trySubscribe()) === "live") {
           return () => {
             void supabase.removeAllChannels();
           };
