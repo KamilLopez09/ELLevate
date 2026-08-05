@@ -105,22 +105,29 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
+        let pollingCleanup: (() => void) | undefined;
         const startPolling = () => {
           if (cancelled()) {
             return undefined;
+          }
+          if (pollingCleanup) {
+            return pollingCleanup;
           }
           setStatus("polling");
           setStatusMessage(
             "Live Realtime is unavailable — refreshing pass feed every 20 seconds.",
           );
+          void pollRecentPasses();
           const intervalId = window.setInterval(() => {
             if (!cancelled()) {
               void pollRecentPasses();
             }
           }, POLL_INTERVAL_MS);
-          return () => {
+          pollingCleanup = () => {
             window.clearInterval(intervalId);
+            pollingCleanup = undefined;
           };
+          return pollingCleanup;
         };
 
         const trySubscribe = async (): Promise<"live" | "failed"> => {
@@ -151,10 +158,9 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
                 wasLiveRef.current = false;
               }
               if (subscribeStatus === "CLOSED" && wasLiveRef.current) {
-                setStatus("offline");
-                setStatusMessage(
-                  "Lost connection to the camp wall. Refresh the page.",
-                );
+                wasLiveRef.current = false;
+                void supabase.removeAllChannels();
+                startPolling();
               }
             },
           );
@@ -178,6 +184,7 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
 
         if ((await trySubscribe()) === "live") {
           return () => {
+            pollingCleanup?.();
             void supabase.removeAllChannels();
           };
         }
