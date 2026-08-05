@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
+  createCamperId,
   readCamperSession,
-  slugify,
   toLastInitial,
   writeCamperSession,
 } from "@/lib/camper-session";
@@ -108,7 +108,7 @@ export function IntakeGatekeeper() {
       return;
     }
 
-    const camperId = slugify(cleanFirst, cleanInitial);
+    const camperId = createCamperId(cleanFirst, cleanInitial);
 
     if (!camperId) {
       setError(copy.intake.errors.invalidName);

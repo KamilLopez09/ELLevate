@@ -16,7 +16,7 @@ import {
   broadcastCampWallPass,
   buildCampWallPayload,
 } from "../_shared/camp-wall-broadcast.ts";
-import { slugifyCamperId } from "../_shared/resume-snapshot.ts";
+import { isCamperIdForName } from "../_shared/resume-snapshot.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -38,8 +38,9 @@ const ALLOWED_LANGUAGES = new Set(["English", "Spanish"]);
 const PASS_THRESHOLD = 8;
 
 /** Max successful telemetry POSTs per IP per hour (best-effort per Edge isolate). */
-const TELEMETRY_RATE_LIMIT = 10;
+const TELEMETRY_RATE_LIMIT = 250;
 const TELEMETRY_RATE_WINDOW_MS = 60 * 60 * 1000;
+const MAX_CUMULATIVE_SCORE = 1300;
 
 interface TelemetryInsert {
   module_name: "sentence_canvas";
@@ -128,7 +129,11 @@ function validate(
   if (b.score !== b.correct_first_try) {
     return { ok: false, error: "score must match correct_first_try" };
   }
-  if (!isFiniteNumber(b.cumulative_score) || b.cumulative_score < 0) {
+  if (
+    !isFiniteNumber(b.cumulative_score) ||
+    b.cumulative_score < 0 ||
+    b.cumulative_score > MAX_CUMULATIVE_SCORE
+  ) {
     return { ok: false, error: "Invalid cumulative_score" };
   }
   if (!isFiniteNumber(b.speed_bonuses_earned) || b.speed_bonuses_earned < 0) {
@@ -165,7 +170,7 @@ function validate(
   const firstName = (b.first_name as string).trim();
   const lastInitial = b.last_initial as string;
   const camperId = b.camper_id as string;
-  if (slugifyCamperId(firstName, lastInitial) !== camperId) {
+  if (!isCamperIdForName(camperId, firstName, lastInitial)) {
     return { ok: false, error: "Invalid camper_id" };
   }
 
@@ -273,7 +278,9 @@ Deno.serve(async (req) => {
       shouldBroadcast = true;
     }
 
-    incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
+    if (shouldUpdate) {
+      incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
+    }
 
     const wallChannel = Deno.env.get("CAMP_WALL_CHANNEL");
     if (wallChannel && shouldBroadcast) {

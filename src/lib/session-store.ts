@@ -6,7 +6,10 @@
  * campers with clearCampSession().
  */
 
-import { allCampSessionKeys } from "@/lib/camp-session-keys";
+import {
+  allCampSessionKeys,
+  CAMPER_SESSION_KEY,
+} from "@/lib/camp-session-keys";
 import { clearTelemetryQueue } from "@/lib/telemetry-queue";
 
 const SESSION_STARTED_AT_KEY = "elle_session_started_at";
@@ -28,10 +31,19 @@ function readStartedAt(): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function hasStoredCamperProgress(): boolean {
+  if (!isBrowser()) {
+    return false;
+  }
+  return allCampSessionKeys().some(
+    (key) => window.localStorage.getItem(key) !== null,
+  );
+}
+
 export function isCampSessionExpired(): boolean {
   const startedAt = readStartedAt();
   if (startedAt === null) {
-    return false;
+    return hasStoredCamperProgress();
   }
   return Date.now() - startedAt > SESSION_TTL_MS;
 }
@@ -58,6 +70,12 @@ export function getCampSessionItem(key: string): string | null {
 export function setCampSessionItem(key: string, value: string): void {
   if (!isBrowser()) {
     return;
+  }
+  if (isCampSessionExpired()) {
+    clearAllCamperDeviceStorage();
+    if (key !== CAMPER_SESSION_KEY) {
+      return;
+    }
   }
   if (!readStartedAt()) {
     touchCampSessionClock();

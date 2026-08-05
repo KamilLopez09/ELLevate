@@ -105,27 +105,32 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           auth: { persistSession: false, autoRefreshToken: false },
         });
 
+        let pollingCleanup: (() => void) | undefined;
         const startPolling = () => {
           if (cancelled()) {
             return undefined;
+          }
+          if (pollingCleanup) {
+            return pollingCleanup;
           }
           setStatus("polling");
           setStatusMessage(
             "Live Realtime is unavailable — refreshing pass feed every 20 seconds.",
           );
+          void pollRecentPasses();
           const intervalId = window.setInterval(() => {
             if (!cancelled()) {
               void pollRecentPasses();
             }
           }, POLL_INTERVAL_MS);
-          return () => {
+          pollingCleanup = () => {
             window.clearInterval(intervalId);
+            pollingCleanup = undefined;
           };
+          return pollingCleanup;
         };
 
-        const trySubscribe = async (
-          privateChannel: boolean,
-        ): Promise<"live" | "failed"> => {
+        const trySubscribe = async (): Promise<"live" | "failed"> => {
           const cleanup = await subscribeCampWall(
             supabase,
             session.channel!,
@@ -153,17 +158,15 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
                 wasLiveRef.current = false;
               }
               if (subscribeStatus === "CLOSED" && wasLiveRef.current) {
-                setStatus("offline");
-                setStatusMessage(
-                  "Lost connection to the camp wall. Refresh the page.",
-                );
+                wasLiveRef.current = false;
+                void supabase.removeAllChannels();
+                startPolling();
               }
             },
-            { privateChannel },
           );
 
           await new Promise((resolve) => {
-            window.setTimeout(resolve, privateChannel ? 5000 : 3000);
+            window.setTimeout(resolve, 5000);
           });
 
           if (cancelled()) {
@@ -179,18 +182,9 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
           return "failed";
         };
 
-        if ((await trySubscribe(true)) === "live") {
+        if ((await trySubscribe()) === "live") {
           return () => {
-            void supabase.removeAllChannels();
-          };
-        }
-
-        wasLiveRef.current = false;
-        if ((await trySubscribe(false)) === "live") {
-          setStatusMessage(
-            "Listening on public Realtime channel (private auth unavailable).",
-          );
-          return () => {
+            pollingCleanup?.();
             void supabase.removeAllChannels();
           };
         }

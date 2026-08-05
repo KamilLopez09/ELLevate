@@ -47,6 +47,22 @@ export function slugifyCamperId(firstName: string, lastInitial: string): string 
     .replace(/^-+|-+$/g, "");
 }
 
+export function isCamperIdForName(
+  camperId: string,
+  firstName: string,
+  lastInitial: string,
+): boolean {
+  const base = slugifyCamperId(firstName, lastInitial);
+  if (camperId === base) {
+    return true;
+  }
+
+  const suffix = camperId.startsWith(`${base}-`)
+    ? camperId.slice(base.length + 1)
+    : "";
+  return /^[a-z0-9]{8}$/.test(suffix);
+}
+
 export function validateSnapshot(
   body: unknown,
 ): { ok: true; snapshot: CampProgressSnapshot } | { ok: false; error: string } {
@@ -88,7 +104,7 @@ export function validateSnapshot(
   const firstName = c.first_name.trim();
   const lastInitial = c.last_initial.toUpperCase();
   const camperId = c.camper_id;
-  if (slugifyCamperId(firstName, lastInitial) !== camperId) {
+  if (!isCamperIdForName(camperId, firstName, lastInitial)) {
     return { ok: false, error: "Invalid snapshot" };
   }
 
