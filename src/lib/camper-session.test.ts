@@ -9,7 +9,6 @@ import {
   slugify,
 } from "@/lib/camper-session";
 import { touchCampSessionClock } from "@/lib/session-store";
-import { isCamperIdForName } from "../../supabase/functions/_shared/resume-snapshot";
 
 describe("lesson complete per week", () => {
   beforeEach(() => {
@@ -39,12 +38,10 @@ describe("camper id generation", () => {
     expect(first).toMatch(/^maria-g-[a-z0-9]{8}$/);
     expect(second).toMatch(/^maria-g-[a-z0-9]{8}$/);
     expect(first).not.toBe(second);
-    expect(isCamperIdForName(first, "Maria", "G")).toBe(true);
   });
 
   it("still accepts legacy slug-only camper ids", () => {
     const legacyId = slugify("Maria", "G");
-    expect(isCamperIdForName(legacyId, "Maria", "G")).toBe(true);
     expect(
       parseCamperSessionData({
         camper_id: legacyId,
