@@ -9,7 +9,18 @@ const ACHIEVEMENT_IDS = [
   "points_1000",
 ] as const;
 
+type AchievementId = (typeof ACHIEVEMENT_IDS)[number];
+
 const ACHIEVEMENT_SET = new Set<string>(ACHIEVEMENT_IDS);
+const PASS_SESSION_BADGES = new Set<AchievementId>([
+  "first_pass",
+  "perfect_week",
+  "speed_star",
+]);
+
+function isAchievementId(value: unknown): value is AchievementId {
+  return typeof value === "string" && ACHIEVEMENT_SET.has(value);
+}
 
 export function countWeeksPassed(weekPassed: Record<string, boolean>): number {
   let count = 0;
@@ -56,4 +67,23 @@ export function recomputeUnlockedAchievements(input: {
   }
 
   return unlocked.filter((id) => ACHIEVEMENT_SET.has(id));
+}
+
+export function normalizeSnapshotAchievements(
+  input: {
+    weekPassed: Record<string, boolean>;
+    cumulativeScore: number;
+    completedModes: string[];
+  },
+  suppliedAchievements: unknown,
+): AchievementId[] {
+  const progressBased = recomputeUnlockedAchievements(input);
+  const passSessionBadges = Array.isArray(suppliedAchievements)
+    ? suppliedAchievements.filter(
+        (id): id is AchievementId =>
+          isAchievementId(id) && PASS_SESSION_BADGES.has(id),
+      )
+    : [];
+
+  return [...new Set([...progressBased, ...passSessionBadges])];
 }
