@@ -285,10 +285,13 @@ Deno.serve(async (req) => {
       return jsonResponse({ error_code: "invalid_code" }, 400);
     }
 
+    // Consume the single-use code atomically. A select-then-delete lets two
+    // concurrent restores read the same snapshot before either delete commits.
     const { data, error } = await admin
       .from("camper_resume_snapshots")
-      .select("snapshot, expires_at")
+      .delete()
       .eq("resume_code", code)
+      .select("snapshot, expires_at")
       .maybeSingle();
 
     if (error) {
@@ -296,19 +299,13 @@ Deno.serve(async (req) => {
     }
 
     if (!data || new Date(data.expires_at).getTime() < Date.now()) {
-      if (data) {
-        await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
-      }
       return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
     }
 
     const validated = validateSnapshot(data.snapshot);
     if (!validated.ok) {
-      await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
       return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
     }
-
-    await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
 
     return jsonResponse({ snapshot: validated.snapshot });
   }
