@@ -1,4 +1,4 @@
-import { recomputeUnlockedAchievements } from "./achievements.ts";
+import { normalizeSnapshotAchievements } from "./achievements.ts";
 
 const ALLOWED_GAME_MODES = new Set([
   "flashcard_drill",
@@ -137,11 +137,14 @@ export function validateSnapshot(
     return { ok: false, error: "Invalid snapshot" };
   }
 
-  const unlockedAchievements = recomputeUnlockedAchievements({
-    weekPassed: normalizedWeekPassed,
-    cumulativeScore,
-    completedModes,
-  });
+  const unlockedAchievements = normalizeSnapshotAchievements(
+    {
+      weekPassed: normalizedWeekPassed,
+      cumulativeScore,
+      completedModes,
+    },
+    c.unlockedAchievements,
+  );
 
   const snapshot: CampProgressSnapshot = {
     camper: {
