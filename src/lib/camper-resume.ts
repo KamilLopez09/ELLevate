@@ -55,6 +55,23 @@ function parseErrorCode(
   return fallback;
 }
 
+async function consumeRestoredResumeCode(
+  code: string,
+  restoreToken: string,
+): Promise<void> {
+  const response = await postResumeFunction({
+    action: "consume-restore",
+    code,
+    restore_token: restoreToken,
+  });
+
+  if (isEdgeFetchFailure(response)) {
+    return;
+  }
+
+  await response.body?.cancel().catch(() => undefined);
+}
+
 export async function createResumeCode(): Promise<
   CreateResumeCodeResult | CreateResumeCodeError
 > {
@@ -150,6 +167,7 @@ export async function restoreFromResumeCode(
 
   const payload = (await response.json().catch(() => null)) as {
     snapshot?: CampProgressSnapshot;
+    restore_token?: string;
     error_code?: string;
   } | null;
 
@@ -170,6 +188,12 @@ export async function restoreFromResumeCode(
   }
 
   reconcileAchievementsWithProgress();
+
+  if (typeof payload.restore_token === "string") {
+    await consumeRestoredResumeCode(normalized, payload.restore_token).catch(
+      () => undefined,
+    );
+  }
 
   return { ok: true, snapshot: payload.snapshot };
 }

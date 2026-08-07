@@ -6,6 +6,11 @@ export interface CreateTokenPayload {
   exp: number;
 }
 
+export interface RestoreTokenPayload {
+  resume_code: string;
+  exp: number;
+}
+
 function base64UrlEncode(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) {
@@ -85,6 +90,21 @@ export async function issueCreateToken(
   return `${payloadPart}.${signature}`;
 }
 
+export async function issueRestoreToken(
+  secret: string,
+  resumeCode: string,
+  ttlMs: number,
+): Promise<string> {
+  const payload: RestoreTokenPayload = {
+    resume_code: resumeCode,
+    exp: Date.now() + ttlMs,
+  };
+  const payloadJson = JSON.stringify(payload);
+  const payloadPart = base64UrlEncode(encoder.encode(payloadJson));
+  const signature = await signPayload(secret, payloadJson);
+  return `${payloadPart}.${signature}`;
+}
+
 export async function verifyCreateToken(
   secret: string,
   token: string,
@@ -130,6 +150,50 @@ export async function verifyCreateToken(
     sessionStartedAt !== undefined &&
     payload.session_started_at !== sessionStartedAt
   ) {
+    return false;
+  }
+
+  return true;
+}
+
+export async function verifyRestoreToken(
+  secret: string,
+  token: string,
+  resumeCode: string,
+): Promise<boolean> {
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return false;
+  }
+
+  const [payloadPart, signature] = parts;
+  if (!payloadPart || !signature) {
+    return false;
+  }
+
+  let payloadJson: string;
+  try {
+    payloadJson = new TextDecoder().decode(base64UrlDecode(payloadPart));
+  } catch {
+    return false;
+  }
+
+  const validSig = await verifySignature(secret, payloadJson, signature);
+  if (!validSig) {
+    return false;
+  }
+
+  let payload: RestoreTokenPayload;
+  try {
+    payload = JSON.parse(payloadJson) as RestoreTokenPayload;
+  } catch {
+    return false;
+  }
+
+  if (payload.resume_code !== resumeCode) {
+    return false;
+  }
+  if (payload.exp < Date.now()) {
     return false;
   }
 
