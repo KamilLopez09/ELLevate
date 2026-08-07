@@ -6,7 +6,9 @@ import { getClientIp } from "../_shared/client-ip.ts";
 import { consumeRateLimit } from "../_shared/rate-limit.ts";
 import {
   issueCreateToken,
+  issueRestoreToken,
   verifyCreateToken,
+  verifyRestoreToken,
 } from "../_shared/resume-attestation.ts";
 import {
   MAX_ACTIVE_SNAPSHOTS_PER_CAMPER,
@@ -24,6 +26,7 @@ const CODE_CHARS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const CODE_LENGTH = 6;
 const SNAPSHOT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CREATE_TOKEN_TTL_MS = 15 * 60 * 1000;
+const RESTORE_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 const TOKEN_ISSUE_LIMIT = 10;
 const TOKEN_ISSUE_WINDOW_MS = 60 * 60 * 1000;
@@ -287,7 +290,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await admin
       .from("camper_resume_snapshots")
-      .select("snapshot, expires_at")
+      .select("snapshot, expires_at, lookup_count")
       .eq("resume_code", code)
       .maybeSingle();
 
@@ -308,9 +311,45 @@ Deno.serve(async (req) => {
       return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
     }
 
-    await admin.from("camper_resume_snapshots").delete().eq("resume_code", code);
+    await admin
+      .from("camper_resume_snapshots")
+      .update({ lookup_count: (data.lookup_count ?? 0) + 1 })
+      .eq("resume_code", code);
 
-    return jsonResponse({ snapshot: validated.snapshot });
+    const restoreToken = await issueRestoreToken(
+      attestationSecret,
+      code,
+      RESTORE_TOKEN_TTL_MS,
+    );
+
+    return jsonResponse({ snapshot: validated.snapshot, restore_token: restoreToken });
+  }
+
+  if (action === "consume-restore") {
+    const code = normalizeCode(body.code);
+    const restoreToken = body.restore_token;
+    if (!code || typeof restoreToken !== "string" || restoreToken.length < 10) {
+      return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 400);
+    }
+
+    const tokenValid = await verifyRestoreToken(
+      attestationSecret,
+      restoreToken,
+      code,
+    );
+    if (!tokenValid) {
+      return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 401);
+    }
+
+    const { error } = await admin
+      .from("camper_resume_snapshots")
+      .delete()
+      .eq("resume_code", code);
+    if (error) {
+      return jsonResponse({ error_code: RESTORE_ERROR_CODE }, 500);
+    }
+
+    return jsonResponse({ ok: true });
   }
 
   return jsonResponse({ error: "Unknown action" }, 400);
