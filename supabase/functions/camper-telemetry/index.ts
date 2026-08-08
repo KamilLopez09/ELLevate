@@ -261,9 +261,26 @@ Deno.serve(async (req) => {
         result.row.total_points > (existing.total_points ?? 0));
 
     if (shouldUpdate) {
+      const updateRow = {
+        completed_at: completedAt,
+        module_name: result.row.module_name,
+        score: result.row.score,
+        error_count: result.row.error_count,
+        game_mode: result.row.game_mode,
+        base_points: result.row.base_points,
+        first_try_bonus: result.row.first_try_bonus,
+        speed_bonus: result.row.speed_bonus,
+        total_points: result.row.total_points,
+        correct_first_try: result.row.correct_first_try,
+        cumulative_score: result.row.cumulative_score,
+        speed_bonuses_earned: result.row.speed_bonuses_earned,
+        accuracy_rate: result.row.accuracy_rate,
+      };
       const { error: updateError } = await supabase
         .from("camper_telemetry")
-        .update(insertRow)
+        // Duplicate pass updates may improve scoring fields, but they must not
+        // rewrite the original camper identity/group assigned to that pass.
+        .update(updateRow)
         .eq("camper_id", result.row.camper_id)
         .eq("week_number", result.row.week_number);
 
