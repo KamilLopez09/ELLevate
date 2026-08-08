@@ -79,7 +79,7 @@ export async function fetchOrganizerTelemetry(
 
 export function escapeCsvCell(value: string | number): string {
   let text = String(value);
-  if (/^[=+\-@\t\r]/.test(text)) {
+  if (/^\s*[=+\-@]/.test(text) || /^[\t\r\n]/.test(text)) {
     text = `'${text}`;
   }
   if (/[",\n]/.test(text)) {

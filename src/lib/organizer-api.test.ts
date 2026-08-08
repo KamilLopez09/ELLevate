@@ -7,6 +7,7 @@ describe("escapeCsvCell", () => {
     expect(escapeCsvCell("=cmd()")).toBe("'=cmd()");
     expect(escapeCsvCell("+1234")).toBe("'+1234");
     expect(escapeCsvCell("-sum(A1)")).toBe("'-sum(A1)");
+    expect(escapeCsvCell("  =cmd()")).toBe("'  =cmd()");
   });
 
   it("quotes fields containing commas or quotes", () => {
