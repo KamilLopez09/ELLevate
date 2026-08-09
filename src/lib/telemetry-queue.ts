@@ -40,6 +40,10 @@ function writeQueue(items: CamperTelemetryRow[]): void {
   window.localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
 }
 
+function queueEntrySignature(payload: CamperTelemetryRow): string {
+  return JSON.stringify(payload);
+}
+
 /** Stores a failed telemetry payload for later retry when back online. */
 export function enqueueTelemetry(payload: CamperTelemetryRow): void {
   const queue = readQueue();
@@ -72,19 +76,26 @@ export async function flushTelemetryQueue(): Promise<number> {
     return 0;
   }
 
-  const remaining: CamperTelemetryRow[] = [];
+  const flushedPayloads = new Set<string>();
   let flushed = 0;
 
   for (const payload of queue) {
     const saved = await postCamperTelemetryDirect(payload);
     if (saved) {
+      flushedPayloads.add(queueEntrySignature(payload));
       flushed += 1;
-    } else {
-      remaining.push(payload);
     }
   }
 
-  writeQueue(remaining);
+  if (flushedPayloads.size > 0) {
+    const currentQueue = readQueue();
+    writeQueue(
+      currentQueue.filter(
+        (payload) => !flushedPayloads.has(queueEntrySignature(payload)),
+      ),
+    );
+  }
+
   if (flushed > 0) {
     notifyProgressSynced();
   }
