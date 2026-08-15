@@ -17,6 +17,7 @@ import {
   buildCampWallPayload,
 } from "../_shared/camp-wall-broadcast.ts";
 import { slugifyCamperId } from "../_shared/resume-snapshot.ts";
+import { shouldUpdateDuplicateTelemetry } from "../_shared/telemetry-duplicate-update.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -255,10 +256,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: readError.message }, 500);
     }
 
-    const shouldUpdate =
-      existing !== null &&
-      (result.row.cumulative_score > (existing.cumulative_score ?? 0) ||
-        result.row.total_points > (existing.total_points ?? 0));
+    const shouldUpdate = shouldUpdateDuplicateTelemetry(existing, result.row);
 
     if (shouldUpdate) {
       const { error: updateError } = await supabase
