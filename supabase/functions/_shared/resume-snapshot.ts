@@ -37,6 +37,19 @@ function isString(value: unknown, min: number, max: number): value is string {
   return typeof value === "string" && value.length >= min && value.length <= max;
 }
 
+function normalizeLastInitial(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const initial = value
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .charAt(0)
+    .toUpperCase();
+  return /^[A-Z]$/.test(initial) ? initial : null;
+}
+
 export function slugifyCamperId(firstName: string, lastInitial: string): string {
   return `${firstName} ${lastInitial}`
     .normalize("NFKD")
@@ -64,7 +77,7 @@ export function validateSnapshot(
   if (
     !isString(c.camper_id, 1, 64) ||
     !isString(c.first_name, 1, 40) ||
-    !isString(c.last_initial, 1, 1) ||
+    typeof c.last_initial !== "string" ||
     !isString(c.age_bracket, 3, 5) ||
     !isString(c.native_language, 5, 10) ||
     !isString(c.group_letter, 1, 1) ||
@@ -86,7 +99,10 @@ export function validateSnapshot(
   }
 
   const firstName = c.first_name.trim();
-  const lastInitial = c.last_initial.toUpperCase();
+  const lastInitial = normalizeLastInitial(c.last_initial);
+  if (!lastInitial) {
+    return { ok: false, error: "Invalid snapshot" };
+  }
   const camperId = c.camper_id;
   if (slugifyCamperId(firstName, lastInitial) !== camperId) {
     return { ok: false, error: "Invalid snapshot" };

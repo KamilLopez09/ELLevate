@@ -82,6 +82,19 @@ function isString(value: unknown, min: number, max: number): value is string {
   return typeof value === "string" && value.length >= min && value.length <= max;
 }
 
+function normalizeLastInitial(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const initial = value
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .charAt(0)
+    .toUpperCase();
+  return /^[A-Z]$/.test(initial) ? initial : null;
+}
+
 /** Mirrors the RLS check constraints; returns a sanitized row or an error. */
 function validate(
   body: unknown,
@@ -143,7 +156,8 @@ function validate(
   if (!isString(b.first_name, 1, 80)) {
     return { ok: false, error: "Invalid first_name" };
   }
-  if (typeof b.last_initial !== "string" || !/^[A-Z]$/.test(b.last_initial)) {
+  const lastInitial = normalizeLastInitial(b.last_initial);
+  if (!lastInitial) {
     return { ok: false, error: "Invalid last_initial" };
   }
   if (
@@ -163,7 +177,6 @@ function validate(
   }
 
   const firstName = (b.first_name as string).trim();
-  const lastInitial = b.last_initial as string;
   const camperId = b.camper_id as string;
   if (slugifyCamperId(firstName, lastInitial) !== camperId) {
     return { ok: false, error: "Invalid camper_id" };
