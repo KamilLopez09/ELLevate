@@ -7,7 +7,9 @@ const ALLOWED_GAME_MODES = new Set([
   "rapid_fire",
 ]);
 
-export const MAX_CUMULATIVE_SCORE = 1300;
+const TOTAL_CAMP_WEEKS = 8;
+const MAX_SESSION_SCORE = 1300;
+export const MAX_CUMULATIVE_SCORE = TOTAL_CAMP_WEEKS * MAX_SESSION_SCORE;
 export const MAX_ACTIVE_SNAPSHOTS_PER_CAMPER = 2;
 
 export interface SnapshotCamper {

@@ -18,7 +18,9 @@ import {
 } from "@/lib/session-store";
 
 const SESSION_STARTED_AT_KEY = "elle_session_started_at";
-const MAX_CUMULATIVE_SCORE = 1300;
+const TOTAL_CAMP_WEEKS = 8;
+const MAX_SESSION_SCORE = 1300;
+const MAX_CUMULATIVE_SCORE = TOTAL_CAMP_WEEKS * MAX_SESSION_SCORE;
 
 export interface CampProgressSnapshot {
   camper: CamperSessionData;
