@@ -30,11 +30,15 @@ function migrateAgeBracket(bracket: string): AgeBracket {
 
 /** COPPA-safe: keep only the first letter of a last name. */
 export function toLastInitial(value: string): string {
-  const trimmed = value.trim();
+  const trimmed = value
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
   if (!trimmed) {
     return "";
   }
-  return trimmed.charAt(0).toUpperCase();
+  const initial = trimmed.charAt(0).toUpperCase();
+  return /^[A-Z]$/.test(initial) ? initial : "";
 }
 
 /**
