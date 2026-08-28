@@ -33,9 +33,9 @@ import {
 import { unlockAchievementsAfterPass } from "@/lib/achievements";
 import { PASS_THRESHOLD } from "@/lib/constants";
 import { useCopy } from "@/lib/i18n/useCopy";
+import { buildLessonTelemetryPayload } from "@/lib/lesson-telemetry";
 import { postCamperTelemetry } from "@/lib/telemetry";
 import { notifyProgressSynced } from "@/lib/progress-events";
-import type { CamperTelemetryRow } from "@/types/sentence-canvas";
 import type { GameModeCompletePayload } from "@/types/game-modes";
 import type { LessonProgressState } from "@/types/lesson-progress";
 
@@ -152,6 +152,7 @@ export function LessonCanvas({
   const modesUsedRef = useRef<Set<GameModeId>>(new Set());
   const errorCountRef = useRef(0);
   const weekCompletedRef = useRef(false);
+  const telemetrySaveRef = useRef<Promise<boolean> | null>(null);
   const [outcomeVersion, bumpOutcomes] = useState(0);
 
   useEffect(() => {
@@ -165,6 +166,7 @@ export function LessonCanvas({
 
   useEffect(() => {
     weekCompletedRef.current = false;
+    telemetrySaveRef.current = null;
   }, [weekNumber]);
 
   const sessionSummary: SessionScoreSummary = useMemo(
@@ -195,8 +197,57 @@ export function LessonCanvas({
     scoreResultsRef.current = [];
     modesUsedRef.current = new Set();
     errorCountRef.current = 0;
+    telemetrySaveRef.current = null;
+    setTelemetryWarning(false);
     refreshOutcomes();
   }, [refreshOutcomes, totalPrompts]);
+
+  const syncCompletedSessionTelemetry = useCallback(
+    (
+      summary: SessionScoreSummary = sessionSummary,
+      firstTryScore = correctFirstTry,
+    ): Promise<boolean> => {
+      if (telemetrySaveRef.current) {
+        return telemetrySaveRef.current;
+      }
+
+      const camper = readCamperSession();
+      if (!camper) {
+        return Promise.resolve(false);
+      }
+
+      const sessionGameMode = pickTelemetryGameMode(
+        modesUsedRef.current,
+        getSelectedGameMode(),
+      );
+      const payload = buildLessonTelemetryPayload({
+        camper,
+        correctFirstTry: firstTryScore,
+        errorCount: errorCountRef.current,
+        gameMode: sessionGameMode,
+        sessionSummary: summary,
+        totalPrompts,
+        weekNumber,
+      });
+
+      const savePromise = postCamperTelemetry(payload)
+        .then((saved) => {
+          setTelemetryWarning(!saved);
+          if (saved) {
+            notifyProgressSynced();
+          }
+          return saved;
+        })
+        .catch(() => {
+          setTelemetryWarning(true);
+          return false;
+        });
+
+      telemetrySaveRef.current = savePromise;
+      return savePromise;
+    },
+    [correctFirstTry, sessionSummary, totalPrompts, weekNumber],
+  );
 
   const finishGate = useCallback(
     (firstTryScore: number) => {
@@ -221,10 +272,11 @@ export function LessonCanvas({
           totalPrompts,
           totalSpeedBonus: summary.totalSpeedBonus,
         });
+        void syncCompletedSessionTelemetry(summary, firstTryScore);
       }
       setPromptIndex(totalPrompts);
     },
-    [totalPrompts, weekNumber],
+    [syncCompletedSessionTelemetry, totalPrompts, weekNumber],
   );
 
   const handleModeComplete = useCallback(
@@ -284,52 +336,7 @@ export function LessonCanvas({
 
   const handleReturnToMenu = async () => {
     setIsSaving(true);
-
-    const camper = readCamperSession();
-    const accuracyRate =
-      totalPrompts > 0
-        ? Number(((correctFirstTry / totalPrompts) * 100).toFixed(2))
-        : 0;
-
-    const sessionGameMode = pickTelemetryGameMode(
-      modesUsedRef.current,
-      getSelectedGameMode(),
-    );
-
-    if (camper) {
-      const fresh = readCamperSession();
-      const payload: CamperTelemetryRow = {
-        module_name: "sentence_canvas",
-        score: correctFirstTry,
-        error_count: errorCountRef.current,
-        game_mode: sessionGameMode,
-        base_points: sessionSummary.results.reduce(
-          (sum, result) => sum + result.base,
-          0,
-        ),
-        first_try_bonus: sessionSummary.totalFirstTryBonus,
-        speed_bonus: sessionSummary.totalSpeedBonus,
-        total_points: sessionSummary.totalPoints,
-        week_number: weekNumber,
-        correct_first_try: correctFirstTry,
-        cumulative_score: fresh?.cumulativeScore ?? camper.cumulativeScore,
-        speed_bonuses_earned: sessionSummary.totalSpeedBonus,
-        accuracy_rate: accuracyRate,
-        camper_id: camper.camper_id,
-        first_name: camper.first_name,
-        last_initial: camper.last_initial,
-        age_bracket: camper.age_bracket,
-        native_language: camper.native_language,
-        group_letter: camper.group_letter,
-      };
-
-      const saved = await postCamperTelemetry(payload);
-      setTelemetryWarning(!saved);
-      if (saved) {
-        notifyProgressSynced();
-      }
-    }
-
+    await syncCompletedSessionTelemetry();
     setIsSaving(false);
     router.push("/menu");
   };
