@@ -9,6 +9,10 @@ import {
 import { useCopy } from "@/lib/i18n/useCopy";
 import { PROGRESS_SYNCED_EVENT } from "@/lib/progress-events";
 
+// Keep passive polling well below the public endpoint's per-IP quota; progress
+// sync, focus, and visibility events still refresh immediately.
+const PASSIVE_REFRESH_INTERVAL_MS = 5 * 60_000;
+
 export function GroupStandingsCard({
   groupLetter,
   camperId,
@@ -23,9 +27,10 @@ export function GroupStandingsCard({
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
     const result = await fetchGroupLeaderboard(groupLetter, camperId);
-    setStandings(result);
+    if (result !== null) {
+      setStandings(result);
+    }
     setLoading(false);
   }, [camperId, groupLetter]);
 
@@ -61,7 +66,7 @@ export function GroupStandingsCard({
       if (document.visibilityState === "visible") {
         onSync();
       }
-    }, 30_000);
+    }, PASSIVE_REFRESH_INTERVAL_MS);
 
     return () => {
       cancelled = true;
