@@ -12,7 +12,7 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const LEADERBOARD_LIMIT = 60;
+const LEADERBOARD_LIMIT = 300;
 const LEADERBOARD_WINDOW_MS = 60 * 60 * 1000;
 const TOP_N = 10;
 
