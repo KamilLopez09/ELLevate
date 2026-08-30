@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import {
+  appendCampWallPassEvent,
   campWallEventKey,
   telemetryRowsToCampWallEvents,
 } from "@/lib/camp-wall-events";
@@ -51,12 +52,9 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
       return;
     }
     seenIds.current.add(dedupeKey);
-
-    const entry: CampWallPassEvent = {
-      ...payload,
-      id: crypto.randomUUID(),
-    };
-    setEvents((prev) => [entry, ...prev].slice(0, MAX_EVENTS));
+    setEvents((prev) =>
+      appendCampWallPassEvent(prev, payload, crypto.randomUUID(), MAX_EVENTS),
+    );
   }, []);
 
   const pollRecentPasses = useCallback(async () => {
@@ -72,7 +70,6 @@ export function CampWallFeed({ password }: CampWallFeedProps) {
 
   const connect = useCallback(
     async (cancelled: () => boolean) => {
-      seenIds.current.clear();
       wasLiveRef.current = false;
       setStatus("connecting");
       setStatusMessage("Connecting to live camp feed…");

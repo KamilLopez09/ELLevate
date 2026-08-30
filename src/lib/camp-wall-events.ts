@@ -1,5 +1,5 @@
 import type { CamperTelemetryRecord } from "@/lib/organizer-api";
-import type { CampWallPassPayload } from "@/types/camp-wall";
+import type { CampWallPassEvent, CampWallPassPayload } from "@/types/camp-wall";
 
 /** Map organizer telemetry rows to sanitized camp-wall payloads (no camper_id). */
 export function telemetryRowsToCampWallEvents(
@@ -19,4 +19,25 @@ export function telemetryRowsToCampWallEvents(
 
 export function campWallEventKey(payload: CampWallPassPayload): string {
   return `${payload.completed_at}-${payload.first_name}-${payload.last_initial}-${payload.group_letter}-${payload.week_number}`;
+}
+
+export function hasCampWallPassEvent(
+  events: readonly CampWallPassPayload[],
+  payload: CampWallPassPayload,
+): boolean {
+  const dedupeKey = campWallEventKey(payload);
+  return events.some((event) => campWallEventKey(event) === dedupeKey);
+}
+
+export function appendCampWallPassEvent(
+  events: CampWallPassEvent[],
+  payload: CampWallPassPayload,
+  id: string,
+  maxEvents: number,
+): CampWallPassEvent[] {
+  if (hasCampWallPassEvent(events, payload)) {
+    return events;
+  }
+
+  return [{ ...payload, id }, ...events].slice(0, maxEvents);
 }
