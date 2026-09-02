@@ -199,8 +199,15 @@ Deno.serve(async (req) => {
       return jsonResponse({ error_code: "authorize_failed" }, 401);
     }
 
-    const validated = validateSnapshot(body.snapshot);
+    const validated = validateSnapshot(body.snapshot, {
+      requireSessionStartedAt: true,
+    });
     if (!validated.ok) {
+      return jsonResponse({ error_code: "create_failed" }, 400);
+    }
+
+    const sessionStartedAt = validated.snapshot.sessionStartedAt;
+    if (sessionStartedAt === undefined) {
       return jsonResponse({ error_code: "create_failed" }, 400);
     }
 
@@ -208,7 +215,7 @@ Deno.serve(async (req) => {
       attestationSecret,
       createToken,
       validated.snapshot.camper.camper_id,
-      validated.snapshot.sessionStartedAt,
+      sessionStartedAt,
     );
     if (!tokenValid) {
       return jsonResponse({ error_code: "authorize_failed" }, 401);

@@ -33,6 +33,10 @@ export interface CampProgressSnapshot {
   sessionStartedAt?: number;
 }
 
+interface ValidateSnapshotOptions {
+  requireSessionStartedAt?: boolean;
+}
+
 function isString(value: unknown, min: number, max: number): value is string {
   return typeof value === "string" && value.length >= min && value.length <= max;
 }
@@ -49,6 +53,7 @@ export function slugifyCamperId(firstName: string, lastInitial: string): string 
 
 export function validateSnapshot(
   body: unknown,
+  options: ValidateSnapshotOptions = {},
 ): { ok: true; snapshot: CampProgressSnapshot } | { ok: false; error: string } {
   if (!body || typeof body !== "object") {
     return { ok: false, error: "Invalid snapshot" };
@@ -180,12 +185,14 @@ export function validateSnapshot(
   ) {
     snapshot.selectedGameMode = record.selectedGameMode;
   }
-  if (
+  const hasValidSessionStartedAt =
     typeof record.sessionStartedAt === "number" &&
     Number.isFinite(record.sessionStartedAt) &&
-    record.sessionStartedAt > 0
-  ) {
+    record.sessionStartedAt > 0;
+  if (hasValidSessionStartedAt) {
     snapshot.sessionStartedAt = record.sessionStartedAt;
+  } else if (options.requireSessionStartedAt) {
+    return { ok: false, error: "Invalid snapshot" };
   }
 
   return { ok: true, snapshot };

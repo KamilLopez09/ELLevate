@@ -89,7 +89,7 @@ export async function verifyCreateToken(
   secret: string,
   token: string,
   camperId: string,
-  sessionStartedAt: number | undefined,
+  sessionStartedAt: number,
 ): Promise<boolean> {
   const parts = token.split(".");
   if (parts.length !== 2) {
@@ -126,10 +126,7 @@ export async function verifyCreateToken(
   if (payload.exp < Date.now()) {
     return false;
   }
-  if (
-    sessionStartedAt !== undefined &&
-    payload.session_started_at !== sessionStartedAt
-  ) {
+  if (payload.session_started_at !== sessionStartedAt) {
     return false;
   }
 
