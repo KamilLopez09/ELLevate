@@ -29,6 +29,7 @@ export function buildGroupLeaderboardFromRows(
       first_name: string;
       last_initial: string;
       cumulative_score: number;
+      completed_at: string;
       weeks: Set<number>;
     }
   >();
@@ -42,15 +43,18 @@ export function buildGroupLeaderboardFromRows(
     const weeks = existing?.weeks ?? new Set<number>();
     weeks.add(row.week_number);
 
-    const cumulative = Math.max(
-      existing?.cumulative_score ?? 0,
-      row.cumulative_score,
-    );
+    const rowCompletedAt = Date.parse(row.completed_at);
+    const existingCompletedAt = existing
+      ? Date.parse(existing.completed_at)
+      : Number.NEGATIVE_INFINITY;
+    const latest =
+      !existing || rowCompletedAt > existingCompletedAt ? row : existing;
 
     byCamper.set(row.camper_id, {
-      first_name: row.first_name,
-      last_initial: row.last_initial,
-      cumulative_score: cumulative,
+      first_name: latest.first_name,
+      last_initial: latest.last_initial,
+      cumulative_score: latest.cumulative_score,
+      completed_at: latest.completed_at,
       weeks,
     });
   }

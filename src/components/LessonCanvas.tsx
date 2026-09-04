@@ -33,6 +33,7 @@ import {
 import { unlockAchievementsAfterPass } from "@/lib/achievements";
 import { PASS_THRESHOLD } from "@/lib/constants";
 import { useCopy } from "@/lib/i18n/useCopy";
+import { acceptPromptCompletion } from "@/lib/prompt-completion-gate";
 import { postCamperTelemetry } from "@/lib/telemetry";
 import { notifyProgressSynced } from "@/lib/progress-events";
 import type { CamperTelemetryRow } from "@/types/sentence-canvas";
@@ -150,12 +151,14 @@ export function LessonCanvas({
   const outcomesRef = useRef<NodeOutcome[]>([]);
   const scoreResultsRef = useRef<ScoreResult[]>([]);
   const modesUsedRef = useRef<Set<GameModeId>>(new Set());
+  const completedPromptIndicesRef = useRef<Set<number>>(new Set());
   const errorCountRef = useRef(0);
   const weekCompletedRef = useRef(false);
   const [outcomeVersion, bumpOutcomes] = useState(0);
 
   useEffect(() => {
     outcomesRef.current = Array.from({ length: totalPrompts }, () => "pending");
+    completedPromptIndicesRef.current = new Set();
     bumpOutcomes((value) => value + 1);
   }, [totalPrompts, weekNumber, ageGroup]);
 
@@ -194,6 +197,7 @@ export function LessonCanvas({
     outcomesRef.current = Array.from({ length: totalPrompts }, () => "pending");
     scoreResultsRef.current = [];
     modesUsedRef.current = new Set();
+    completedPromptIndicesRef.current = new Set();
     errorCountRef.current = 0;
     refreshOutcomes();
   }, [refreshOutcomes, totalPrompts]);
@@ -230,6 +234,11 @@ export function LessonCanvas({
   const handleModeComplete = useCallback(
     (payload: GameModeCompletePayload) => {
       if (totalPrompts === 0 || promptIndex >= totalPrompts || !prompt) {
+        return;
+      }
+      if (
+        !acceptPromptCompletion(completedPromptIndicesRef.current, promptIndex)
+      ) {
         return;
       }
 
