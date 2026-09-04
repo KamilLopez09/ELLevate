@@ -46,7 +46,7 @@ export function GroupLeaderboardPanel({
           Group leaderboard
         </h2>
         <p className="mt-2 text-sm text-ink/70">
-          Ranked by highest cumulative points per camper (COPPA-safe: first name
+          Ranked by latest cumulative points per camper (COPPA-safe: first name
           and last initial only).
         </p>
       </div>
