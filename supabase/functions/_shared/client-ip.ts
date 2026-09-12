@@ -17,9 +17,14 @@ export function getClientIp(req: Request): string {
 
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) {
-      return first;
+    // Proxies append to the right; spoofed client-supplied values stay left.
+    const forwardedIps = forwarded
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const nearestForwardedIp = forwardedIps.at(-1);
+    if (nearestForwardedIp) {
+      return nearestForwardedIp;
     }
   }
 
