@@ -9,6 +9,14 @@ import {
   verifyCreateToken,
 } from "../_shared/resume-attestation.ts";
 import {
+  RESUME_CREATE_IP_LIMIT,
+  RESUME_CREATE_LIMIT_PER_CAMPER,
+  RESUME_TOKEN_ISSUE_IP_LIMIT,
+  RESUME_TOKEN_ISSUE_LIMIT_PER_CAMPER,
+  resumeCamperRateKey,
+  resumeIpRateKey,
+} from "../_shared/resume-rate-limit.ts";
+import {
   MAX_ACTIVE_SNAPSHOTS_PER_CAMPER,
   validateSnapshot,
 } from "../_shared/resume-snapshot.ts";
@@ -25,9 +33,7 @@ const CODE_LENGTH = 6;
 const SNAPSHOT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CREATE_TOKEN_TTL_MS = 15 * 60 * 1000;
 
-const TOKEN_ISSUE_LIMIT = 10;
 const TOKEN_ISSUE_WINDOW_MS = 60 * 60 * 1000;
-const CREATE_LIMIT = 5;
 const CREATE_WINDOW_MS = 60 * 60 * 1000;
 const RESTORE_LIMIT = 30;
 const RESTORE_WINDOW_MS = 60 * 60 * 1000;
@@ -139,21 +145,6 @@ Deno.serve(async (req) => {
   void purgeExpiredSnapshots(admin);
 
   if (action === "issue-create-token") {
-    const limited = consumeRateLimit(
-      `resume-token:${clientIp}`,
-      TOKEN_ISSUE_LIMIT,
-      TOKEN_ISSUE_WINDOW_MS,
-    );
-    if (!limited.allowed) {
-      return jsonResponse(
-        { error_code: "rate_limited" },
-        429,
-        limited.retryAfterSeconds
-          ? { "Retry-After": String(limited.retryAfterSeconds) }
-          : undefined,
-      );
-    }
-
     const camperId = body.camper_id;
     const sessionStartedAt = body.session_started_at;
     if (
@@ -163,6 +154,36 @@ Deno.serve(async (req) => {
       sessionStartedAt <= 0
     ) {
       return jsonResponse({ error_code: "invalid_session" }, 400);
+    }
+
+    const ipLimited = consumeRateLimit(
+      resumeIpRateKey("token", clientIp),
+      RESUME_TOKEN_ISSUE_IP_LIMIT,
+      TOKEN_ISSUE_WINDOW_MS,
+    );
+    if (!ipLimited.allowed) {
+      return jsonResponse(
+        { error_code: "rate_limited" },
+        429,
+        ipLimited.retryAfterSeconds
+          ? { "Retry-After": String(ipLimited.retryAfterSeconds) }
+          : undefined,
+      );
+    }
+
+    const camperLimited = consumeRateLimit(
+      resumeCamperRateKey("token", clientIp, camperId),
+      RESUME_TOKEN_ISSUE_LIMIT_PER_CAMPER,
+      TOKEN_ISSUE_WINDOW_MS,
+    );
+    if (!camperLimited.allowed) {
+      return jsonResponse(
+        { error_code: "rate_limited" },
+        429,
+        camperLimited.retryAfterSeconds
+          ? { "Retry-After": String(camperLimited.retryAfterSeconds) }
+          : undefined,
+      );
     }
 
     const createToken = await issueCreateToken(
@@ -179,21 +200,6 @@ Deno.serve(async (req) => {
   }
 
   if (action === "create") {
-    const limited = consumeRateLimit(
-      `resume-create:${clientIp}`,
-      CREATE_LIMIT,
-      CREATE_WINDOW_MS,
-    );
-    if (!limited.allowed) {
-      return jsonResponse(
-        { error_code: "rate_limited" },
-        429,
-        limited.retryAfterSeconds
-          ? { "Retry-After": String(limited.retryAfterSeconds) }
-          : undefined,
-      );
-    }
-
     const createToken = body.create_token;
     if (typeof createToken !== "string" || createToken.length < 10) {
       return jsonResponse({ error_code: "authorize_failed" }, 401);
@@ -212,6 +218,40 @@ Deno.serve(async (req) => {
     );
     if (!tokenValid) {
       return jsonResponse({ error_code: "authorize_failed" }, 401);
+    }
+
+    const ipLimited = consumeRateLimit(
+      resumeIpRateKey("create", clientIp),
+      RESUME_CREATE_IP_LIMIT,
+      CREATE_WINDOW_MS,
+    );
+    if (!ipLimited.allowed) {
+      return jsonResponse(
+        { error_code: "rate_limited" },
+        429,
+        ipLimited.retryAfterSeconds
+          ? { "Retry-After": String(ipLimited.retryAfterSeconds) }
+          : undefined,
+      );
+    }
+
+    const camperLimited = consumeRateLimit(
+      resumeCamperRateKey(
+        "create",
+        clientIp,
+        validated.snapshot.camper.camper_id,
+      ),
+      RESUME_CREATE_LIMIT_PER_CAMPER,
+      CREATE_WINDOW_MS,
+    );
+    if (!camperLimited.allowed) {
+      return jsonResponse(
+        { error_code: "rate_limited" },
+        429,
+        camperLimited.retryAfterSeconds
+          ? { "Retry-After": String(camperLimited.retryAfterSeconds) }
+          : undefined,
+      );
     }
 
     let tokenReserved = false;
