@@ -218,6 +218,9 @@ Deno.serve(async (req) => {
         : undefined,
     );
   }
+  const countRejectedPost = () => {
+    incrementRateLimit(rateLimitKey, TELEMETRY_RATE_WINDOW_MS);
+  };
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -229,11 +232,13 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
+    countRejectedPost();
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
   const result = validate(body);
   if (!result.ok) {
+    countRejectedPost();
     return jsonResponse({ error: result.error }, 400);
   }
 
@@ -252,6 +257,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (readError) {
+      countRejectedPost();
       return jsonResponse({ error: readError.message }, 500);
     }
 
@@ -268,6 +274,7 @@ Deno.serve(async (req) => {
         .eq("week_number", result.row.week_number);
 
       if (updateError) {
+        countRejectedPost();
         return jsonResponse({ error: updateError.message }, 500);
       }
       shouldBroadcast = true;
@@ -292,6 +299,7 @@ Deno.serve(async (req) => {
   }
 
   if (error) {
+    countRejectedPost();
     return jsonResponse({ error: error.message }, 500);
   }
 
