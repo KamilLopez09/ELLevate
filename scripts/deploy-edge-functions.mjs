@@ -4,6 +4,8 @@
  */
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -43,8 +45,8 @@ function requireEnv(name) {
   return value;
 }
 
-function run(command, args) {
-  console.log(`> ${command} ${args.join(" ")}`);
+function run(command, args, options = {}) {
+  console.log(options.label ?? `> ${command} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
     cwd: root,
     stdio: "inherit",
@@ -53,6 +55,34 @@ function run(command, args) {
   });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
+  }
+}
+
+function dotenvLine(name, value) {
+  const escaped = value
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/"/g, '\\"');
+  return `${name}="${escaped}"`;
+}
+
+function setSupabaseSecrets(secrets) {
+  const tempDir = mkdtempSync(join(tmpdir(), "ellevate-supabase-secrets-"));
+  const envFile = join(tempDir, "secrets.env");
+
+  try {
+    writeFileSync(
+      envFile,
+      Object.entries(secrets)
+        .map(([name, value]) => dotenvLine(name, value))
+        .join("\n"),
+      { mode: 0o600 },
+    );
+    run("npx", ["supabase", "secrets", "set", "--env-file", envFile], {
+      label: "> npx supabase secrets set --env-file <redacted>",
+    });
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
   }
 }
 
@@ -67,16 +97,13 @@ const campWallChannel =
 const jwtSecret = requireEnv("CAMP_WALL_JWT_SECRET");
 
 run("npx", ["supabase", "link", "--project-ref", process.env.SUPABASE_PROJECT_REF, "--yes"]);
-run("npx", [
-  "supabase",
-  "secrets",
-  "set",
-  `ORGANIZER_PASSWORD=${organizerPassword}`,
-  `COUNSELOR_RESET_PIN=${counselorPin}`,
-  `RESUME_ATTESTATION_SECRET=${resumeAttestationSecret}`,
-  `CAMP_WALL_CHANNEL=${campWallChannel}`,
-  `CAMP_WALL_JWT_SECRET=${jwtSecret}`,
-]);
+setSupabaseSecrets({
+  ORGANIZER_PASSWORD: organizerPassword,
+  COUNSELOR_RESET_PIN: counselorPin,
+  RESUME_ATTESTATION_SECRET: resumeAttestationSecret,
+  CAMP_WALL_CHANNEL: campWallChannel,
+  CAMP_WALL_JWT_SECRET: jwtSecret,
+});
 
 const functions = [
   "camper-telemetry",
@@ -101,4 +128,4 @@ console.log("- Counselor quick-reset through counselor-reset (COUNSELOR_RESET_PI
 console.log("- Live camp wall through organizer-wall-session + camper-telemetry broadcast.");
 console.log("- Apply migration 012_group_leaderboard.sql if not yet applied.");
 console.log("- Group standings for campers through group-leaderboard (RPC).");
-console.log(`- CAMP_WALL_CHANNEL set to: ${campWallChannel}`);
+console.log("- CAMP_WALL_CHANNEL is configured.");
